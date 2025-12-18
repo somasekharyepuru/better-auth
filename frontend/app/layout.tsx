@@ -1,9 +1,11 @@
-import type { Metadata } from 'next';
-import './globals.css';
+import type { Metadata } from "next";
+import "./globals.css";
+import { ToastProvider } from "@/components/ui/toast";
 
 export const metadata: Metadata = {
-  title: 'Auth Service',
-  description: 'Authentication service with Better Auth',
+  title: "Auth Service - Secure Authentication Platform",
+  description:
+    "Complete authentication solution with email verification, password reset, and secure login",
 };
 
 export default function RootLayout({
@@ -13,8 +15,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body suppressHydrationWarning>
+        <ToastProvider>{children}</ToastProvider>
+      </body>
     </html>
   );
 }
-

@@ -1,273 +1,178 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft } from "lucide-react";
+
+import { AuthLayout } from "@/components/auth-layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
+import { useToast } from "@/components/ui/toast";
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+});
+
+type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<"email" | "otp" | "password">("email");
+  const [success, setSuccess] = useState(false);
+  const router = useRouter();
+  const { addToast } = useToast();
 
-  const sendOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    getValues,
+  } = useForm<ForgotPasswordForm>({
+    resolver: zodResolver(forgotPasswordSchema),
+  });
+
+  const onSubmit = async (data: ForgotPasswordForm) => {
+    setIsLoading(true);
     setError("");
-    setMessage("");
-    setLoading(true);
 
     try {
-      // Use the correct forgetPassword.emailOtp method
-      const result = await authClient.forgetPassword.emailOtp({
-        email,
-      });
-
-      if (result.error) {
-        setError(result.error.message || "Failed to send reset code");
-      } else {
-        setMessage("Password reset code sent! Please check your inbox.");
-        setStep("otp");
-      }
-    } catch (err) {
-      setError("An error occurred");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const verifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      // Check the OTP first (optional step)
-      const result = await authClient.emailOtp.checkVerificationOtp({
-        email,
-        otp,
+      // Use emailOtp plugin's sendVerificationOtp for password reset
+      const result = await authClient.emailOtp.sendVerificationOtp({
+        email: data.email,
         type: "forget-password",
       });
 
       if (result.error) {
-        setError(result.error.message || "Invalid verification code");
-      } else {
-        setMessage("Code verified! Please enter your new password.");
-        setStep("password");
+        setError(result.error.message || "Failed to send reset email");
+        return;
       }
-    } catch (err) {
-      setError("An error occurred during verification");
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const resetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
-      setLoading(false);
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters long");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      // Use the emailOTP resetPassword method
-      const result = await authClient.emailOtp.resetPassword({
-        email,
-        otp,
-        password: newPassword,
+      // Store email in sessionStorage for the reset password page
+      sessionStorage.setItem("resetPasswordEmail", data.email);
+      addToast({
+        type: "success",
+        title: "Reset Code Sent",
+        description: `We've sent a 6-digit code to ${data.email}`,
       });
-
-      if (result.error) {
-        setError(result.error.message || "Failed to reset password");
-      } else {
-        setMessage(
-          "Password reset successfully! You can now login with your new password."
-        );
-        // Redirect to login after a delay
-        setTimeout(() => {
-          window.location.href = "/login";
-        }, 2000);
-      }
+      setSuccess(true);
     } catch (err) {
-      setError("An error occurred while resetting password");
+      const errorMessage = "An unexpected error occurred. Please try again.";
+      setError(errorMessage);
+      addToast({
+        type: "error",
+        title: "Failed to Send Code",
+        description: errorMessage,
+      });
+      console.error("Forgot password error:", err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <AuthLayout title="Check your email">
+        <div className="space-y-6">
+          <Link
+            href="/login"
+            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-800"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            back to sign in
+          </Link>
+
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+              <svg
+                className="w-8 h-8 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+            <div className="space-y-2">
+              <p className="text-gray-600">
+                We've sent a password reset link to:
+              </p>
+              <p className="font-medium text-gray-900">{getValues("email")}</p>
+            </div>
+            <p className="text-sm text-gray-500">
+              Check your email and follow the instructions to reset your
+              password.
+            </p>
+          </div>
+
+          <Button
+            onClick={() => router.push("/reset-password")}
+            className="w-full h-12"
+          >
+            Enter reset code
+          </Button>
+
+          <Button
+            onClick={() => router.push("/login")}
+            variant="outline"
+            className="w-full h-12"
+          >
+            Back to sign in
+          </Button>
+        </div>
+      </AuthLayout>
+    );
+  }
 
   return (
-    <div style={{ padding: "2rem", maxWidth: "400px", margin: "0 auto" }}>
-      <h1>Forgot Password</h1>
+    <AuthLayout
+      title="Forgot your password?"
+      subtitle="Enter your email address and we'll send you a link to reset your password."
+    >
+      <div className="space-y-6">
+        <Link
+          href="/login"
+          className="inline-flex items-center text-sm text-gray-600 hover:text-gray-800"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          back to sign in
+        </Link>
 
-      {step === "email" && (
-        <div>
-          <p>
-            Enter your email address and we'll send you a password reset code.
-          </p>
-          <form onSubmit={sendOTP}>
-            <div style={{ marginBottom: "1rem" }}>
-              <label>
-                Email:
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "0.5rem",
-                    marginTop: "0.5rem",
-                  }}
-                />
-              </label>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {error && (
+            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
+              {error}
             </div>
-            {error && (
-              <div style={{ color: "red", marginBottom: "1rem" }}>{error}</div>
-            )}
-            {message && (
-              <div style={{ color: "green", marginBottom: "1rem" }}>
-                {message}
-              </div>
-            )}
-            <button
-              type="submit"
-              disabled={loading}
-              style={{ padding: "0.5rem 1rem" }}
-            >
-              {loading ? "Sending..." : "Send Reset Code"}
-            </button>
-          </form>
-        </div>
-      )}
+          )}
 
-      {step === "otp" && (
-        <div>
-          <p>Please enter the 6-digit code sent to {email}</p>
-          <form onSubmit={verifyOTP}>
-            <div style={{ marginBottom: "1rem" }}>
-              <label>
-                Verification Code:
-                <input
-                  type="text"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  required
-                  maxLength={6}
-                  placeholder="123456"
-                  style={{
-                    width: "100%",
-                    padding: "0.5rem",
-                    marginTop: "0.5rem",
-                  }}
-                />
-              </label>
-            </div>
-            {error && (
-              <div style={{ color: "red", marginBottom: "1rem" }}>{error}</div>
+          <div>
+            <Input
+              {...register("email")}
+              type="email"
+              placeholder="Enter your email address"
+              disabled={isLoading}
+            />
+            {errors.email && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.email.message}
+              </p>
             )}
-            {message && (
-              <div style={{ color: "green", marginBottom: "1rem" }}>
-                {message}
-              </div>
-            )}
-            <button
-              type="submit"
-              disabled={loading || !otp}
-              style={{ padding: "0.5rem 1rem" }}
-            >
-              {loading ? "Verifying..." : "Verify Code"}
-            </button>
-          </form>
-          <div style={{ marginTop: "1rem" }}>
-            <button
-              onClick={() =>
-                sendOTP({ preventDefault: () => {} } as React.FormEvent)
-              }
-              disabled={loading}
-              style={{
-                padding: "0.5rem 1rem",
-                background: "transparent",
-                border: "1px solid #ccc",
-              }}
-            >
-              Resend Code
-            </button>
           </div>
-        </div>
-      )}
 
-      {step === "password" && (
-        <div>
-          <p>Enter your new password</p>
-          <form onSubmit={resetPassword}>
-            <div style={{ marginBottom: "1rem" }}>
-              <label>
-                New Password:
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  minLength={8}
-                  style={{
-                    width: "100%",
-                    padding: "0.5rem",
-                    marginTop: "0.5rem",
-                  }}
-                />
-              </label>
-            </div>
-            <div style={{ marginBottom: "1rem" }}>
-              <label>
-                Confirm Password:
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  minLength={8}
-                  style={{
-                    width: "100%",
-                    padding: "0.5rem",
-                    marginTop: "0.5rem",
-                  }}
-                />
-              </label>
-            </div>
-            {error && (
-              <div style={{ color: "red", marginBottom: "1rem" }}>{error}</div>
-            )}
-            {message && (
-              <div style={{ color: "green", marginBottom: "1rem" }}>
-                {message}
-              </div>
-            )}
-            <button
-              type="submit"
-              disabled={loading || !newPassword || !confirmPassword}
-              style={{ padding: "0.5rem 1rem" }}
-            >
-              {loading ? "Resetting..." : "Reset Password"}
-            </button>
-          </form>
-        </div>
-      )}
-
-      <div style={{ marginTop: "1rem" }}>
-        <a href="/login">Back to Login</a>
+          <Button type="submit" className="w-full h-12" disabled={isLoading}>
+            {isLoading ? "Sending..." : "Send reset link"}
+          </Button>
+        </form>
       </div>
-    </div>
+    </AuthLayout>
   );
 }
