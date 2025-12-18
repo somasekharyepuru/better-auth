@@ -17,7 +17,10 @@ import { useToast } from "@/components/ui/toast";
 const resetPasswordSchema = z
   .object({
     otp: z.string().length(6, "OTP must be 6 digits"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .max(128, "Password must be less than 128 characters"),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {

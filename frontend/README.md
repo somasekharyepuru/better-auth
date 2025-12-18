@@ -1,20 +1,29 @@
-# Auth Service Frontend
+# Personal Productivity Frontend
 
-A modern, responsive authentication frontend built with Next.js 15, Better Auth, and Tailwind CSS with a clean, professional design.
+A modern, responsive personal productivity platform built with Next.js 15, Better Auth, and Tailwind CSS with a clean, professional design focused on enhancing user productivity.
 
 ## 🚀 Features
 
-- **Modern Authentication Flows**
+- **Secure Authentication**
 
   - Email/password registration and login
   - Email OTP verification
   - Password reset with OTP
   - Social authentication (Google, Apple)
+  - Two-factor authentication
   - Session management
+
+- **Productivity Tools**
+
+  - Task management and organization
+  - Goal setting and tracking
+  - Progress visualization
+  - Productivity analytics
+  - Smart scheduling
 
 - **Beautiful UI/UX**
 
-  - Split-screen layout with gradient branding
+  - Modern productivity-focused design
   - Responsive design (mobile-first)
   - Clean, minimal interface
   - Smooth transitions and loading states
@@ -38,15 +47,16 @@ A modern, responsive authentication frontend built with Next.js 15, Better Auth,
 
 ## 📱 Pages & Flows
 
-### Authentication Pages
+### Application Pages
 
-- `/` - Landing page showcasing authentication features
+- `/` - Landing page showcasing productivity features
 - `/signup` - User registration
 - `/login` - User sign in
 - `/verify-email` - Email verification with OTP
 - `/forgot-password` - Password reset request
 - `/reset-password` - Password reset with OTP
-- `/dashboard` - Protected user dashboard
+- `/dashboard` - Personal productivity dashboard
+- `/profile` - User profile and settings
 
 ### Authentication Flows
 
@@ -70,12 +80,12 @@ Sign In → Forgot Password → Reset Password → Sign In → Dashboard
 
 ## 🎨 Design System
 
-The design follows a clean, modern aesthetic with:
+The design follows a clean, productivity-focused aesthetic with:
 
-- **Colors**: Blue/purple gradients with neutral grays
-- **Typography**: System fonts with clear hierarchy
-- **Components**: Consistent spacing and styling
-- **Layout**: Split-screen on desktop, single-column on mobile
+- **Colors**: Blue/purple gradients with neutral grays for focus
+- **Typography**: System fonts with clear hierarchy for readability
+- **Components**: Consistent spacing and styling optimized for productivity
+- **Layout**: Dashboard-focused design with intuitive navigation
 
 See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for detailed design guidelines.
 
@@ -279,4 +289,4 @@ This will log authentication events to the browser console.
 
 ---
 
-**Built with ❤️ using Next.js, Better Auth, and Tailwind CSS**
+**Built with ❤️ to boost your productivity using Next.js, Better Auth, and Tailwind CSS**

@@ -2,6 +2,7 @@
 
 import { ReactNode } from "react";
 import Link from "next/link";
+import { APP_CONFIG } from "@/config/app.constants";
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -18,29 +19,33 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
         <div className="relative z-10 flex flex-col justify-between p-12 text-white">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-blue-600 font-bold text-lg">A</span>
+              <span className="text-blue-600 font-bold text-lg">
+                {APP_CONFIG.shortName}
+              </span>
             </div>
-            <span className="text-xl font-semibold">Auth Service</span>
+            <span className="text-xl font-semibold">{APP_CONFIG.name}</span>
           </div>
 
           <div className="space-y-4">
             <h1 className="text-4xl font-bold leading-tight">
-              Secure Authentication
+              {APP_CONFIG.authLayout.title}
             </h1>
             <p className="text-blue-100 text-lg">
-              Sign in securely with email verification and password protection
+              {APP_CONFIG.authLayout.subtitle}
             </p>
           </div>
 
           <div className="flex items-center space-x-2 text-sm text-blue-100">
             <div className="flex items-center space-x-2">
               <div className="w-6 h-6 bg-white/20 rounded flex items-center justify-center">
-                <span className="text-xs font-bold">A</span>
+                <span className="text-xs font-bold">
+                  {APP_CONFIG.shortName}
+                </span>
               </div>
-              <span>Auth Service</span>
+              <span>{APP_CONFIG.name}</span>
             </div>
             <span>•</span>
-            <span>Secure by design</span>
+            <span>{APP_CONFIG.authLayout.tagline}</span>
           </div>
         </div>
       </div>
@@ -50,9 +55,11 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
         <div className="w-full max-w-md space-y-8">
           <div className="lg:hidden flex items-center justify-center space-x-2 mb-8">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">A</span>
+              <span className="text-white font-bold text-lg">
+                {APP_CONFIG.shortName}
+              </span>
             </div>
-            <span className="text-xl font-semibold">Auth Service</span>
+            <span className="text-xl font-semibold">{APP_CONFIG.name}</span>
           </div>
 
           <div className="text-center space-y-2">

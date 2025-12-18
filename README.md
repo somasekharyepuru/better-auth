@@ -1,11 +1,11 @@
-# 🔐 Authentication Better Auth
+# 📈 Personal Productivity App
 
-A complete authentication system built with Better Auth, featuring multi-tenant organization management, role-based access control, and email OTP verification.
+A comprehensive personal productivity platform built with Better Auth, featuring secure user management, task organization, goal tracking, and productivity analytics.
 
 ## 📁 Project Structure
 
 ```
-authentication-better-auth/
+personal-productivity-app/
 ├── backend/          # NestJS backend with Better Auth
 ├── frontend/         # Next.js frontend application
 └── README.md         # This file
@@ -52,7 +52,7 @@ npm run dev
 
 ## ✨ Features
 
-### 🔐 Authentication
+### 🔐 Secure Authentication
 
 - ✅ Email/Password authentication
 - ✅ Email OTP verification
@@ -61,36 +61,44 @@ npm run dev
 - ✅ Two-factor authentication
 - ✅ Session management
 
-### 🏢 Organization Management
+### 📝 Task Management
 
-- ✅ Multi-tenant architecture
-- ✅ Role-based access control (RBAC)
-- ✅ User invitations with roles
-- ✅ Organization switching
-- ✅ Member management
+- 📋 Smart task organization
+- ⏰ Due date tracking
+- 🏷️ Task categorization
+- ✅ Progress monitoring
+- 📊 Productivity insights
 
-### 👥 Roles & Permissions
+### 🎯 Goal Setting & Tracking
 
-- 🔴 **Owner** - Full control
-- 🟠 **Admin** - Manage users & settings
-- 🟡 **Manager** - Manage team members
-- 🟢 **Member** - Standard access
-- 🔵 **Viewer** - Read-only access
+- 🎯 SMART goal creation
+- 📈 Progress visualization
+- 🏆 Achievement milestones
+- 📅 Timeline management
+- 📊 Success analytics
+
+### 📊 Productivity Analytics
+
+- 📈 Performance dashboards
+- ⏱️ Time tracking insights
+- 🔥 Productivity streaks
+- 📋 Task completion rates
+- 🎯 Goal achievement metrics
 
 ### 📧 Email Integration
 
 - ✅ N8N webhook integration
 - ✅ OTP email delivery
-- ✅ Invitation emails
-- ✅ Password reset emails
+- ✅ Task reminders
+- ✅ Goal milestone notifications
 
 ## 📚 Documentation
 
 ### Backend Documentation
 
 - [`working-api.md`](./backend/working-api.md) - Complete API documentation with tested endpoints
-- [`ORGANIZATION_SYSTEM.md`](./backend/ORGANIZATION_SYSTEM.md) - Organization system architecture
-- [`ROLES_AND_PERMISSIONS_SUMMARY.md`](./backend/ROLES_AND_PERMISSIONS_SUMMARY.md) - Role management guide
+- [`ORGANIZATION_SYSTEM.md`](./backend/ORGANIZATION_SYSTEM.md) - User management system architecture
+- [`ROLES_AND_PERMISSIONS_SUMMARY.md`](./backend/ROLES_AND_PERMISSIONS_SUMMARY.md) - User role management guide
 - [`PRODUCTION_CHECKLIST.md`](./backend/PRODUCTION_CHECKLIST.md) - Production deployment guide
 
 ### Key Configuration Files
@@ -112,8 +120,9 @@ npm run dev
 ### Frontend
 
 - **Framework**: Next.js 15
-- **Styling**: CSS-in-JS (inline styles)
+- **Styling**: Tailwind CSS
 - **Authentication**: Better Auth React Client
+- **UI Components**: Custom component library
 - **TypeScript**: Full type safety
 
 ## 🔧 Environment Configuration
@@ -208,9 +217,10 @@ graph TD
     B --> C[Better Auth]
     C --> D[PostgreSQL Database]
     C --> E[N8N Email Service]
-    B --> F[Organization System]
-    F --> G[Role-Based Access Control]
-    G --> H[Multi-Tenant Architecture]
+    B --> F[Task Management System]
+    F --> G[Goal Tracking Engine]
+    G --> H[Analytics Dashboard]
+    H --> I[Productivity Insights]
 ```
 
 ## 🤝 Contributing
@@ -230,11 +240,11 @@ This project is licensed under the MIT License.
 For issues and questions:
 
 1. Check the documentation in [`backend/working-api.md`](./backend/working-api.md)
-2. Review the organization system guide in [`backend/ORGANIZATION_SYSTEM.md`](./backend/ORGANIZATION_SYSTEM.md)
+2. Review the user management guide in [`backend/ORGANIZATION_SYSTEM.md`](./backend/ORGANIZATION_SYSTEM.md)
 3. Check the production checklist in [`backend/PRODUCTION_CHECKLIST.md`](./backend/PRODUCTION_CHECKLIST.md)
 
 ---
 
-**🎉 Ready for production with comprehensive authentication and organization management!**
+**🎉 Ready to boost your productivity with comprehensive task management and goal tracking!**
 
 Built with ❤️ using Better Auth, NestJS, and Next.js

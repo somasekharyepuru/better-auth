@@ -1,163 +1,209 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { APP_CONFIG } from "@/config/app.constants";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      <div className="min-h-screen bg-gradient-to-br from-white/80 via-blue-50/50 to-indigo-50/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <header className="pt-6 pb-12">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center shadow-lg">
-                  <span className="text-white font-bold text-xl">A</span>
-                </div>
-                <span className="text-2xl font-semibold text-gray-800">
-                  Auth Service
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <header className="py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 bg-gray-900 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg">
+                  {APP_CONFIG.shortName}
                 </span>
               </div>
-
-              <div className="flex items-center space-x-4">
-                <Link href="/login">
-                  <Button
-                    variant="ghost"
-                    className="text-gray-700 hover:bg-gray-100 border border-gray-200 shadow-sm"
-                  >
-                    Sign in
-                  </Button>
-                </Link>
-                <Link href="/signup">
-                  <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg">
-                    Get started
-                  </Button>
-                </Link>
-              </div>
+              <span className="text-xl font-semibold text-gray-900">
+                {APP_CONFIG.name}
+              </span>
             </div>
-          </header>
 
-          <main className="py-20 text-center text-gray-800">
-            <div className="max-w-4xl mx-auto space-y-8">
-              <h1 className="text-6xl font-bold leading-tight bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent">
-                Secure Authentication Platform
-              </h1>
+            <div className="flex items-center space-x-3">
+              <Link href="/login">
+                <Button
+                  variant="ghost"
+                  className="text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                >
+                  {APP_CONFIG.navigation.login}
+                </Button>
+              </Link>
+              <Link href="/signup">
+                <Button className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-6">
+                  {APP_CONFIG.navigation.signup}
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </header>
 
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Complete authentication solution with email verification,
-                password reset, and organization management
-              </p>
+        {/* Hero Section */}
+        <main className="pt-20 pb-32">
+          <div className="max-w-4xl mx-auto text-center space-y-8">
+            <h1 className="text-7xl font-normal leading-tight text-gray-900">
+              {APP_CONFIG.hero.title.main}
+              <br />
+              <span className="font-light">
+                {APP_CONFIG.hero.title.subtitle}
+              </span>
+            </h1>
 
-              <div className="flex items-center justify-center space-x-4 pt-8">
-                <Link href="/signup">
-                  <Button
-                    size="lg"
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 h-14 px-8 text-lg shadow-xl"
-                  >
-                    Create account
-                  </Button>
-                </Link>
-                <Link href="/login">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="border-gray-300 text-gray-700 hover:bg-gray-50 h-14 px-8 text-lg shadow-lg bg-white/80 backdrop-blur-sm"
-                  >
-                    Sign in
-                  </Button>
-                </Link>
-              </div>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              {APP_CONFIG.hero.description}
+              <sup className="text-sm">{APP_CONFIG.hero.footnote}</sup>
+            </p>
+          </div>
 
-              <div className="pt-16 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-                <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 space-y-3 shadow-lg border border-white/20">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
-                    <svg
-                      className="w-6 h-6 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                      />
-                    </svg>
+          {/* Dashboard Preview */}
+          <div className="mt-20 max-w-5xl mx-auto">
+            <div className="rounded-2xl shadow-2xl overflow-hidden border border-gray-200 bg-white">
+              <div className="bg-gradient-to-br from-purple-50 via-blue-50 to-cyan-50 p-8">
+                {/* Mock Dashboard Header */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                    </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-800">
-                    Email & OTP Verification
-                  </h3>
-                  <p className="text-gray-600">
-                    Secure email verification with one-time passwords for
-                    enhanced security
-                  </p>
                 </div>
 
-                <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 space-y-3 shadow-lg border border-white/20">
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-md">
-                    <svg
-                      className="w-6 h-6 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                      />
-                    </svg>
+                {/* Mock Dashboard Content */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="h-6 w-40 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                      <div className="h-32 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg"></div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="h-16 bg-gray-100 rounded"></div>
+                        <div className="h-16 bg-gray-100 rounded"></div>
+                        <div className="h-16 bg-gray-100 rounded"></div>
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-800">
-                    Password Recovery
-                  </h3>
-                  <p className="text-gray-600">
-                    Secure password reset flow with email verification and OTP
-                    codes
-                  </p>
-                </div>
-
-                <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 space-y-3 shadow-lg border border-white/20">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex items-center justify-center shadow-md">
-                    <svg
-                      className="w-6 h-6 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
-                      />
-                    </svg>
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="space-y-3">
+                      <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="space-y-2">
+                        <div className="h-12 bg-gray-100 rounded"></div>
+                        <div className="h-12 bg-gray-100 rounded"></div>
+                        <div className="h-12 bg-gray-100 rounded"></div>
+                        <div className="h-12 bg-gray-100 rounded"></div>
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-800">
-                    Social Authentication
-                  </h3>
-                  <p className="text-gray-600">
-                    Sign in with Google, Apple, or traditional email and
-                    password
-                  </p>
                 </div>
               </div>
             </div>
-          </main>
+          </div>
+        </main>
 
-          <footer className="py-8 text-center">
-            <div className="flex items-center justify-center space-x-2 text-gray-500">
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded flex items-center justify-center">
-                  <span className="text-xs font-bold text-white">A</span>
+        {/* Features Section */}
+        <section className="py-20 border-t border-gray-200">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+              <div className="space-y-4">
+                <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
                 </div>
-                <span>Auth Service</span>
+                <h3 className="text-2xl font-semibold text-gray-900">
+                  {APP_CONFIG.features.security.title}
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
+                  {APP_CONFIG.features.security.description}
+                </p>
               </div>
-              <span>•</span>
-              <span>Secure by design</span>
+
+              <div className="space-y-4">
+                <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-semibold text-gray-900">
+                  {APP_CONFIG.features.performance.title}
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
+                  {APP_CONFIG.features.performance.description}
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-semibold text-gray-900">
+                  {APP_CONFIG.features.management.title}
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
+                  {APP_CONFIG.features.management.description}
+                </p>
+              </div>
             </div>
-          </footer>
-        </div>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="py-12 border-t border-gray-200">
+          <div className="flex items-center justify-between text-sm text-gray-500">
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 bg-gray-900 rounded flex items-center justify-center">
+                <span className="text-xs font-bold text-white">
+                  {APP_CONFIG.shortName}
+                </span>
+              </div>
+              <span className="text-gray-900 font-medium">
+                {APP_CONFIG.name}
+              </span>
+            </div>
+            <div className="text-xs">
+              <sup>{APP_CONFIG.hero.footnote}</sup>{" "}
+              {APP_CONFIG.footer.disclaimer}
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );

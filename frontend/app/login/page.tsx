@@ -68,6 +68,21 @@ export default function LoginPage() {
         return;
       }
 
+      // Check if 2FA is required
+      if (
+        result.data &&
+        "twoFactorRedirect" in result.data &&
+        result.data.twoFactorRedirect
+      ) {
+        addToast({
+          type: "info",
+          title: "Two-Factor Authentication Required",
+          description: "Please enter your verification code to continue.",
+        });
+        router.push("/verify-2fa?callbackURL=/dashboard");
+        return;
+      }
+
       // Successful login
       addToast({
         type: "success",

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/toast";
+import { APP_CONFIG } from "@/config/app.constants";
 
 export const metadata: Metadata = {
-  title: "Auth Service - Secure Authentication Platform",
-  description:
-    "Complete authentication solution with email verification, password reset, and secure login",
+  title: APP_CONFIG.metadata.title,
+  description: APP_CONFIG.metadata.description,
 };
 
 export default function RootLayout({
