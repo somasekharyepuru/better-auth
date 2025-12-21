@@ -88,7 +88,7 @@ export default function HomePage() {
         ref={(el) => addToRefs(el, 0)}
         className="py-32 px-6 reveal"
       >
-        <div className="max-w-3xl mx-auto text-center">
+        <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-semibold text-gray-900 mb-8">
             {APP_CONFIG.philosophy.headline}
           </h2>
@@ -146,7 +146,7 @@ export default function HomePage() {
         ref={(el) => addToRefs(el, 3)}
         className="py-32 px-6 bg-gray-50/50 reveal"
       >
-        <div className="max-w-3xl mx-auto text-center">
+        <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-12">
             {APP_CONFIG.audience.headline}
           </h2>
@@ -168,7 +168,7 @@ export default function HomePage() {
         ref={(el) => addToRefs(el, 4)}
         className="py-40 px-6 reveal"
       >
-        <div className="max-w-3xl mx-auto text-center">
+        <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-4xl md:text-6xl font-semibold text-gray-900 mb-6">
             {APP_CONFIG.finalCta.headline}
           </h2>

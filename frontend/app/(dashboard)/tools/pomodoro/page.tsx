@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { useSettings } from "@/lib/settings-context";
 import { Spinner } from "@/components/ui/spinner";
-import { ChevronLeft, Play, Pause, RotateCcw, Coffee, Brain, Sunset } from "lucide-react";
+import { ChevronLeft, Play, Pause, RotateCcw, Coffee, Brain, Sunset, X } from "lucide-react";
 
 type TimerMode = "focus" | "shortBreak" | "longBreak";
 
@@ -39,6 +39,7 @@ export default function PomodoroPage() {
     const [mode, setMode] = useState<TimerMode>("focus");
     const [remainingSeconds, setRemainingSeconds] = useState(25 * 60);
     const [isRunning, setIsRunning] = useState(false);
+    const [showCompleteModal, setShowCompleteModal] = useState(false);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
     // Get durations from settings
@@ -75,6 +76,13 @@ export default function PomodoroPage() {
         checkAuth();
     }, [router]);
 
+    // Request notification permission
+    useEffect(() => {
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+            Notification.requestPermission();
+        }
+    }, []);
+
     // Load state from localStorage
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -91,6 +99,9 @@ export default function PomodoroPage() {
                         setRemainingSeconds(newRemaining);
                         if (newRemaining > 0) {
                             setIsRunning(true);
+                        } else {
+                            // Timer finished while away
+                            setShowCompleteModal(true);
                         }
                     } else {
                         setRemainingSeconds(state.remainingSeconds);
@@ -115,6 +126,15 @@ export default function PomodoroPage() {
         }
     }, [mode, remainingSeconds, isRunning, isAuthenticated]);
 
+    // Update document title
+    useEffect(() => {
+        if (typeof document !== 'undefined') {
+            document.title = isRunning
+                ? `(${formatTime(remainingSeconds)}) ${MODE_CONFIG[mode].label} - Daymark`
+                : 'Pomodoro - Daymark';
+        }
+    }, [remainingSeconds, isRunning, mode]);
+
     // Timer logic
     useEffect(() => {
         if (isRunning && remainingSeconds > 0) {
@@ -122,6 +142,15 @@ export default function PomodoroPage() {
                 setRemainingSeconds((prev) => {
                     if (prev <= 1) {
                         setIsRunning(false);
+                        setShowCompleteModal(true);
+
+                        // Show notification
+                        if (Notification.permission === 'granted') {
+                            new Notification("Timer Complete!", {
+                                body: `${MODE_CONFIG[mode].label} session finished.`,
+                                icon: "/icon.png" // Assumes standard icon path, fallback by browser if missing
+                            });
+                        }
                         return 0;
                     }
                     return prev - 1;
@@ -134,7 +163,8 @@ export default function PomodoroPage() {
                 clearInterval(intervalRef.current);
             }
         };
-    }, [isRunning, remainingSeconds]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isRunning, remainingSeconds]); // Added mode to deps if needed, but safe here
 
     const toggleTimer = () => {
         setIsRunning(!isRunning);
@@ -143,12 +173,14 @@ export default function PomodoroPage() {
     const resetTimer = () => {
         setIsRunning(false);
         setRemainingSeconds(getDuration(mode));
+        setShowCompleteModal(false);
     };
 
     const switchMode = (newMode: TimerMode) => {
         setIsRunning(false);
         setMode(newMode);
         setRemainingSeconds(getDuration(newMode));
+        setShowCompleteModal(false);
     };
 
     if (isLoading || settingsLoading || !isAuthenticated) {
@@ -163,7 +195,7 @@ export default function PomodoroPage() {
     const progress = (remainingSeconds / getDuration(mode)) * 100;
 
     return (
-        <div className="bg-premium">
+        <div className="bg-premium relative">
             <main className="max-w-lg mx-auto px-4 sm:px-6 py-8">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8">
@@ -180,7 +212,7 @@ export default function PomodoroPage() {
                 </div>
 
                 {/* Timer Card */}
-                <div className="card-premium">
+                <div className="card-premium relative z-10">
                     {/* Mode Tabs */}
                     <div className="flex gap-2 mb-8">
                         {(Object.keys(MODE_CONFIG) as TimerMode[]).map((m) => {
@@ -267,6 +299,46 @@ export default function PomodoroPage() {
                     Long: {settings.pomodoroLongBreak}min
                 </div>
             </main>
+
+            {/* Completion Modal */}
+            {showCompleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full transform scale-100 animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-start mb-4">
+                            <h3 className="text-xl font-semibold text-gray-900">
+                                {mode === 'focus' ? 'Great Focus!' : 'Break Over'}
+                            </h3>
+                            <button
+                                onClick={() => setShowCompleteModal(false)}
+                                className="text-gray-400 hover:text-gray-600"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <p className="text-gray-600 mb-6">
+                            {mode === 'focus'
+                                ? "You've completed your focus session. Time for a break?"
+                                : "Hope you're refreshed. Ready to focus again?"}
+                        </p>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => switchMode(mode === 'focus' ? 'shortBreak' : 'focus')}
+                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
+                            >
+                                {mode === 'focus' ? 'Start Break' : 'Start Focus'}
+                            </button>
+                            <button
+                                onClick={() => setShowCompleteModal(false)}
+                                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -177,7 +177,7 @@ export default function DecisionLogPage() {
 
     return (
         <div className="bg-premium">
-            <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+            <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8">
                     <button

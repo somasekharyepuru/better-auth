@@ -13,6 +13,8 @@ import {
     Trash2,
     Star,
     ArrowRight,
+    Info,
+    HelpCircle
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_AUTH_URL || "http://localhost:3002";
@@ -26,10 +28,34 @@ interface EisenhowerTask {
 }
 
 const QUADRANTS = [
-    { id: 1, title: "Do First", subtitle: "Urgent & Important", color: "bg-red-50 border-red-200" },
-    { id: 2, title: "Schedule", subtitle: "Not Urgent & Important", color: "bg-blue-50 border-blue-200" },
-    { id: 3, title: "Delegate", subtitle: "Urgent & Not Important", color: "bg-yellow-50 border-yellow-200" },
-    { id: 4, title: "Eliminate", subtitle: "Neither", color: "bg-gray-50 border-gray-200" },
+    {
+        id: 1,
+        title: "Do First",
+        subtitle: "Urgent & Important",
+        color: "bg-red-50 border-red-200",
+        description: "Crises, deadlines, and pressing problems. Do these immediately."
+    },
+    {
+        id: 2,
+        title: "Schedule",
+        subtitle: "Not Urgent & Important",
+        color: "bg-blue-50 border-blue-200",
+        description: "Strategic planning, relationship building, and personal growth. Decide when to do these."
+    },
+    {
+        id: 3,
+        title: "Delegate",
+        subtitle: "Urgent & Not Important",
+        color: "bg-yellow-50 border-yellow-200",
+        description: "Interruptions, some emails/calls. Try to delegate or automate these."
+    },
+    {
+        id: 4,
+        title: "Eliminate",
+        subtitle: "Neither",
+        color: "bg-gray-50 border-gray-200",
+        description: "Time wasters, excessive entertainment. Eliminate these from your schedule."
+    },
 ];
 
 async function fetchApi(url: string, options: RequestInit = {}) {
@@ -51,6 +77,7 @@ export default function EisenhowerPage() {
     const [addingToQuadrant, setAddingToQuadrant] = useState<number | null>(null);
     const [newTitle, setNewTitle] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showInfo, setShowInfo] = useState(false);
 
     const loadTasks = useCallback(async () => {
         try {
@@ -144,24 +171,33 @@ export default function EisenhowerPage() {
     }
 
     return (
-        <div className="bg-premium">
+        <div className="bg-premium relative">
             <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
                 {/* Header */}
-                <div className="flex items-center gap-4 mb-8">
-                    <button
-                        onClick={() => router.push("/tools")}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <div>
-                        <h1 className="text-2xl text-heading">
-                            Eisenhower Matrix
-                        </h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Prioritize by urgency and importance
-                        </p>
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => router.push("/tools")}
+                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
+                        <div>
+                            <h1 className="text-2xl text-heading">
+                                Eisenhower Matrix
+                            </h1>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Prioritize by urgency and importance
+                            </p>
+                        </div>
                     </div>
+                    <button
+                        onClick={() => setShowInfo(true)}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="How to use"
+                    >
+                        <HelpCircle className="w-6 h-6" />
+                    </button>
                 </div>
 
                 {/* Matrix Grid */}
@@ -173,15 +209,22 @@ export default function EisenhowerPage() {
                         return (
                             <div
                                 key={quadrant.id}
-                                className={`rounded-2xl border-2 p-5 min-h-[250px] ${quadrant.color}`}
+                                className={`rounded-2xl border-2 p-5 min-h-[250px] ${quadrant.color} relative group/quadrant`}
                             >
                                 {/* Quadrant Header */}
                                 <div className="flex items-center justify-between mb-4">
-                                    <div>
-                                        <h3 className="text-subheading text-gray-900 dark:text-gray-900">
+                                    <div className="group/tooltip relative">
+                                        <h3 className="text-subheading text-gray-900 dark:text-gray-900 flex items-center gap-2 cursor-help">
                                             {quadrant.title}
+                                            <Info className="w-3 h-3 text-gray-400 opacity-0 group-hover/quadrant:opacity-100 transition-opacity" />
                                         </h3>
                                         <p className="text-xs text-muted text-gray-600 dark:text-gray-700">{quadrant.subtitle}</p>
+
+                                        {/* Hover Tooltip */}
+                                        <div className="absolute left-0 top-full mt-2 z-20 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all shadow-lg pointer-events-none">
+                                            {quadrant.description}
+                                            <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 transform rotate-45" />
+                                        </div>
                                     </div>
                                     {!isAdding && (
                                         <button
@@ -287,6 +330,66 @@ export default function EisenhowerPage() {
                     })}
                 </div>
             </main>
+
+            {/* Info Modal */}
+            {showInfo && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-xl p-6 max-w-2xl w-full transform scale-100 animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-start mb-6">
+                            <div>
+                                <h3 className="text-xl font-semibold text-gray-900">
+                                    How to use the Eisenhower Matrix
+                                </h3>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    A simple way to prioritize tasks based on urgency and importance.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowInfo(false)}
+                                className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div className="space-y-4">
+                                <div className="p-4 bg-red-50 rounded-xl border border-red-100">
+                                    <h4 className="font-medium text-red-900 mb-1">1. Do First (Urgent & Important)</h4>
+                                    <p className="text-sm text-red-700">Tasks that need immediate attention. Crises, deadlines, and pressing problems.</p>
+                                </div>
+                                <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                                    <h4 className="font-medium text-blue-900 mb-1">2. Schedule (Not Urgent & Important)</h4>
+                                    <p className="text-sm text-blue-700">Tasks related to goals, planning, and growth. Schedule these for later.</p>
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-100">
+                                    <h4 className="font-medium text-yellow-900 mb-1">3. Delegate (Urgent & Not Important)</h4>
+                                    <p className="text-sm text-yellow-700">Tasks that need to be done but not necessarily by you. Interruptions, some emails.</p>
+                                </div>
+                                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                    <h4 className="font-medium text-gray-900 mb-1">4. Eliminate (Neither)</h4>
+                                    <p className="text-sm text-gray-700">Time wasters and distractions. Try to eliminate or minimize these.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-600">
+                            <strong>Pro Tip:</strong> Focus most of your energy on Quadrant 2 (Schedule) to prevent tasks from becoming urgent crises in Quadrant 1.
+                        </div>
+
+                        <div className="mt-6 flex justify-end">
+                            <button
+                                onClick={() => setShowInfo(false)}
+                                className="px-5 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium"
+                            >
+                                Got it
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
