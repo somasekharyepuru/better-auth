@@ -51,7 +51,7 @@ export function Logo({ size = "md", showText = true, className }: LogoProps) {
                         height="22"
                         rx="3"
                         fill="currentColor"
-                        className="text-gray-900"
+                        className="text-gray-900 dark:text-gray-100"
                     />
                 </svg>
             </div>
@@ -60,7 +60,7 @@ export function Logo({ size = "md", showText = true, className }: LogoProps) {
             {showText && (
                 <span
                     className={cn(
-                        "font-semibold text-gray-900 tracking-tight",
+                        "font-semibold text-gray-900 dark:text-gray-100 tracking-tight",
                         sizes[size].text
                     )}
                 >
@@ -108,7 +108,7 @@ export function LogoIcon({ className }: { className?: string }) {
                 height="22"
                 rx="3"
                 fill="currentColor"
-                className="text-gray-900"
+                className="text-gray-900 dark:text-gray-100"
             />
         </svg>
     );

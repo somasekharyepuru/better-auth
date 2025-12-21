@@ -175,7 +175,7 @@ export default function PomodoroPage() {
                     </button>
                     <div>
                         <h1 className="text-2xl text-heading">Pomodoro Timer</h1>
-                        <p className="text-sm text-muted">Focus on what matters</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Focus on what matters</p>
                     </div>
                 </div>
 
@@ -230,7 +230,7 @@ export default function PomodoroPage() {
                             {/* Time */}
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                                 <currentConfig.icon className="w-8 h-8 text-gray-400 mb-2" />
-                                <span className="text-6xl font-light text-gray-900">
+                                <span className="text-6xl font-light text-gray-900 dark:text-gray-100">
                                     {formatTime(remainingSeconds)}
                                 </span>
                             </div>

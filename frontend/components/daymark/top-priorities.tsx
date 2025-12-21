@@ -139,7 +139,7 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3 }: TopP
                         {/* Delete button */}
                         <button
                             onClick={() => handleDelete(priority.id)}
-                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all"
+                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-all"
                         >
                             <Trash2 className="w-4 h-4" />
                         </button>
@@ -150,17 +150,17 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3 }: TopP
                 {Array.from({ length: Math.max(0, maxItems - priorities.length) }).map((_, i) => (
                     <div
                         key={`empty-${i}`}
-                        className="flex items-center gap-3 p-3 rounded-xl border-2 border-dashed border-gray-200"
+                        className="flex items-center gap-3 p-3 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-800"
                     >
-                        <div className="w-6 h-6 rounded-full border-2 border-gray-200" />
-                        <span className="text-gray-300">Priority {priorities.length + i + 1}</span>
+                        <div className="w-6 h-6 rounded-full border-2 border-gray-200 dark:border-gray-800" />
+                        <span className="text-gray-300 dark:text-gray-600">Priority {priorities.length + i + 1}</span>
                     </div>
                 ))}
 
                 {/* Add input */}
                 {isAdding && (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
-                        <div className="w-6 h-6 rounded-full border-2 border-gray-300" />
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                        <div className="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600" />
                         <input
                             ref={inputRef}
                             type="text"
@@ -174,13 +174,13 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3 }: TopP
                                 }
                             }}
                             placeholder="What's your priority?"
-                            className="flex-1 bg-transparent text-gray-900 outline-none placeholder:text-gray-400"
+                            className="flex-1 bg-transparent text-gray-900 dark:text-gray-100 outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
                         />
                         <div className="flex gap-1">
                             <button
                                 onClick={handleAdd}
                                 disabled={isLoading || !newTitle.trim()}
-                                className="p-1.5 text-gray-900 hover:bg-gray-200 rounded-lg disabled:opacity-50"
+                                className="p-1.5 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg disabled:opacity-50"
                             >
                                 <Check className="w-4 h-4" />
                             </button>
@@ -189,7 +189,7 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3 }: TopP
                                     setIsAdding(false);
                                     setNewTitle("");
                                 }}
-                                className="p-1.5 text-gray-500 hover:bg-gray-200 rounded-lg"
+                                className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg"
                             >
                                 <X className="w-4 h-4" />
                             </button>
@@ -204,6 +204,6 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3 }: TopP
                     </p>
                 )}
             </div>
-        </div>
+        </div >
     );
 }

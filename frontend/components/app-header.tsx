@@ -47,7 +47,7 @@ export function AppHeader() {
   const showToolsLink = settings.toolsTabEnabled && (settings.pomodoroEnabled || settings.eisenhowerEnabled || settings.decisionLogEnabled);
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-b border-gray-100 z-50">
+    <header className="fixed top-0 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 z-50">
       <div className="max-w-3xl mx-auto px-6">
         <div className="flex justify-between items-center h-16">
           {/* Left side */}
@@ -55,7 +55,7 @@ export function AppHeader() {
             {isProfilePage || isToolsPage ? (
               <button
                 onClick={() => router.push("/dashboard")}
-                className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors"
+                className="flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span className="text-sm font-medium">Back</span>
@@ -72,7 +72,7 @@ export function AppHeader() {
             {isDashboard && showToolsLink && (
               <button
                 onClick={() => router.push("/tools")}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors"
               >
                 <Wrench className="w-4 h-4" />
                 Tools
@@ -80,12 +80,12 @@ export function AppHeader() {
             )}
             {isDashboard && user && (
               <>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   {user.name}
                 </span>
                 <button
                   onClick={() => router.push("/profile")}
-                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
+                  className="w-8 h-8 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-full flex items-center justify-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
                 >
                   {user.name.charAt(0).toUpperCase()}
                 </button>

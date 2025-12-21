@@ -82,7 +82,7 @@ export default function ToolsPage() {
                     </button>
                     <div>
                         <h1 className="text-2xl text-heading">Tools</h1>
-                        <p className="text-sm text-muted">Productivity utilities</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Productivity utilities</p>
                     </div>
                 </div>
 
@@ -105,13 +105,13 @@ export default function ToolsPage() {
                                 onClick={() => router.push(tool.href)}
                                 className="card-premium text-left group"
                             >
-                                <div className="w-12 h-12 rounded-2xl bg-gray-100/80 flex items-center justify-center mb-4 group-hover:bg-gray-200/80 transition-colors">
-                                    <tool.icon className="w-6 h-6 text-body" />
+                                <div className="w-12 h-12 rounded-2xl bg-gray-100/80 dark:bg-gray-800 flex items-center justify-center mb-4 group-hover:bg-gray-200/80 dark:group-hover:bg-gray-700 transition-colors">
+                                    <tool.icon className="w-6 h-6 text-body dark:text-gray-300" />
                                 </div>
                                 <h3 className="text-lg text-subheading mb-1">
                                     {tool.name}
                                 </h3>
-                                <p className="text-sm text-muted">{tool.description}</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{tool.description}</p>
                             </button>
                         ))}
                     </div>

@@ -92,7 +92,7 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3 }: ToDiscussProp
                         className="group flex items-start gap-4 p-4 rounded-2xl hover:bg-black/[0.02] transition-all"
                     >
                         {/* Number badge */}
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100/80 text-muted text-sm font-medium flex items-center justify-center">
+                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100/80 dark:bg-gray-800 text-muted dark:text-gray-400 text-sm font-medium flex items-center justify-center">
                             {index + 1}
                         </span>
 
@@ -107,7 +107,7 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3 }: ToDiscussProp
                                     if (e.key === "Enter") handleEdit(item.id);
                                     if (e.key === "Escape") setEditingId(null);
                                 }}
-                                className="flex-1 bg-transparent text-gray-900 outline-none border-b border-gray-300 focus:border-gray-900"
+                                className="flex-1 bg-transparent text-gray-900 dark:text-gray-100 outline-none border-b border-gray-300 dark:border-gray-600 focus:border-gray-900 dark:focus:border-gray-400"
                                 autoFocus
                             />
                         ) : (
@@ -117,7 +117,6 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3 }: ToDiscussProp
                                     setEditContent(item.content);
                                 }}
                                 title={item.content}
-                                className="flex-1 text-gray-700 cursor-text truncate"
                             >
                                 {item.content}
                             </span>
@@ -126,7 +125,7 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3 }: ToDiscussProp
                         {/* Delete button */}
                         <button
                             onClick={() => handleDelete(item.id)}
-                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all"
+                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-all"
                         >
                             <Trash2 className="w-4 h-4" />
                         </button>
@@ -137,19 +136,19 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3 }: ToDiscussProp
                 {maxItems > 0 && Array.from({ length: Math.max(0, maxItems - items.length) }).map((_, i) => (
                     <div
                         key={`empty-${i}`}
-                        className="flex items-start gap-3 p-3 rounded-xl border-2 border-dashed border-gray-200"
+                        className="flex items-start gap-3 p-3 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-800"
                     >
-                        <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-300 text-sm font-medium flex items-center justify-center">
+                        <span className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800/50 text-gray-300 dark:text-gray-600 text-sm font-medium flex items-center justify-center">
                             {items.length + i + 1}
                         </span>
-                        <span className="text-gray-300">Discussion point</span>
+                        <span className="text-gray-300 dark:text-gray-600">Discussion point</span>
                     </div>
                 ))}
 
                 {/* Add input */}
                 {isAdding && (
-                    <div className="flex items-start gap-3 p-3 rounded-xl bg-gray-50">
-                        <span className="w-6 h-6 rounded-full bg-gray-200 text-gray-500 text-sm font-medium flex items-center justify-center">
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                        <span className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm font-medium flex items-center justify-center">
                             {items.length + 1}
                         </span>
                         <input
@@ -165,13 +164,13 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3 }: ToDiscussProp
                                 }
                             }}
                             placeholder="What do you want to discuss?"
-                            className="flex-1 bg-transparent text-gray-900 outline-none placeholder:text-gray-400"
+                            className="flex-1 bg-transparent text-gray-900 dark:text-gray-100 outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
                         />
                         <div className="flex gap-1">
                             <button
                                 onClick={handleAdd}
                                 disabled={isLoading || !newContent.trim()}
-                                className="p-1.5 text-gray-900 hover:bg-gray-200 rounded-lg disabled:opacity-50"
+                                className="p-1.5 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg disabled:opacity-50"
                             >
                                 <Check className="w-4 h-4" />
                             </button>
@@ -180,7 +179,7 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3 }: ToDiscussProp
                                     setIsAdding(false);
                                     setNewContent("");
                                 }}
-                                className="p-1.5 text-gray-500 hover:bg-gray-200 rounded-lg"
+                                className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg"
                             >
                                 <X className="w-4 h-4" />
                             </button>

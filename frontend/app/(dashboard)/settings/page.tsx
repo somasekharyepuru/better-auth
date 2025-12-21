@@ -17,7 +17,10 @@ import {
     Timer,
     Grid3X3,
     BookOpen,
+    Sun,
+    Monitor,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 
 const SECTION_OPTIONS = [
     { key: "priorities", label: "Top Priorities", description: "Your main focus items for the day" },
@@ -33,6 +36,8 @@ const TIME_BLOCK_TYPES = ["Deep Work", "Meeting", "Personal", "Break", "Admin"];
 export default function SettingsPage() {
     const router = useRouter();
     const { settings, isLoading, updateSettings } = useSettings();
+    const { theme, setTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState("");
@@ -71,6 +76,11 @@ export default function SettingsPage() {
         };
         checkAuth();
     }, [router]);
+
+    // Mount check for theme
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // Sync local state with settings
     useEffect(() => {
@@ -167,6 +177,34 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="space-y-6">
+                    {/* Theme Preferences */}
+                    <section className="card-premium">
+                        <div className="flex items-center gap-2 mb-6">
+                            <Sun className="w-5 h-5 text-muted" />
+                            <h2 className="text-lg text-subheading">Appearance</h2>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                            {['light', 'dark', 'system'].map((mode) => (
+                                <button
+                                    key={mode}
+                                    onClick={() => setTheme(mode)}
+                                    className={`
+                                        flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all border
+                                        ${mounted && theme === mode
+                                            ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                                            : 'bg-secondary/50 text-secondary-foreground border-transparent hover:bg-secondary'
+                                        }
+                                    `}
+                                >
+                                    {mode === 'light' && <Sun className="w-4 h-4" />}
+                                    {mode === 'dark' && <Moon className="w-4 h-4" />}
+                                    {mode === 'system' && <Monitor className="w-4 h-4" />}
+                                    <span className="capitalize font-medium">{mode}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </section>
+
                     {/* Dashboard Preferences */}
                     <section className="card-premium">
                         <div className="flex items-center gap-2 mb-6">
@@ -178,8 +216,8 @@ export default function SettingsPage() {
                             {/* Max Priorities */}
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="font-medium text-gray-900">Top Priorities</p>
-                                    <p className="text-sm text-gray-500">Maximum items per day (1-5)</p>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100">Top Priorities</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">Maximum items per day (1-5)</p>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button
@@ -201,8 +239,8 @@ export default function SettingsPage() {
                             {/* Max Discussion */}
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="font-medium text-gray-900">To Discuss Items</p>
-                                    <p className="text-sm text-gray-500">Maximum items per day (0-5)</p>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100">To Discuss Items</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">Maximum items per day (0-5)</p>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button
@@ -227,7 +265,7 @@ export default function SettingsPage() {
                     <section className="card-premium">
                         <div className="flex items-center gap-2 mb-5">
                             <Eye className="w-5 h-5 text-gray-400" />
-                            <h2 className="text-lg font-semibold text-gray-900">Section Visibility</h2>
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Section Visibility</h2>
                         </div>
 
                         <div className="space-y-3">
@@ -237,8 +275,8 @@ export default function SettingsPage() {
                                     className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors"
                                 >
                                     <div>
-                                        <p className="font-medium text-gray-900">{section.label}</p>
-                                        <p className="text-sm text-gray-500">{section.description}</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{section.label}</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">{section.description}</p>
                                     </div>
                                     <input
                                         type="checkbox"
@@ -255,15 +293,15 @@ export default function SettingsPage() {
                     <section className="card-premium">
                         <div className="flex items-center gap-2 mb-5">
                             <Clock className="w-5 h-5 text-gray-400" />
-                            <h2 className="text-lg font-semibold text-gray-900">Scheduling Defaults</h2>
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Scheduling Defaults</h2>
                         </div>
 
                         <div className="space-y-5">
                             {/* Default Duration */}
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="font-medium text-gray-900">Default Duration</p>
-                                    <p className="text-sm text-gray-500">For new time blocks</p>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100">Default Duration</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">For new time blocks</p>
                                 </div>
                                 <select
                                     value={defaultDuration}
@@ -282,8 +320,8 @@ export default function SettingsPage() {
                             {/* Default Type */}
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="font-medium text-gray-900">Default Type</p>
-                                    <p className="text-sm text-gray-500">For new time blocks</p>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100">Default Type</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">For new time blocks</p>
                                 </div>
                                 <select
                                     value={defaultType}
@@ -304,15 +342,15 @@ export default function SettingsPage() {
                     <section className="card-premium">
                         <div className="flex items-center gap-2 mb-5">
                             <Wrench className="w-5 h-5 text-gray-400" />
-                            <h2 className="text-lg font-semibold text-gray-900">Tools</h2>
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Tools</h2>
                         </div>
 
                         <div className="space-y-4">
                             {/* Tools Tab Toggle */}
                             <label className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
                                 <div>
-                                    <p className="font-medium text-gray-900">Show Tools Tab</p>
-                                    <p className="text-sm text-gray-500">Display tools link in dashboard header</p>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100">Show Tools Tab</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">Display tools link in dashboard header</p>
                                 </div>
                                 <input
                                     type="checkbox"
@@ -331,8 +369,8 @@ export default function SettingsPage() {
                                                 <div className="flex items-center gap-3">
                                                     <Timer className="w-5 h-5 text-blue-500" />
                                                     <div>
-                                                        <p className="font-medium text-gray-900">Pomodoro Timer</p>
-                                                        <p className="text-sm text-gray-500">Focus timer for deep work</p>
+                                                        <p className="font-medium text-gray-900 dark:text-gray-100">Pomodoro Timer</p>
+                                                        <p className="text-sm text-gray-500 dark:text-gray-400">Focus timer for deep work</p>
                                                     </div>
                                                 </div>
                                                 <input
@@ -347,8 +385,8 @@ export default function SettingsPage() {
                                                 <div className="flex items-center gap-3">
                                                     <Grid3X3 className="w-5 h-5 text-purple-500" />
                                                     <div>
-                                                        <p className="font-medium text-gray-900">Eisenhower Matrix</p>
-                                                        <p className="text-sm text-gray-500">Prioritize tasks by urgency</p>
+                                                        <p className="font-medium text-gray-900 dark:text-gray-100">Eisenhower Matrix</p>
+                                                        <p className="text-sm text-gray-500 dark:text-gray-400">Prioritize tasks by urgency</p>
                                                     </div>
                                                 </div>
                                                 <input
@@ -363,8 +401,8 @@ export default function SettingsPage() {
                                                 <div className="flex items-center gap-3">
                                                     <BookOpen className="w-5 h-5 text-green-500" />
                                                     <div>
-                                                        <p className="font-medium text-gray-900">Decision Log</p>
-                                                        <p className="text-sm text-gray-500">Track important decisions</p>
+                                                        <p className="font-medium text-gray-900 dark:text-gray-100">Decision Log</p>
+                                                        <p className="text-sm text-gray-500 dark:text-gray-400">Track important decisions</p>
                                                     </div>
                                                 </div>
                                                 <input
@@ -382,7 +420,7 @@ export default function SettingsPage() {
                                             <p className="text-sm font-medium text-gray-500 mb-3">Pomodoro Durations</p>
                                             <div className="space-y-4">
                                                 <div className="flex items-center justify-between">
-                                                    <p className="text-gray-700">Focus</p>
+                                                    <p className="text-gray-700 dark:text-gray-300">Focus</p>
                                                     <div className="flex items-center gap-2">
                                                         <button
                                                             onClick={() => setFocusDuration((p) => Math.max(5, p - 5))}
@@ -400,7 +438,7 @@ export default function SettingsPage() {
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-between">
-                                                    <p className="text-gray-700">Short Break</p>
+                                                    <p className="text-gray-700 dark:text-gray-300">Short Break</p>
                                                     <div className="flex items-center gap-2">
                                                         <button
                                                             onClick={() => setShortBreak((p) => Math.max(1, p - 1))}
@@ -418,7 +456,7 @@ export default function SettingsPage() {
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-between">
-                                                    <p className="text-gray-700">Long Break</p>
+                                                    <p className="text-gray-700 dark:text-gray-300">Long Break</p>
                                                     <div className="flex items-center gap-2">
                                                         <button
                                                             onClick={() => setLongBreak((p) => Math.max(5, p - 5))}
@@ -447,13 +485,13 @@ export default function SettingsPage() {
                     <section className="card-premium">
                         <div className="flex items-center gap-2 mb-5">
                             <Moon className="w-5 h-5 text-gray-400" />
-                            <h2 className="text-lg font-semibold text-gray-900">Review Preferences</h2>
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Review Preferences</h2>
                         </div>
 
                         <label className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
                             <div>
-                                <p className="font-medium text-gray-900">End-of-Day Review</p>
-                                <p className="text-sm text-gray-500">Enable daily reflection prompts</p>
+                                <p className="font-medium text-gray-900 dark:text-gray-100">End-of-Day Review</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Enable daily reflection prompts</p>
                             </div>
                             <input
                                 type="checkbox"
@@ -468,14 +506,14 @@ export default function SettingsPage() {
                     <section className="card-premium">
                         <div className="flex items-center gap-2 mb-5">
                             <Zap className="w-5 h-5 text-gray-400" />
-                            <h2 className="text-lg font-semibold text-gray-900">Daily Behavior</h2>
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Daily Behavior</h2>
                         </div>
 
                         <div className="space-y-3">
                             <label className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
                                 <div>
-                                    <p className="font-medium text-gray-900">Auto-carry unfinished</p>
-                                    <p className="text-sm text-gray-500">Move incomplete priorities to next day</p>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100">Auto-carry unfinished</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">Move incomplete priorities to next day</p>
                                 </div>
                                 <input
                                     type="checkbox"
@@ -487,8 +525,8 @@ export default function SettingsPage() {
 
                             <label className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
                                 <div>
-                                    <p className="font-medium text-gray-900">Auto-create next day</p>
-                                    <p className="text-sm text-gray-500">Automatically prepare tomorrow's dashboard</p>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100">Auto-create next day</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">Automatically prepare tomorrow's dashboard</p>
                                 </div>
                                 <input
                                     type="checkbox"

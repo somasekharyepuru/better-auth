@@ -159,7 +159,7 @@ export default function DashboardPage() {
               {!isToday && (
                 <button
                   onClick={goToToday}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   <Calendar className="w-4 h-4" />
                   Today
@@ -180,7 +180,7 @@ export default function DashboardPage() {
               {showReviewButton && (
                 <button
                   onClick={() => setShowReview(true)}
-                  className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   <Moon className="w-4 h-4" />
                   End of Day

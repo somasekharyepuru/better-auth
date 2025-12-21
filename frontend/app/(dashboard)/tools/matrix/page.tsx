@@ -158,7 +158,7 @@ export default function EisenhowerPage() {
                         <h1 className="text-2xl text-heading">
                             Eisenhower Matrix
                         </h1>
-                        <p className="text-sm text-muted">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                             Prioritize by urgency and importance
                         </p>
                     </div>
@@ -178,10 +178,10 @@ export default function EisenhowerPage() {
                                 {/* Quadrant Header */}
                                 <div className="flex items-center justify-between mb-4">
                                     <div>
-                                        <h3 className="text-subheading">
+                                        <h3 className="text-subheading text-gray-900 dark:text-gray-900">
                                             {quadrant.title}
                                         </h3>
-                                        <p className="text-xs text-muted">{quadrant.subtitle}</p>
+                                        <p className="text-xs text-muted text-gray-600 dark:text-gray-700">{quadrant.subtitle}</p>
                                     </div>
                                     {!isAdding && (
                                         <button
@@ -200,7 +200,7 @@ export default function EisenhowerPage() {
                                             key={task.id}
                                             className="group flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-2.5 shadow-sm hover:shadow transition-shadow"
                                         >
-                                            <span className="flex-1 text-sm text-body truncate" title={task.title}>
+                                            <span className="flex-1 text-sm text-body truncate text-gray-700" title={task.title}>
                                                 {task.title}
                                             </span>
                                             <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
