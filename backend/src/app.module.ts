@@ -12,6 +12,8 @@ import { TimeBlocksModule } from './time-blocks/time-blocks.module';
 import { QuickNotesModule } from './quick-notes/quick-notes.module';
 import { DailyReviewModule } from './daily-review/daily-review.module';
 import { SettingsModule } from './settings/settings.module';
+import { EisenhowerModule } from './eisenhower/eisenhower.module';
+import { DecisionLogModule } from './decision-log/decision-log.module';
 import { AuthMiddleware } from './auth/auth.middleware';
 
 @Module({
@@ -29,6 +31,8 @@ import { AuthMiddleware } from './auth/auth.middleware';
     QuickNotesModule,
     DailyReviewModule,
     SettingsModule,
+    EisenhowerModule,
+    DecisionLogModule,
   ],
 })
 export class AppModule implements NestModule {

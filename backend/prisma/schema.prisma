@@ -266,9 +266,56 @@ model UserSettings {
   autoCarryForward  Boolean @default(true)
   autoCreateNextDay Boolean @default(true)
 
+  // Tools Settings
+  toolsTabEnabled      Boolean @default(true)
+  pomodoroEnabled      Boolean @default(true)
+  eisenhowerEnabled    Boolean @default(true)
+  decisionLogEnabled   Boolean @default(true)
+  pomodoroFocusDuration    Int @default(25)  // minutes
+  pomodoroShortBreak       Int @default(5)   // minutes
+  pomodoroLongBreak        Int @default(15)  // minutes
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@map("user_settings")
+}
+
+// ==========================================
+// Tools - Eisenhower Matrix
+// ==========================================
+
+model EisenhowerTask {
+  id       String  @id @default(cuid())
+  userId   String
+  title    String
+  note     String? @db.Text
+  quadrant Int     // 1=Urgent+Important, 2=Not Urgent+Important, 3=Urgent+Not Important, 4=Neither
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("eisenhower_task")
+}
+
+// ==========================================
+// Tools - Decision Log
+// ==========================================
+
+model DecisionEntry {
+  id       String   @id @default(cuid())
+  userId   String
+  title    String
+  date     DateTime
+  context  String?  @db.Text
+  decision String   @db.Text
+  outcome  String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("decision_entry")
 }

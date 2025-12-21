@@ -13,6 +13,10 @@ import {
     Moon,
     Zap,
     ChevronLeft,
+    Wrench,
+    Timer,
+    Grid3X3,
+    BookOpen,
 } from "lucide-react";
 
 const SECTION_OPTIONS = [
@@ -42,6 +46,14 @@ export default function SettingsPage() {
     const [reviewEnabled, setReviewEnabled] = useState(true);
     const [autoCarry, setAutoCarry] = useState(true);
     const [autoCreate, setAutoCreate] = useState(true);
+    // Tools state
+    const [toolsEnabled, setToolsEnabled] = useState(true);
+    const [pomodoroEnabled, setPomodoroEnabled] = useState(true);
+    const [eisenhowerEnabled, setEisenhowerEnabled] = useState(true);
+    const [decisionLogEnabled, setDecisionLogEnabled] = useState(true);
+    const [focusDuration, setFocusDuration] = useState(25);
+    const [shortBreak, setShortBreak] = useState(5);
+    const [longBreak, setLongBreak] = useState(15);
 
     // Auth check
     useEffect(() => {
@@ -71,6 +83,14 @@ export default function SettingsPage() {
             setReviewEnabled(settings.endOfDayReviewEnabled);
             setAutoCarry(settings.autoCarryForward);
             setAutoCreate(settings.autoCreateNextDay);
+            // Tools
+            setToolsEnabled(settings.toolsTabEnabled);
+            setPomodoroEnabled(settings.pomodoroEnabled);
+            setEisenhowerEnabled(settings.eisenhowerEnabled);
+            setDecisionLogEnabled(settings.decisionLogEnabled);
+            setFocusDuration(settings.pomodoroFocusDuration);
+            setShortBreak(settings.pomodoroShortBreak);
+            setLongBreak(settings.pomodoroLongBreak);
         }
     }, [settings]);
 
@@ -87,6 +107,14 @@ export default function SettingsPage() {
                 endOfDayReviewEnabled: reviewEnabled,
                 autoCarryForward: autoCarry,
                 autoCreateNextDay: autoCreate,
+                // Tools
+                toolsTabEnabled: toolsEnabled,
+                pomodoroEnabled,
+                eisenhowerEnabled,
+                decisionLogEnabled,
+                pomodoroFocusDuration: focusDuration,
+                pomodoroShortBreak: shortBreak,
+                pomodoroLongBreak: longBreak,
             });
             setSaveMessage("Settings saved successfully!");
             setTimeout(() => setSaveMessage(""), 3000);
@@ -269,6 +297,149 @@ export default function SettingsPage() {
                                     ))}
                                 </select>
                             </div>
+                        </div>
+                    </section>
+
+                    {/* Tools Settings */}
+                    <section className="bg-white rounded-2xl border border-gray-200 p-6">
+                        <div className="flex items-center gap-2 mb-5">
+                            <Wrench className="w-5 h-5 text-gray-400" />
+                            <h2 className="text-lg font-semibold text-gray-900">Tools</h2>
+                        </div>
+
+                        <div className="space-y-4">
+                            {/* Tools Tab Toggle */}
+                            <label className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
+                                <div>
+                                    <p className="font-medium text-gray-900">Show Tools Tab</p>
+                                    <p className="text-sm text-gray-500">Display tools link in dashboard header</p>
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    checked={toolsEnabled}
+                                    onChange={(e) => setToolsEnabled(e.target.checked)}
+                                    className="w-5 h-5 rounded text-gray-900 focus:ring-gray-500"
+                                />
+                            </label>
+
+                            {toolsEnabled && (
+                                <>
+                                    <div className="border-t border-gray-100 pt-4">
+                                        <p className="text-sm font-medium text-gray-500 mb-3">Available Tools</p>
+                                        <div className="space-y-3">
+                                            <label className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <Timer className="w-5 h-5 text-blue-500" />
+                                                    <div>
+                                                        <p className="font-medium text-gray-900">Pomodoro Timer</p>
+                                                        <p className="text-sm text-gray-500">Focus timer for deep work</p>
+                                                    </div>
+                                                </div>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={pomodoroEnabled}
+                                                    onChange={(e) => setPomodoroEnabled(e.target.checked)}
+                                                    className="w-5 h-5 rounded text-gray-900 focus:ring-gray-500"
+                                                />
+                                            </label>
+
+                                            <label className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <Grid3X3 className="w-5 h-5 text-purple-500" />
+                                                    <div>
+                                                        <p className="font-medium text-gray-900">Eisenhower Matrix</p>
+                                                        <p className="text-sm text-gray-500">Prioritize tasks by urgency</p>
+                                                    </div>
+                                                </div>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={eisenhowerEnabled}
+                                                    onChange={(e) => setEisenhowerEnabled(e.target.checked)}
+                                                    className="w-5 h-5 rounded text-gray-900 focus:ring-gray-500"
+                                                />
+                                            </label>
+
+                                            <label className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <BookOpen className="w-5 h-5 text-green-500" />
+                                                    <div>
+                                                        <p className="font-medium text-gray-900">Decision Log</p>
+                                                        <p className="text-sm text-gray-500">Track important decisions</p>
+                                                    </div>
+                                                </div>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={decisionLogEnabled}
+                                                    onChange={(e) => setDecisionLogEnabled(e.target.checked)}
+                                                    className="w-5 h-5 rounded text-gray-900 focus:ring-gray-500"
+                                                />
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {pomodoroEnabled && (
+                                        <div className="border-t border-gray-100 pt-4">
+                                            <p className="text-sm font-medium text-gray-500 mb-3">Pomodoro Durations</p>
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-gray-700">Focus</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => setFocusDuration((p) => Math.max(5, p - 5))}
+                                                            className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                                                        >
+                                                            -
+                                                        </button>
+                                                        <span className="w-16 text-center font-medium">{focusDuration} min</span>
+                                                        <button
+                                                            onClick={() => setFocusDuration((p) => Math.min(120, p + 5))}
+                                                            className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                                                        >
+                                                            +
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-gray-700">Short Break</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => setShortBreak((p) => Math.max(1, p - 1))}
+                                                            className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                                                        >
+                                                            -
+                                                        </button>
+                                                        <span className="w-16 text-center font-medium">{shortBreak} min</span>
+                                                        <button
+                                                            onClick={() => setShortBreak((p) => Math.min(30, p + 1))}
+                                                            className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                                                        >
+                                                            +
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-gray-700">Long Break</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => setLongBreak((p) => Math.max(5, p - 5))}
+                                                            className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                                                        >
+                                                            -
+                                                        </button>
+                                                        <span className="w-16 text-center font-medium">{longBreak} min</span>
+                                                        <button
+                                                            onClick={() => setLongBreak((p) => Math.min(60, p + 5))}
+                                                            className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                                                        >
+                                                            +
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </div>
                     </section>
 

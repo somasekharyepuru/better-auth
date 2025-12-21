@@ -1,0 +1,122 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
+import { useSettings } from "@/lib/settings-context";
+import { Spinner } from "@/components/ui/spinner";
+import { Timer, Grid3X3, BookOpen, ChevronLeft } from "lucide-react";
+
+const TOOLS = [
+    {
+        key: "pomodoro",
+        name: "Pomodoro Timer",
+        description: "Focus timer for deep work sessions",
+        icon: Timer,
+        href: "/tools/pomodoro",
+        settingsKey: "pomodoroEnabled" as const,
+    },
+    {
+        key: "matrix",
+        name: "Eisenhower Matrix",
+        description: "Prioritize by urgency and importance",
+        icon: Grid3X3,
+        href: "/tools/matrix",
+        settingsKey: "eisenhowerEnabled" as const,
+    },
+    {
+        key: "decisions",
+        name: "Decision Log",
+        description: "Track important decisions and context",
+        icon: BookOpen,
+        href: "/tools/decisions",
+        settingsKey: "decisionLogEnabled" as const,
+    },
+];
+
+export default function ToolsPage() {
+    const router = useRouter();
+    const { settings, isLoading: settingsLoading } = useSettings();
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const sessionData = await authClient.getSession();
+                if (!sessionData?.data) {
+                    router.push("/login");
+                    return;
+                }
+                setIsAuthenticated(true);
+            } catch {
+                router.push("/login");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        checkAuth();
+    }, [router]);
+
+    if (isLoading || settingsLoading || !isAuthenticated) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <Spinner size="lg" />
+            </div>
+        );
+    }
+
+    // Filter tools based on settings
+    const enabledTools = TOOLS.filter((tool) => settings[tool.settingsKey]);
+
+    return (
+        <div className="min-h-screen bg-gray-50">
+            <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+                {/* Header */}
+                <div className="flex items-center gap-4 mb-8">
+                    <button
+                        onClick={() => router.push("/dashboard")}
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                        <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <div>
+                        <h1 className="text-2xl font-semibold text-gray-900">Tools</h1>
+                        <p className="text-sm text-gray-500">Productivity utilities</p>
+                    </div>
+                </div>
+
+                {/* Tools Grid */}
+                {enabledTools.length === 0 ? (
+                    <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
+                        <p className="text-gray-500">No tools enabled</p>
+                        <button
+                            onClick={() => router.push("/settings")}
+                            className="mt-4 text-blue-600 hover:underline"
+                        >
+                            Enable tools in settings
+                        </button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {enabledTools.map((tool) => (
+                            <button
+                                key={tool.key}
+                                onClick={() => router.push(tool.href)}
+                                className="group bg-white rounded-2xl border border-gray-200 p-6 text-left hover:border-gray-300 hover:shadow-sm transition-all"
+                            >
+                                <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mb-4 group-hover:bg-gray-200 transition-colors">
+                                    <tool.icon className="w-6 h-6 text-gray-600" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                                    {tool.name}
+                                </h3>
+                                <p className="text-sm text-gray-500">{tool.description}</p>
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </main>
+        </div>
+    );
+}

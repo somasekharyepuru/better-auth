@@ -10,6 +10,14 @@ export interface UpdateSettingsDto {
     endOfDayReviewEnabled?: boolean;
     autoCarryForward?: boolean;
     autoCreateNextDay?: boolean;
+    // Tools settings
+    toolsTabEnabled?: boolean;
+    pomodoroEnabled?: boolean;
+    eisenhowerEnabled?: boolean;
+    decisionLogEnabled?: boolean;
+    pomodoroFocusDuration?: number;
+    pomodoroShortBreak?: number;
+    pomodoroLongBreak?: number;
 }
 
 export interface UserSettingsResponse {
@@ -23,6 +31,14 @@ export interface UserSettingsResponse {
     endOfDayReviewEnabled: boolean;
     autoCarryForward: boolean;
     autoCreateNextDay: boolean;
+    // Tools settings
+    toolsTabEnabled: boolean;
+    pomodoroEnabled: boolean;
+    eisenhowerEnabled: boolean;
+    decisionLogEnabled: boolean;
+    pomodoroFocusDuration: number;
+    pomodoroShortBreak: number;
+    pomodoroLongBreak: number;
 }
 
 @Injectable()
@@ -59,6 +75,16 @@ export class SettingsService {
         }
         if (data.defaultTimeBlockDuration !== undefined) {
             data.defaultTimeBlockDuration = Math.max(15, Math.min(240, data.defaultTimeBlockDuration));
+        }
+        // Validate pomodoro durations
+        if (data.pomodoroFocusDuration !== undefined) {
+            data.pomodoroFocusDuration = Math.max(1, Math.min(120, data.pomodoroFocusDuration));
+        }
+        if (data.pomodoroShortBreak !== undefined) {
+            data.pomodoroShortBreak = Math.max(1, Math.min(30, data.pomodoroShortBreak));
+        }
+        if (data.pomodoroLongBreak !== undefined) {
+            data.pomodoroLongBreak = Math.max(1, Math.min(60, data.pomodoroLongBreak));
         }
 
         // Convert enabledSections array to JSON string for storage
@@ -98,6 +124,14 @@ export class SettingsService {
             endOfDayReviewEnabled: settings.endOfDayReviewEnabled,
             autoCarryForward: settings.autoCarryForward,
             autoCreateNextDay: settings.autoCreateNextDay,
+            // Tools settings
+            toolsTabEnabled: settings.toolsTabEnabled,
+            pomodoroEnabled: settings.pomodoroEnabled,
+            eisenhowerEnabled: settings.eisenhowerEnabled,
+            decisionLogEnabled: settings.decisionLogEnabled,
+            pomodoroFocusDuration: settings.pomodoroFocusDuration,
+            pomodoroShortBreak: settings.pomodoroShortBreak,
+            pomodoroLongBreak: settings.pomodoroLongBreak,
         };
     }
 }

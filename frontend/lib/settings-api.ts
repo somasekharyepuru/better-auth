@@ -12,6 +12,14 @@ export interface UserSettings {
     endOfDayReviewEnabled: boolean;
     autoCarryForward: boolean;
     autoCreateNextDay: boolean;
+    // Tools settings
+    toolsTabEnabled: boolean;
+    pomodoroEnabled: boolean;
+    eisenhowerEnabled: boolean;
+    decisionLogEnabled: boolean;
+    pomodoroFocusDuration: number;
+    pomodoroShortBreak: number;
+    pomodoroLongBreak: number;
 }
 
 export interface UpdateSettingsDto {
@@ -23,6 +31,14 @@ export interface UpdateSettingsDto {
     endOfDayReviewEnabled?: boolean;
     autoCarryForward?: boolean;
     autoCreateNextDay?: boolean;
+    // Tools settings
+    toolsTabEnabled?: boolean;
+    pomodoroEnabled?: boolean;
+    eisenhowerEnabled?: boolean;
+    decisionLogEnabled?: boolean;
+    pomodoroFocusDuration?: number;
+    pomodoroShortBreak?: number;
+    pomodoroLongBreak?: number;
 }
 
 // Default settings (used when API fails or loading)
@@ -37,6 +53,14 @@ export const DEFAULT_SETTINGS: UserSettings = {
     endOfDayReviewEnabled: true,
     autoCarryForward: true,
     autoCreateNextDay: true,
+    // Tools defaults
+    toolsTabEnabled: true,
+    pomodoroEnabled: true,
+    eisenhowerEnabled: true,
+    decisionLogEnabled: true,
+    pomodoroFocusDuration: 25,
+    pomodoroShortBreak: 5,
+    pomodoroLongBreak: 15,
 };
 
 async function fetchWithCredentials(url: string, options: RequestInit = {}) {
