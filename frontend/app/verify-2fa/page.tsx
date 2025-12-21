@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AuthLayout } from "@/components/auth-layout";
 import { Shield, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 const verify2FASchema = z.object({
   code: z
@@ -26,6 +27,7 @@ type Verify2FAFormData = z.infer<typeof verify2FASchema>;
 function Verify2FAContent() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [useBackupCode, setUseBackupCode] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addToast } = useToast();
@@ -36,24 +38,23 @@ function Verify2FAContent() {
     register,
     handleSubmit,
     formState: { errors },
-    setError,
   } = useForm<Verify2FAFormData>({
     resolver: zodResolver(verify2FASchema),
   });
 
   const onSubmit = async (data: Verify2FAFormData) => {
     setIsVerifying(true);
+    setError("");
+
     try {
       let result;
 
       if (useBackupCode) {
-        // Verify backup code
         result = await authClient.twoFactor.verifyBackupCode({
           code: data.code,
           trustDevice: true,
         });
       } else {
-        // Verify TOTP code
         result = await authClient.twoFactor.verifyTotp({
           code: data.code,
           trustDevice: true,
@@ -61,40 +62,25 @@ function Verify2FAContent() {
       }
 
       if (result.error) {
-        setError("code", {
-          type: "manual",
-          message: useBackupCode
+        setError(
+          useBackupCode
             ? "Invalid backup code. Please try again."
-            : "Invalid verification code. Please try again.",
-        });
-        addToast({
-          type: "error",
-          title: "Verification Failed",
-          description:
-            result.error.message || "Invalid code. Please try again.",
-        });
+            : "Invalid verification code. Please try again."
+        );
         return;
       }
 
-      // Successful verification
+      // Success toast for navigation
       addToast({
         type: "success",
-        title: "Verification Successful",
-        description: "You have been successfully signed in.",
+        title: "Welcome back!",
+        duration: 3000,
       });
 
       router.push(callbackURL);
-    } catch (error) {
-      console.error("2FA verification error:", error);
-      setError("code", {
-        type: "manual",
-        message: "Verification failed. Please try again.",
-      });
-      addToast({
-        type: "error",
-        title: "Verification Failed",
-        description: "An error occurred. Please try again.",
-      });
+    } catch (err) {
+      setError("Verification failed. Please try again.");
+      console.error("2FA verification error:", err);
     } finally {
       setIsVerifying(false);
     }
@@ -102,41 +88,50 @@ function Verify2FAContent() {
 
   return (
     <AuthLayout
-      title="Two-Factor Authentication"
-      subtitle="Enter the verification code from your authenticator app"
+      title="Two-factor authentication"
+      subtitle={
+        useBackupCode
+          ? "Enter one of your backup codes to continue."
+          : "Enter the 6-digit code from your authenticator app."
+      }
     >
       <div className="space-y-6">
-        <div className="flex items-center justify-center">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-            <Shield className="w-8 h-8 text-blue-600" />
+        <Link
+          href="/login"
+          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to sign in
+        </Link>
+
+        <div className="flex justify-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center">
+            <Shield className="w-8 h-8 text-gray-600" />
           </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {error && (
+            <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl">
+              {error}
+            </div>
+          )}
+
           <div>
-            <label
-              htmlFor="code"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              {useBackupCode ? "Backup Code" : "Verification Code"}
-            </label>
             <Input
-              id="code"
               {...register("code")}
               placeholder={useBackupCode ? "Enter backup code" : "000000"}
               maxLength={useBackupCode ? 10 : 6}
-              className={`text-center text-lg tracking-widest ${
-                errors.code ? "border-red-500" : ""
-              }`}
+              className="text-center text-lg tracking-widest font-mono"
               autoComplete="off"
               autoFocus
             />
             {errors.code && (
-              <p className="text-red-600 text-sm mt-1">{errors.code.message}</p>
+              <p className="mt-2 text-sm text-red-500">{errors.code.message}</p>
             )}
           </div>
 
-          <Button type="submit" className="w-full h-12" disabled={isVerifying}>
+          <Button type="submit" className="w-full" disabled={isVerifying}>
             {isVerifying ? (
               <>
                 <Spinner size="sm" className="mr-2" />
@@ -148,39 +143,28 @@ function Verify2FAContent() {
           </Button>
         </form>
 
-        <div className="space-y-3">
+        <div className="text-center">
           <button
             type="button"
             onClick={() => setUseBackupCode(!useBackupCode)}
-            className="w-full text-sm text-blue-600 hover:text-blue-700"
+            className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
           >
             {useBackupCode
-              ? "Use authenticator app code"
+              ? "Use authenticator app instead"
               : "Use backup code instead"}
           </button>
-
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => router.push("/login")}
-              className="text-sm text-gray-600 hover:text-gray-700 inline-flex items-center space-x-1"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to sign in</span>
-            </button>
-          </div>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start space-x-2">
-            <Shield className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
+        <div className="bg-gray-50 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <Shield className="w-5 h-5 text-gray-400 mt-0.5 shrink-0" />
             <div>
-              <h4 className="text-sm font-medium text-blue-900">
-                Security Tip
+              <h4 className="text-sm font-medium text-gray-900">
+                Security tip
               </h4>
-              <p className="text-sm text-blue-700 mt-1">
+              <p className="text-sm text-gray-500 mt-1">
                 {useBackupCode
-                  ? "Each backup code can only be used once. Make sure to keep your remaining codes safe."
+                  ? "Each backup code can only be used once. Keep your remaining codes safe."
                   : "Open your authenticator app and enter the 6-digit code. Codes refresh every 30 seconds."}
               </p>
             </div>
@@ -195,8 +179,8 @@ export default function Verify2FAPage() {
   return (
     <Suspense
       fallback={
-        <AuthLayout title="Two-Factor Authentication" subtitle="Loading...">
-          <div className="flex justify-center">
+        <AuthLayout title="Two-factor authentication">
+          <div className="flex justify-center py-8">
             <Spinner size="lg" />
           </div>
         </AuthLayout>

@@ -1,30 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { daysApi, formatDate, Day } from "@/lib/daymark-api";
 import { Spinner } from "@/components/ui/spinner";
-import { useToast } from "@/components/ui/toast";
+import { DayProgress } from "@/components/daymark/day-progress";
+import { TopPriorities } from "@/components/daymark/top-priorities";
+import { ToDiscuss } from "@/components/daymark/to-discuss";
+import { TimeBlocks } from "@/components/daymark/time-blocks";
+import { QuickNotes } from "@/components/daymark/quick-notes";
+import { EndOfDayReview } from "@/components/daymark/end-of-day-review";
+import { ChevronLeft, ChevronRight, Moon, Calendar } from "lucide-react";
 
 interface User {
   id: string;
   name: string;
   email: string;
-  emailVerified: boolean;
-  role?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  image?: string | null;
 }
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentDate, setCurrentDate] = useState(() => formatDate(new Date()));
+  const [dayData, setDayData] = useState<Day | null>(null);
+  const [isDayLoading, setIsDayLoading] = useState(false);
+  const [showReview, setShowReview] = useState(false);
   const router = useRouter();
-  const { addToast } = useToast();
 
+  // Auth check
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -35,14 +39,9 @@ export default function DashboardPage() {
           return;
         }
 
-        setUser(sessionData?.data?.user);
+        setUser(sessionData.data.user as User);
       } catch (error) {
         console.error("Auth check error:", error);
-        addToast({
-          type: "error",
-          title: "Authentication Error",
-          description: "Please sign in again to continue.",
-        });
         router.push("/login");
       } finally {
         setIsLoading(false);
@@ -52,9 +51,54 @@ export default function DashboardPage() {
     checkAuth();
   }, [router]);
 
+  // Load day data
+  const loadDayData = useCallback(async () => {
+    setIsDayLoading(true);
+    try {
+      const data = await daysApi.getDay(currentDate);
+      setDayData(data);
+    } catch (error) {
+      console.error("Failed to load day data:", error);
+    } finally {
+      setIsDayLoading(false);
+    }
+  }, [currentDate]);
+
+  useEffect(() => {
+    if (user) {
+      loadDayData();
+    }
+  }, [user, currentDate, loadDayData]);
+
+  // Date navigation
+  const goToPreviousDay = () => {
+    const date = new Date(currentDate);
+    date.setDate(date.getDate() - 1);
+    setCurrentDate(formatDate(date));
+  };
+
+  const goToNextDay = () => {
+    const date = new Date(currentDate);
+    date.setDate(date.getDate() + 1);
+    setCurrentDate(formatDate(date));
+  };
+
+  const goToToday = () => {
+    setCurrentDate(formatDate(new Date()));
+  };
+
+  const isToday = currentDate === formatDate(new Date());
+
+  // Format display date
+  const displayDate = new Date(currentDate).toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Spinner size="lg" />
       </div>
     );
@@ -64,110 +108,118 @@ export default function DashboardPage() {
     return null;
   }
 
+  // Calculate progress
+  const completedCount = dayData?.priorities.filter((p) => p.completed).length || 0;
+  const totalCount = dayData?.priorities.length || 0;
+
+  // Get incomplete priorities for review
+  const incompletePriorities = dayData?.priorities.filter((p) => !p.completed) || [];
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
-          {/* Welcome Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Welcome back, {user.name}!
-            </h1>
-            <p className="text-gray-600">
-              Ready to boost your productivity today? Let's get things done.
-            </p>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
-                  Tasks Today
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">0</div>
-                <p className="text-xs text-gray-500">
-                  Ready to add your first task?
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
-                  Goals Progress
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">0%</div>
-                <p className="text-xs text-gray-500">
-                  Set your first goal to get started
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
-                  Productivity Score
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">--</div>
-                <p className="text-xs text-gray-500">
-                  Complete tasks to see your score
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Getting Started */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Get Started with Personal Productivity
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <h3 className="font-medium text-gray-800">Quick Actions</h3>
-                <div className="space-y-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full justify-start"
-                  >
-                    📝 Add your first task
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full justify-start"
-                  >
-                    🎯 Set a goal
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full justify-start"
-                  >
-                    📊 View analytics
-                  </Button>
-                </div>
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
+          {/* Header with date navigation */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={goToPreviousDay}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={goToNextDay}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
               </div>
-              <div className="space-y-2">
-                <h3 className="font-medium text-gray-800">Tips</h3>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Start with 3-5 tasks for today</li>
-                  <li>• Set realistic, achievable goals</li>
-                  <li>• Review your progress weekly</li>
-                  <li>• Use time blocking for focus</li>
-                </ul>
+
+              <div>
+                <h1 className="text-2xl font-semibold text-gray-900">{displayDate}</h1>
+                {isToday && (
+                  <p className="text-sm text-gray-500">
+                    Welcome back, {user.name.split(" ")[0]}
+                  </p>
+                )}
+              </div>
+
+              {!isToday && (
+                <button
+                  onClick={goToToday}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Today
+                </button>
+              )}
+            </div>
+
+            {/* End of day review button */}
+            <button
+              onClick={() => setShowReview(true)}
+              className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+            >
+              <Moon className="w-4 h-4" />
+              End of Day
+            </button>
+          </div>
+
+          {/* Day Progress */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <DayProgress completed={completedCount} total={totalCount} />
+          </div>
+
+          {/* Main Grid */}
+          {isDayLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <Spinner size="lg" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Column */}
+              <div className="space-y-6">
+                <TopPriorities
+                  date={currentDate}
+                  priorities={dayData?.priorities || []}
+                  onUpdate={loadDayData}
+                />
+                <ToDiscuss
+                  date={currentDate}
+                  items={dayData?.discussionItems || []}
+                  onUpdate={loadDayData}
+                />
+              </div>
+
+              {/* Right Column */}
+              <div className="space-y-6">
+                <TimeBlocks
+                  date={currentDate}
+                  blocks={dayData?.timeBlocks || []}
+                  onUpdate={loadDayData}
+                />
+                <QuickNotes
+                  date={currentDate}
+                  note={dayData?.quickNote || null}
+                  onUpdate={loadDayData}
+                />
               </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
+
+      {/* End of Day Review Modal */}
+      <EndOfDayReview
+        date={currentDate}
+        review={dayData?.dailyReview || null}
+        incompletePriorities={incompletePriorities}
+        onUpdate={loadDayData}
+        isOpen={showReview}
+        onClose={() => setShowReview(false)}
+      />
     </div>
   );
 }

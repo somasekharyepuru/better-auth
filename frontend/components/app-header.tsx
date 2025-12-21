@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import { APP_CONFIG } from "@/config/app.constants";
+import { ArrowLeft, ChevronRight } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 
 interface User {
   id: string;
@@ -38,65 +39,49 @@ export function AppHeader() {
     checkAuth();
   }, []);
 
-  const getBackButton = () => {
-    if (pathname === "/profile" || pathname.startsWith("/profile/")) {
-      return (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.push("/dashboard")}
-          className="flex items-center space-x-2"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back</span>
-        </Button>
-      );
-    }
-    return null;
-  };
+  const isProfilePage = pathname === "/profile" || pathname.startsWith("/profile/");
+  const isDashboard = pathname === "/dashboard";
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-b border-gray-100 z-50">
+      <div className="max-w-3xl mx-auto px-6">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-4">
-            {getBackButton()}
-            {pathname === "/dashboard" && (
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">
-                    {APP_CONFIG.shortName}
-                  </span>
-                </div>
-                <span className="text-xl font-semibold">{APP_CONFIG.name}</span>
-              </div>
+          {/* Left side */}
+          <div className="flex items-center gap-4">
+            {isProfilePage ? (
+              <button
+                onClick={() => router.push("/dashboard")}
+                className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm font-medium">Back</span>
+              </button>
+            ) : (
+              <Link href="/dashboard">
+                <Logo size="sm" />
+              </Link>
             )}
           </div>
 
-          <div className="flex items-center space-x-2">
-            {pathname !== "/dashboard" && (
+          {/* Right side */}
+          <div className="flex items-center gap-4">
+            {isDashboard && user && (
               <>
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">
-                    {APP_CONFIG.shortName}
-                  </span>
-                </div>
-                <span className="text-xl font-semibold">{APP_CONFIG.name}</span>
+                <span className="text-sm text-gray-500">
+                  {user.name}
+                </span>
+                <button
+                  onClick={() => router.push("/profile")}
+                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
+                >
+                  {user.name.charAt(0).toUpperCase()}
+                </button>
               </>
             )}
-            {pathname === "/dashboard" && user && (
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600">
-                  Welcome, {user.name}
-                </span>
-                <Button
-                  onClick={() => router.push("/profile")}
-                  variant="ghost"
-                  size="sm"
-                >
-                  Profile
-                </Button>
-              </div>
+            {isProfilePage && (
+              <Link href="/dashboard">
+                <Logo size="sm" showText={false} />
+              </Link>
             )}
           </div>
         </div>

@@ -49,22 +49,10 @@ export default function LoginPage() {
 
       if (result.error) {
         if (result.error.code === "EMAIL_NOT_VERIFIED") {
-          addToast({
-            type: "warning",
-            title: "Email Not Verified",
-            description: "Please verify your email address to continue.",
-          });
           router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
           return;
         }
-        const errorMessage =
-          result.error.message || "Invalid email or password";
-        setError(errorMessage);
-        addToast({
-          type: "error",
-          title: "Sign In Failed",
-          description: errorMessage,
-        });
+        setError(result.error.message || "Invalid email or password");
         return;
       }
 
@@ -74,30 +62,19 @@ export default function LoginPage() {
         "twoFactorRedirect" in result.data &&
         result.data.twoFactorRedirect
       ) {
-        addToast({
-          type: "info",
-          title: "Two-Factor Authentication Required",
-          description: "Please enter your verification code to continue.",
-        });
         router.push("/verify-2fa?callbackURL=/dashboard");
         return;
       }
 
-      // Successful login
+      // Successful login - use toast for success
       addToast({
         type: "success",
-        title: "Welcome Back!",
-        description: "You have been successfully signed in.",
+        title: "Welcome back!",
+        duration: 3000,
       });
       router.push("/dashboard");
     } catch (err) {
-      const errorMessage = "An unexpected error occurred. Please try again.";
-      setError(errorMessage);
-      addToast({
-        type: "error",
-        title: "Sign In Failed",
-        description: errorMessage,
-      });
+      setError("An unexpected error occurred. Please try again.");
       console.error("Sign in error:", err);
     } finally {
       setIsLoading(false);
@@ -105,84 +82,86 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthLayout title="Sign in">
+    <AuthLayout title="Welcome back">
       <div className="space-y-6">
         <SocialAuthButtons mode="signin" />
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-gray-300" />
+            <span className="w-full border-t border-gray-200" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-gray-50 px-2 text-gray-500">or</span>
+            <span className="bg-white px-4 text-gray-400">or</span>
           </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
+            <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl">
               {error}
             </div>
           )}
 
-          <div>
-            <Input
-              {...register("email")}
-              type="email"
-              placeholder="Email"
-              disabled={isLoading}
-            />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.email.message}
-              </p>
-            )}
-          </div>
-
-          <div className="relative">
-            <Input
-              {...register("password")}
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              disabled={isLoading}
-            />
-            <button
-              type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? (
-                <EyeOff className="h-5 w-5" />
-              ) : (
-                <Eye className="h-5 w-5" />
+          <div className="space-y-4">
+            <div>
+              <Input
+                {...register("email")}
+                type="email"
+                placeholder="Email"
+                disabled={isLoading}
+              />
+              {errors.email && (
+                <p className="mt-2 text-sm text-red-500">
+                  {errors.email.message}
+                </p>
               )}
-            </button>
-            {errors.password && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.password.message}
-              </p>
-            )}
+            </div>
+
+            <div className="relative">
+              <Input
+                {...register("password")}
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+              {errors.password && (
+                <p className="mt-2 text-sm text-red-500">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
           </div>
 
-          <Button type="submit" className="w-full h-12" disabled={isLoading}>
+          <div className="text-right">
+            <Link
+              href="/forgot-password"
+              className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
+            >
+              Forgot password?
+            </Link>
+          </div>
+
+          <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Signing in..." : "Sign in"}
           </Button>
         </form>
 
-        <div className="text-center space-y-2">
-          <Link
-            href="/forgot-password"
-            className="text-blue-600 hover:text-blue-700 text-sm"
-          >
-            Forgot password?
-          </Link>
-        </div>
-
         <div className="text-center">
-          <span className="text-gray-600">No account? </span>
+          <span className="text-gray-500">Don't have an account? </span>
           <Link
             href="/signup"
-            className="text-blue-600 hover:text-blue-700 font-medium"
+            className="text-gray-900 font-medium hover:underline"
           >
             Sign up
           </Link>

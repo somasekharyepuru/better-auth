@@ -1,0 +1,96 @@
+"use client";
+
+import { useState, useEffect, useRef, useCallback } from "react";
+import { QuickNote, quickNotesApi } from "@/lib/daymark-api";
+import { FileText, Check, Loader2 } from "lucide-react";
+
+interface QuickNotesProps {
+    date: string;
+    note: QuickNote | null;
+    onUpdate: () => void;
+}
+
+export function QuickNotes({ date, note, onUpdate }: QuickNotesProps) {
+    const [content, setContent] = useState(note?.content || "");
+    const [isSaving, setIsSaving] = useState(false);
+    const [showSaved, setShowSaved] = useState(false);
+    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Update content when note changes (day navigation)
+    useEffect(() => {
+        setContent(note?.content || "");
+    }, [note, date]);
+
+    // Autosave with debounce
+    const saveNote = useCallback(
+        async (newContent: string) => {
+            if (newContent === (note?.content || "")) return;
+
+            setIsSaving(true);
+            try {
+                await quickNotesApi.upsert(date, newContent);
+                setShowSaved(true);
+                onUpdate();
+
+                // Hide saved indicator after 2 seconds
+                if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
+                savedTimeoutRef.current = setTimeout(() => setShowSaved(false), 2000);
+            } catch (error) {
+                console.error("Failed to save note:", error);
+            } finally {
+                setIsSaving(false);
+            }
+        },
+        [date, note, onUpdate]
+    );
+
+    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const newContent = e.target.value;
+        setContent(newContent);
+
+        // Debounce save
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = setTimeout(() => saveNote(newContent), 500);
+    };
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+            if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
+        };
+    }, []);
+
+    return (
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 h-full flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-gray-400" />
+                    <h2 className="text-lg font-semibold text-gray-900">Quick Notes</h2>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                    {isSaving && (
+                        <span className="flex items-center gap-1 text-gray-400">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            Saving...
+                        </span>
+                    )}
+                    {showSaved && !isSaving && (
+                        <span className="flex items-center gap-1 text-green-600">
+                            <Check className="w-3.5 h-3.5" />
+                            Saved
+                        </span>
+                    )}
+                </div>
+            </div>
+
+            <textarea
+                value={content}
+                onChange={handleChange}
+                placeholder="Jot down your thoughts, meeting notes, or ideas..."
+                className="flex-1 w-full bg-gray-50 rounded-xl p-4 text-gray-700 outline-none resize-none placeholder:text-gray-400 focus:bg-gray-100 transition-colors min-h-[200px]"
+            />
+        </div>
+    );
+}

@@ -53,34 +53,21 @@ export default function SignUpPage() {
       });
 
       if (result.error) {
-        const errorMessage =
-          result.error.message || "An error occurred during sign up";
-        setError(errorMessage);
-        addToast({
-          type: "error",
-          title: "Sign Up Failed",
-          description: errorMessage,
-        });
+        setError(result.error.message || "An error occurred during sign up");
         return;
       }
 
-      // Success
+      // Success - toast for navigation confirmation
       addToast({
         type: "success",
-        title: "Account Created!",
-        description: "Please check your email to verify your account.",
+        title: "Check your email",
+        description: "We sent you a verification code.",
+        duration: 4000,
       });
 
-      // Redirect to email verification page
       router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
     } catch (err) {
-      const errorMessage = "An unexpected error occurred. Please try again.";
-      setError(errorMessage);
-      addToast({
-        type: "error",
-        title: "Sign Up Failed",
-        description: errorMessage,
-      });
+      setError("An unexpected error occurred. Please try again.");
       console.error("Sign up error:", err);
     } finally {
       setIsLoading(false);
@@ -88,86 +75,102 @@ export default function SignUpPage() {
   };
 
   return (
-    <AuthLayout title="Sign up">
+    <AuthLayout
+      title="Create your account"
+      subtitle="Start your journey to focused productivity."
+    >
       <div className="space-y-6">
         <SocialAuthButtons />
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-gray-300" />
+            <span className="w-full border-t border-gray-200" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-gray-50 px-2 text-gray-500">or</span>
+            <span className="bg-white px-4 text-gray-400">or</span>
           </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
+            <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl">
               {error}
             </div>
           )}
 
-          <div>
-            <Input
-              {...register("name")}
-              placeholder="Full name"
-              disabled={isLoading}
-            />
-            {errors.name && (
-              <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-            )}
-          </div>
-
-          <div>
-            <Input
-              {...register("email")}
-              type="email"
-              placeholder="Email"
-              disabled={isLoading}
-            />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.email.message}
-              </p>
-            )}
-          </div>
-
-          <div className="relative">
-            <Input
-              {...register("password")}
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              disabled={isLoading}
-            />
-            <button
-              type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? (
-                <EyeOff className="h-5 w-5" />
-              ) : (
-                <Eye className="h-5 w-5" />
+          <div className="space-y-4">
+            <div>
+              <Input
+                {...register("name")}
+                placeholder="Full name"
+                disabled={isLoading}
+              />
+              {errors.name && (
+                <p className="mt-2 text-sm text-red-500">{errors.name.message}</p>
               )}
-            </button>
-            {errors.password && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.password.message}
-              </p>
-            )}
+            </div>
+
+            <div>
+              <Input
+                {...register("email")}
+                type="email"
+                placeholder="Email"
+                disabled={isLoading}
+              />
+              {errors.email && (
+                <p className="mt-2 text-sm text-red-500">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+
+            <div className="relative">
+              <Input
+                {...register("password")}
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+              {errors.password && (
+                <p className="mt-2 text-sm text-red-500">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
           </div>
 
-          <Button type="submit" className="w-full h-12" disabled={isLoading}>
-            {isLoading ? "Creating account..." : "Sign up"}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Creating account..." : "Create account"}
           </Button>
         </form>
 
+        <p className="text-center text-sm text-gray-500">
+          By signing up, you agree to our{" "}
+          <Link href="/terms" className="text-gray-900 hover:underline">
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="text-gray-900 hover:underline">
+            Privacy Policy
+          </Link>
+        </p>
+
         <div className="text-center">
-          <span className="text-gray-600">Already have an account? </span>
+          <span className="text-gray-500">Already have an account? </span>
           <Link
             href="/login"
-            className="text-blue-600 hover:text-blue-700 font-medium"
+            className="text-gray-900 font-medium hover:underline"
           >
             Sign in
           </Link>

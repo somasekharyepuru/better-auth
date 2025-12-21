@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
@@ -12,19 +11,20 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
-  ArrowLeft,
   User,
   Mail,
-  Calendar,
   Lock,
   Shield,
   Eye,
   EyeOff,
+  ChevronRight,
+  LogOut,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
 });
 
 const changePasswordSchema = z
@@ -44,7 +44,7 @@ const changePasswordSchema = z
 type ProfileFormData = z.infer<typeof profileSchema>;
 type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
 
-interface User {
+interface UserData {
   id: string;
   name: string;
   email: string;
@@ -56,19 +56,16 @@ interface User {
 }
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [activeSidebarTab, setActiveSidebarTab] = useState<
-    "account" | "settings"
-  >("account");
-  const [activeAccountTab, setActiveAccountTab] = useState<
-    "profile" | "password" | "2fa"
-  >("profile");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const router = useRouter();
   const { addToast } = useToast();
 
@@ -102,17 +99,9 @@ export default function ProfilePage() {
 
         const userData = sessionData.data.user;
         setUser(userData);
-        reset({
-          name: userData.name,
-          email: userData.email,
-        });
+        reset({ name: userData.name });
       } catch (error) {
         console.error("Auth check error:", error);
-        addToast({
-          type: "error",
-          title: "Authentication Error",
-          description: "Please sign in again to continue.",
-        });
         router.push("/login");
       } finally {
         setIsLoading(false);
@@ -120,67 +109,32 @@ export default function ProfilePage() {
     };
 
     checkAuth();
-  }, [router, reset, addToast]);
+  }, [router, reset]);
 
-  const onSubmit = async (data: ProfileFormData) => {
+  const onProfileSubmit = async (data: ProfileFormData) => {
     setIsUpdating(true);
+    setProfileError("");
+
     try {
-      // Use Better Auth's built-in updateUser method
-      const result = await authClient.updateUser({
-        name: data.name,
-        // Note: Email changes require special handling in Better Auth
-        // We'll handle email separately if it changed
-      });
+      const result = await authClient.updateUser({ name: data.name });
 
       if (result.error) {
-        throw new Error(result.error.message || "Failed to update profile");
+        setProfileError(result.error.message || "Failed to update profile");
+        return;
       }
 
-      // Handle email change separately if needed
-      if (data.email !== user?.email) {
-        const emailResult = await authClient.changeEmail({
-          newEmail: data.email,
-          callbackURL: "/profile",
-        });
+      addToast({
+        type: "success",
+        title: "Profile updated",
+        duration: 3000,
+      });
 
-        if (emailResult.error) {
-          // Name was updated but email failed
-          addToast({
-            type: "warning",
-            title: "Partial Update",
-            description:
-              "Name updated successfully, but email change failed. Please try again.",
-          });
-        } else {
-          addToast({
-            type: "info",
-            title: "Email Verification Required",
-            description:
-              "Name updated. Please check your new email to verify the email change.",
-          });
-        }
-      } else {
-        addToast({
-          type: "success",
-          title: "Profile Updated",
-          description: "Your profile has been successfully updated.",
-        });
-      }
-
-      // Update local user state
       if (result.data && user) {
         setUser({ ...user, ...result.data });
       }
     } catch (error) {
+      setProfileError("An unexpected error occurred. Please try again.");
       console.error("Profile update error:", error);
-      addToast({
-        type: "error",
-        title: "Update Failed",
-        description:
-          error instanceof Error
-            ? error.message
-            : "There was an error updating your profile. Please try again.",
-      });
     } finally {
       setIsUpdating(false);
     }
@@ -188,35 +142,31 @@ export default function ProfilePage() {
 
   const onPasswordSubmit = async (data: ChangePasswordFormData) => {
     setIsChangingPassword(true);
+    setPasswordError("");
+
     try {
-      // Use Better Auth's built-in changePassword method
       const result = await authClient.changePassword({
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
-        revokeOtherSessions: true, // Invalidate other sessions for security
+        revokeOtherSessions: true,
       });
 
       if (result.error) {
-        throw new Error(result.error.message || "Failed to change password");
+        setPasswordError(result.error.message || "Failed to change password");
+        return;
       }
 
       addToast({
         type: "success",
-        title: "Password Changed",
-        description: "Your password has been updated successfully.",
+        title: "Password changed",
+        duration: 3000,
       });
 
       resetPassword();
+      setShowPasswordForm(false);
     } catch (error) {
+      setPasswordError("An unexpected error occurred. Please try again.");
       console.error("Password change error:", error);
-      addToast({
-        type: "error",
-        title: "Password Change Failed",
-        description:
-          error instanceof Error
-            ? error.message
-            : "There was an error changing your password. Please try again.",
-      });
     } finally {
       setIsChangingPassword(false);
     }
@@ -225,25 +175,15 @@ export default function ProfilePage() {
   const handleSignOut = async () => {
     try {
       await authClient.signOut();
-      addToast({
-        type: "success",
-        title: "Signed Out",
-        description: "You have been successfully signed out.",
-      });
       router.push("/");
     } catch (error) {
       console.error("Sign out error:", error);
-      addToast({
-        type: "error",
-        title: "Sign Out Failed",
-        description: "There was an error signing you out. Please try again.",
-      });
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <Spinner size="lg" />
       </div>
     );
@@ -254,466 +194,227 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex gap-8">
-          {/* Sidebar */}
-          <div className="w-64 flex-shrink-0">
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <h3 className="text-sm font-medium text-gray-500 mb-4">
-                Personal settings for this workspace
-              </h3>
-              <nav className="space-y-2">
-                <button
-                  onClick={() => setActiveSidebarTab("account")}
-                  className={`w-full flex items-center space-x-3 px-3 py-2 text-left rounded-md text-sm font-medium ${
-                    activeSidebarTab === "account"
-                      ? "bg-gray-100 text-gray-900"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
-                >
-                  <User className="w-4 h-4" />
-                  <span>Account</span>
-                </button>
-                <button
-                  onClick={() => setActiveSidebarTab("settings")}
-                  className={`w-full flex items-center space-x-3 px-3 py-2 text-left rounded-md text-sm font-medium ${
-                    activeSidebarTab === "settings"
-                      ? "bg-gray-100 text-gray-900"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
-                >
-                  <Shield className="w-4 h-4" />
-                  <span>Settings</span>
-                </button>
-              </nav>
-
-              {/* Sign Out Button */}
-              <div className="mt-6 pt-4 border-t border-gray-200">
-                <Button
-                  onClick={handleSignOut}
-                  variant="destructive"
-                  size="sm"
-                  className="w-full"
-                >
-                  Sign Out
-                </Button>
-              </div>
-            </div>
+    <div className="min-h-screen bg-white">
+      <main className="max-w-2xl mx-auto px-6 py-12">
+        {/* Profile Header */}
+        <div className="text-center mb-12">
+          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl font-semibold text-gray-600">
+              {user.name.charAt(0).toUpperCase()}
+            </span>
           </div>
+          <h1 className="text-2xl font-semibold text-gray-900">{user.name}</h1>
+          <p className="text-gray-500">{user.email}</p>
+          {user.emailVerified ? (
+            <div className="flex items-center justify-center gap-1 mt-2 text-green-600">
+              <CheckCircle className="w-4 h-4" />
+              <span className="text-sm">Verified</span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-1 mt-2 text-amber-600">
+              <AlertCircle className="w-4 h-4" />
+              <span className="text-sm">Email not verified</span>
+            </div>
+          )}
+        </div>
 
-          {/* Main Content */}
-          <div className="flex-1 min-w-0">
-            {activeSidebarTab === "account" && (
-              <div className="space-y-6">
-                {/* Account Tab Navigation */}
-                <div className="border-b border-gray-200">
-                  <nav className="-mb-px flex space-x-8">
-                    <button
-                      onClick={() => setActiveAccountTab("profile")}
-                      className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                        activeAccountTab === "profile"
-                          ? "border-blue-500 text-blue-600"
-                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      }`}
-                    >
-                      Update Profile
-                    </button>
-                    <button
-                      onClick={() => setActiveAccountTab("password")}
-                      className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                        activeAccountTab === "password"
-                          ? "border-blue-500 text-blue-600"
-                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      }`}
-                    >
-                      Change Password
-                    </button>
-                    <button
-                      onClick={() => setActiveAccountTab("2fa")}
-                      className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                        activeAccountTab === "2fa"
-                          ? "border-blue-500 text-blue-600"
-                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      }`}
-                    >
-                      2FA
-                    </button>
-                  </nav>
+        {/* Profile Section */}
+        <section className="mb-8">
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
+            Profile
+          </h2>
+          <div className="bg-gray-50 rounded-2xl p-6">
+            <form onSubmit={handleSubmit(onProfileSubmit)} className="space-y-4">
+              {profileError && (
+                <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl">
+                  {profileError}
                 </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Name
+                </label>
+                <Input
+                  {...register("name")}
+                  placeholder="Your name"
+                  disabled={isUpdating}
+                />
+                {errors.name && (
+                  <p className="mt-2 text-sm text-red-500">{errors.name.message}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
+                <Input
+                  type="email"
+                  value={user.email}
+                  disabled
+                  className="bg-gray-100 cursor-not-allowed"
+                />
+                <p className="mt-1 text-xs text-gray-400">
+                  Email cannot be changed
+                </p>
+              </div>
+              <Button type="submit" className="w-full" disabled={isUpdating}>
+                {isUpdating ? "Saving..." : "Save changes"}
+              </Button>
+            </form>
+          </div>
+        </section>
 
-                {/* Update Profile Tab */}
-                {activeAccountTab === "profile" && (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* Personal Information */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center space-x-2">
-                            <User className="w-5 h-5" />
-                            <span>Personal Information</span>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <form
-                            onSubmit={handleSubmit(onSubmit)}
-                            className="space-y-4"
-                          >
-                            <div>
-                              <label
-                                htmlFor="name"
-                                className="block text-sm font-medium text-gray-700 mb-2"
-                              >
-                                Full Name
-                              </label>
-                              <Input
-                                id="name"
-                                {...register("name")}
-                                placeholder="Enter your full name"
-                                className={errors.name ? "border-red-500" : ""}
-                              />
-                              {errors.name && (
-                                <p className="text-red-600 text-sm mt-1">
-                                  {errors.name.message}
-                                </p>
-                              )}
-                            </div>
+        {/* Security Section */}
+        <section className="mb-8">
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
+            Security
+          </h2>
+          <div className="bg-gray-50 rounded-2xl divide-y divide-gray-200">
+            {/* Change Password */}
+            <div className="p-6">
+              <button
+                onClick={() => setShowPasswordForm(!showPasswordForm)}
+                className="w-full flex items-center justify-between text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
+                    <Lock className="w-5 h-5 text-gray-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Password</p>
+                    <p className="text-sm text-gray-500">Change your password</p>
+                  </div>
+                </div>
+                <ChevronRight
+                  className={`w-5 h-5 text-gray-400 transition-transform ${showPasswordForm ? "rotate-90" : ""
+                    }`}
+                />
+              </button>
 
-                            <div>
-                              <label
-                                htmlFor="email"
-                                className="block text-sm font-medium text-gray-700 mb-2"
-                              >
-                                Email Address
-                              </label>
-                              <Input
-                                id="email"
-                                type="email"
-                                {...register("email")}
-                                placeholder="Enter your email address"
-                                className={errors.email ? "border-red-500" : ""}
-                              />
-                              {errors.email && (
-                                <p className="text-red-600 text-sm mt-1">
-                                  {errors.email.message}
-                                </p>
-                              )}
-                              {!user.emailVerified && (
-                                <p className="text-amber-600 text-sm mt-1 flex items-center space-x-1">
-                                  <Mail className="w-4 h-4" />
-                                  <span>Email not verified</span>
-                                </p>
-                              )}
-                            </div>
-
-                            <div className="pt-4">
-                              <Button
-                                type="submit"
-                                disabled={isUpdating}
-                                className="w-full"
-                              >
-                                {isUpdating ? (
-                                  <>
-                                    <Spinner size="sm" className="mr-2" />
-                                    Updating...
-                                  </>
-                                ) : (
-                                  "Update Profile"
-                                )}
-                              </Button>
-                            </div>
-                          </form>
-                        </CardContent>
-                      </Card>
-
-                      {/* Account Information */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Account Information</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          <div>
-                            <span className="text-sm font-medium text-gray-500">
-                              User ID
-                            </span>
-                            <p className="text-gray-900 font-mono text-xs break-all">
-                              {user.id}
-                            </p>
-                          </div>
-                          <div>
-                            <span className="text-sm font-medium text-gray-500">
-                              Role
-                            </span>
-                            <p className="text-gray-900 capitalize">
-                              {user.role || "user"}
-                            </p>
-                          </div>
-                          <div>
-                            <span className="text-sm font-medium text-gray-500">
-                              Email Status
-                            </span>
-                            <p
-                              className={`${
-                                user.emailVerified
-                                  ? "text-green-600"
-                                  : "text-red-600"
-                              }`}
-                            >
-                              {user.emailVerified ? "Verified" : "Not Verified"}
-                            </p>
-                          </div>
-                          <div>
-                            <span className="text-sm font-medium text-gray-500 flex items-center space-x-1">
-                              <Calendar className="w-4 h-4" />
-                              <span>Member Since</span>
-                            </span>
-                            <p className="text-gray-900">
-                              {new Date(user.createdAt).toLocaleDateString(
-                                "en-US",
-                                {
-                                  year: "numeric",
-                                  month: "long",
-                                  day: "numeric",
-                                }
-                              )}
-                            </p>
-                          </div>
-                        </CardContent>
-                      </Card>
+              {showPasswordForm && (
+                <form
+                  onSubmit={handlePasswordSubmit(onPasswordSubmit)}
+                  className="mt-6 space-y-4"
+                >
+                  {passwordError && (
+                    <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl">
+                      {passwordError}
                     </div>
-
-                    {/* Email Verification */}
-                    {!user.emailVerified && (
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center space-x-2">
-                            <Mail className="w-5 h-5" />
-                            <span>Email Verification</span>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-gray-600 mb-4">
-                            Your email address is not verified. Please verify
-                            your email to secure your account.
-                          </p>
-                          <Button
-                            variant="outline"
-                            onClick={() => router.push("/verify-email")}
-                          >
-                            Verify Email
-                          </Button>
-                        </CardContent>
-                      </Card>
+                  )}
+                  <div className="relative">
+                    <Input
+                      {...registerPassword("currentPassword")}
+                      type={showCurrentPassword ? "text" : "password"}
+                      placeholder="Current password"
+                      disabled={isChangingPassword}
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    >
+                      {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                    {passwordErrors.currentPassword && (
+                      <p className="mt-2 text-sm text-red-500">
+                        {passwordErrors.currentPassword.message}
+                      </p>
                     )}
                   </div>
-                )}
-
-                {/* Change Password Tab */}
-                {activeAccountTab === "password" && (
-                  <div className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <Lock className="w-5 h-5" />
-                          <span>Change Password</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <form
-                          onSubmit={handlePasswordSubmit(onPasswordSubmit)}
-                          className="space-y-4"
-                        >
-                          {/* Current Password */}
-                          <div>
-                            <label
-                              htmlFor="currentPassword"
-                              className="block text-sm font-medium text-gray-700 mb-2"
-                            >
-                              Current Password
-                            </label>
-                            <div className="relative">
-                              <Input
-                                id="currentPassword"
-                                type={showCurrentPassword ? "text" : "password"}
-                                {...registerPassword("currentPassword")}
-                                placeholder="Enter your current password"
-                                className={
-                                  passwordErrors.currentPassword
-                                    ? "border-red-500 pr-12"
-                                    : "pr-12"
-                                }
-                              />
-                              <button
-                                type="button"
-                                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                onClick={() =>
-                                  setShowCurrentPassword(!showCurrentPassword)
-                                }
-                              >
-                                {showCurrentPassword ? (
-                                  <EyeOff className="h-4 w-4 text-gray-400" />
-                                ) : (
-                                  <Eye className="h-4 w-4 text-gray-400" />
-                                )}
-                              </button>
-                            </div>
-                            {passwordErrors.currentPassword && (
-                              <p className="text-red-600 text-sm mt-1">
-                                {passwordErrors.currentPassword.message}
-                              </p>
-                            )}
-                          </div>
-
-                          {/* New Password */}
-                          <div>
-                            <label
-                              htmlFor="newPassword"
-                              className="block text-sm font-medium text-gray-700 mb-2"
-                            >
-                              New Password
-                            </label>
-                            <div className="relative">
-                              <Input
-                                id="newPassword"
-                                type={showNewPassword ? "text" : "password"}
-                                {...registerPassword("newPassword")}
-                                placeholder="Enter your new password"
-                                className={
-                                  passwordErrors.newPassword
-                                    ? "border-red-500 pr-12"
-                                    : "pr-12"
-                                }
-                              />
-                              <button
-                                type="button"
-                                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                onClick={() =>
-                                  setShowNewPassword(!showNewPassword)
-                                }
-                              >
-                                {showNewPassword ? (
-                                  <EyeOff className="h-4 w-4 text-gray-400" />
-                                ) : (
-                                  <Eye className="h-4 w-4 text-gray-400" />
-                                )}
-                              </button>
-                            </div>
-                            {passwordErrors.newPassword && (
-                              <p className="text-red-600 text-sm mt-1">
-                                {passwordErrors.newPassword.message}
-                              </p>
-                            )}
-                          </div>
-
-                          {/* Confirm Password */}
-                          <div>
-                            <label
-                              htmlFor="confirmPassword"
-                              className="block text-sm font-medium text-gray-700 mb-2"
-                            >
-                              Confirm New Password
-                            </label>
-                            <div className="relative">
-                              <Input
-                                id="confirmPassword"
-                                type={showConfirmPassword ? "text" : "password"}
-                                {...registerPassword("confirmPassword")}
-                                placeholder="Confirm your new password"
-                                className={
-                                  passwordErrors.confirmPassword
-                                    ? "border-red-500 pr-12"
-                                    : "pr-12"
-                                }
-                              />
-                              <button
-                                type="button"
-                                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                onClick={() =>
-                                  setShowConfirmPassword(!showConfirmPassword)
-                                }
-                              >
-                                {showConfirmPassword ? (
-                                  <EyeOff className="h-4 w-4 text-gray-400" />
-                                ) : (
-                                  <Eye className="h-4 w-4 text-gray-400" />
-                                )}
-                              </button>
-                            </div>
-                            {passwordErrors.confirmPassword && (
-                              <p className="text-red-600 text-sm mt-1">
-                                {passwordErrors.confirmPassword.message}
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="pt-4">
-                            <Button
-                              type="submit"
-                              disabled={isChangingPassword}
-                              className="w-full"
-                            >
-                              {isChangingPassword ? (
-                                <>
-                                  <Spinner size="sm" className="mr-2" />
-                                  Changing Password...
-                                </>
-                              ) : (
-                                "Change Password"
-                              )}
-                            </Button>
-                          </div>
-                        </form>
-                      </CardContent>
-                    </Card>
+                  <div className="relative">
+                    <Input
+                      {...registerPassword("newPassword")}
+                      type={showNewPassword ? "text" : "password"}
+                      placeholder="New password"
+                      disabled={isChangingPassword}
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                    >
+                      {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                    {passwordErrors.newPassword && (
+                      <p className="mt-2 text-sm text-red-500">
+                        {passwordErrors.newPassword.message}
+                      </p>
+                    )}
                   </div>
-                )}
-
-                {/* Two-Factor Authentication Tab */}
-                {activeAccountTab === "2fa" && (
-                  <div className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <Shield className="w-5 h-5" />
-                          <span>Two-Factor Authentication</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-600 mb-4">
-                          Add an extra layer of security to your account with
-                          two-factor authentication.
-                        </p>
-                        <Button
-                          variant="outline"
-                          onClick={() => router.push("/profile/two-factor")}
-                        >
-                          Manage 2FA
-                        </Button>
-                      </CardContent>
-                    </Card>
+                  <div className="relative">
+                    <Input
+                      {...registerPassword("confirmPassword")}
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Confirm new password"
+                      disabled={isChangingPassword}
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                    {passwordErrors.confirmPassword && (
+                      <p className="mt-2 text-sm text-red-500">
+                        {passwordErrors.confirmPassword.message}
+                      </p>
+                    )}
                   </div>
-                )}
-              </div>
-            )}
+                  <Button type="submit" className="w-full" disabled={isChangingPassword}>
+                    {isChangingPassword ? "Changing..." : "Change password"}
+                  </Button>
+                </form>
+              )}
+            </div>
 
-            {/* Settings Tab */}
-            {activeSidebarTab === "settings" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Application Settings</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600">
-                      Settings and preferences will be available here in future
-                      updates.
-                    </p>
-                  </CardContent>
-                </Card>
+            {/* Two-Factor Authentication */}
+            <button
+              onClick={() => router.push("/profile/two-factor")}
+              className="w-full p-6 flex items-center justify-between text-left"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-gray-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">Two-factor authentication</p>
+                  <p className="text-sm text-gray-500">Add an extra layer of security</p>
+                </div>
               </div>
-            )}
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
           </div>
-        </div>
+        </section>
+
+        {/* Account Section */}
+        <section className="mb-8">
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
+            Account
+          </h2>
+          <div className="bg-gray-50 rounded-2xl">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm text-gray-500">Member since</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {new Date(user.createdAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </span>
+              </div>
+              <Button
+                onClick={handleSignOut}
+                variant="outline"
+                className="w-full text-red-600 border-red-200 hover:bg-red-50"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign out
+              </Button>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   );

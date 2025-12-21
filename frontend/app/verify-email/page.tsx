@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Mail, CheckCircle } from "lucide-react";
 
 import { AuthLayout } from "@/components/auth-layout";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import { authClient } from "@/lib/auth-client";
 import { useToast } from "@/components/ui/toast";
 
 const otpSchema = z.object({
-  otp: z.string().length(6, "OTP must be 6 digits"),
+  otp: z.string().length(6, "Code must be 6 digits"),
 });
 
 type OTPForm = z.infer<typeof otpSchema>;
@@ -25,7 +25,7 @@ function VerifyEmailContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [success, setSuccess] = useState(false);
   const [email, setEmail] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -62,34 +62,16 @@ function VerifyEmailContent() {
       });
 
       if (result.error) {
-        const errorMessage = result.error.message || "Invalid OTP";
-        setError(errorMessage);
-        addToast({
-          type: "error",
-          title: "Verification Failed",
-          description: errorMessage,
-        });
+        setError(result.error.message || "Invalid code");
         return;
       }
 
-      setSuccess("Email verified successfully!");
-      addToast({
-        type: "success",
-        title: "Email Verified!",
-        description:
-          "Your email has been successfully verified. You can now sign in.",
-      });
+      setSuccess(true);
       setTimeout(() => {
         router.push("/login");
       }, 2000);
     } catch (err) {
-      const errorMessage = "An unexpected error occurred. Please try again.";
-      setError(errorMessage);
-      addToast({
-        type: "error",
-        title: "Verification Failed",
-        description: errorMessage,
-      });
+      setError("An unexpected error occurred. Please try again.");
       console.error("Email verification error:", err);
     } finally {
       setIsLoading(false);
@@ -112,59 +94,36 @@ function VerifyEmailContent() {
       });
 
       if (result.error) {
-        const errorMessage = result.error.message || "Failed to resend OTP";
-        setError(errorMessage);
-        addToast({
-          type: "error",
-          title: "Resend Failed",
-          description: errorMessage,
-        });
+        setError(result.error.message || "Failed to resend code");
         return;
       }
 
-      setSuccess("OTP sent successfully!");
+      // Toast for resend confirmation
       addToast({
         type: "success",
-        title: "Code Sent",
-        description: "A new verification code has been sent to your email.",
+        title: "Code sent",
+        duration: 3000,
       });
-      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      const errorMessage = "Failed to resend OTP. Please try again.";
-      setError(errorMessage);
-      addToast({
-        type: "error",
-        title: "Resend Failed",
-        description: errorMessage,
-      });
+      setError("Failed to resend code. Please try again.");
       console.error("Resend OTP error:", err);
     } finally {
       setIsResending(false);
     }
   };
 
-  if (success && success.includes("verified")) {
+  if (success) {
     return (
-      <AuthLayout title="Your email was confirmed!">
-        <div className="text-center space-y-6">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-            <svg
-              className="w-8 h-8 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+      <AuthLayout title="Email verified!">
+        <div className="text-center space-y-8">
+          <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto">
+            <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
-          <p className="text-gray-600">Return to the app to continue.</p>
-          <Button onClick={() => router.push("/login")} className="w-full h-12">
-            Or, continue here instead
+          <p className="text-gray-500">
+            Your email has been verified. Redirecting you to sign in...
+          </p>
+          <Button onClick={() => router.push("/login")} className="w-full">
+            Continue to sign in
           </Button>
         </div>
       </AuthLayout>
@@ -172,31 +131,30 @@ function VerifyEmailContent() {
   }
 
   return (
-    <AuthLayout title="We sent you an email">
+    <AuthLayout title="Verify your email">
       <div className="space-y-6">
         <Link
           href="/signup"
-          className="inline-flex items-center text-sm text-gray-600 hover:text-gray-800"
+          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          back
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
         </Link>
 
-        <div className="text-center space-y-2">
-          <p className="text-gray-600">A confirmation link has been sent to:</p>
-          <p className="font-medium text-gray-900">{email}</p>
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto">
+            <Mail className="w-8 h-8 text-gray-600" />
+          </div>
+          <div className="space-y-2">
+            <p className="text-gray-500">We sent a verification code to:</p>
+            <p className="font-medium text-gray-900">{email}</p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
+            <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl">
               {error}
-            </div>
-          )}
-
-          {success && !success.includes("verified") && (
-            <div className="p-3 text-sm text-green-600 bg-green-50 border border-green-200 rounded-lg">
-              {success}
             </div>
           )}
 
@@ -206,33 +164,33 @@ function VerifyEmailContent() {
               placeholder="Enter 6-digit code"
               maxLength={6}
               disabled={isLoading}
-              className="text-center text-lg tracking-widest"
+              className="text-center text-lg tracking-widest font-mono"
             />
             {errors.otp && (
-              <p className="mt-1 text-sm text-red-600">{errors.otp.message}</p>
+              <p className="mt-2 text-sm text-red-500">{errors.otp.message}</p>
             )}
           </div>
 
-          <Button type="submit" className="w-full h-12" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? (
               <>
                 <Spinner size="sm" className="mr-2" />
                 Verifying...
               </>
             ) : (
-              "Verify Email"
+              "Verify email"
             )}
           </Button>
         </form>
 
         <div className="text-center">
-          <span className="text-gray-600">Didn't receive it? </span>
+          <span className="text-gray-500">Didn't receive the code? </span>
           <button
             onClick={handleResendOTP}
             disabled={isResending}
-            className="text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50"
+            className="text-gray-900 font-medium hover:underline disabled:opacity-50"
           >
-            {isResending ? "Sending..." : "Resend link"}
+            {isResending ? "Sending..." : "Resend"}
           </button>
         </div>
       </div>
@@ -244,8 +202,8 @@ export default function VerifyEmailPage() {
   return (
     <Suspense
       fallback={
-        <AuthLayout title="Confirming your email address">
-          <div className="flex justify-center">
+        <AuthLayout title="Verify your email">
+          <div className="flex justify-center py-8">
             <Spinner size="lg" />
           </div>
         </AuthLayout>

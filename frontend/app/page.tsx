@@ -1,210 +1,214 @@
+"use client";
+
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { useEffect, useRef } from "react";
 import { APP_CONFIG } from "@/config/app.constants";
+import { AppMockup } from "@/components/landing/AppMockup";
+import { Logo } from "@/components/ui/logo";
 
 export default function HomePage() {
+  const sectionsRef = useRef<(HTMLElement | null)[]>([]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("revealed");
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+    );
+
+    sectionsRef.current.forEach((section) => {
+      if (section) observer.observe(section);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  const addToRefs = (el: HTMLElement | null, index: number) => {
+    sectionsRef.current[index] = el;
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <header className="py-6">
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-9 h-9 bg-gray-900 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">
-                  {APP_CONFIG.shortName}
-                </span>
+            <Link href="/">
+              <Logo size="sm" />
+            </Link>
+
+            <div className="flex items-center gap-4">
+              <Link
+                href="/login"
+                className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors"
+              >
+                {APP_CONFIG.navigation.login}
+              </Link>
+              <Link
+                href="/signup"
+                className="bg-gray-900 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors"
+              >
+                {APP_CONFIG.navigation.signup}
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="pt-32 pb-20 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-5xl md:text-7xl font-semibold text-gray-900 mb-6 opacity-0-initial animate-fade-in-up">
+            {APP_CONFIG.hero.headline}
+          </h1>
+          <p className="text-xl md:text-2xl text-gray-500 font-light mb-10 max-w-2xl mx-auto opacity-0-initial animate-fade-in-up delay-200">
+            {APP_CONFIG.hero.subheadline}
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20 opacity-0-initial animate-fade-in-up delay-400">
+            <button className="btn-primary">
+              {APP_CONFIG.hero.primaryCta}
+            </button>
+            <button className="btn-secondary">
+              {APP_CONFIG.hero.secondaryCta}
+            </button>
+          </div>
+          <div className="opacity-0-initial animate-fade-in-scale delay-600">
+            <AppMockup />
+          </div>
+        </div>
+      </section>
+
+      {/* Philosophy Section */}
+      <section
+        ref={(el) => addToRefs(el, 0)}
+        className="py-32 px-6 reveal"
+      >
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-4xl md:text-5xl font-semibold text-gray-900 mb-8">
+            {APP_CONFIG.philosophy.headline}
+          </h2>
+          <p className="text-xl md:text-2xl text-gray-500 font-light leading-relaxed">
+            {APP_CONFIG.philosophy.description}
+          </p>
+        </div>
+      </section>
+
+      {/* Feature Highlights */}
+      <section
+        ref={(el) => addToRefs(el, 1)}
+        className="py-32 px-6 bg-gray-50/50 reveal"
+      >
+        <div className="max-w-4xl mx-auto">
+          <div className="space-y-24">
+            {APP_CONFIG.features.map((feature, index) => (
+              <div key={index} className="text-center">
+                {/* Feature Icon Placeholder */}
+                <div className="w-16 h-16 mx-auto mb-8 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-50 border border-gray-200/60 flex items-center justify-center">
+                  <div className="w-6 h-6 rounded-lg bg-gray-900/10" />
+                </div>
+                <h3 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-4">
+                  {feature.title}
+                </h3>
+                <p className="text-xl text-gray-500 font-light max-w-md mx-auto">
+                  {feature.description}
+                </p>
               </div>
-              <span className="text-xl font-semibold text-gray-900">
-                {APP_CONFIG.name}
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Fits Into Your Life */}
+      <section
+        ref={(el) => addToRefs(el, 2)}
+        className="py-32 px-6 reveal"
+      >
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
+            {APP_CONFIG.lifestyle.statements.map((statement, index) => (
+              <div key={index} className="text-center">
+                <p className="text-2xl md:text-3xl font-medium text-gray-900">
+                  {statement}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Who It's For */}
+      <section
+        ref={(el) => addToRefs(el, 3)}
+        className="py-32 px-6 bg-gray-50/50 reveal"
+      >
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-12">
+            {APP_CONFIG.audience.headline}
+          </h2>
+          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
+            {APP_CONFIG.audience.list.map((audience, index) => (
+              <span
+                key={index}
+                className="text-xl md:text-2xl text-gray-500 font-light"
+              >
+                {audience}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section
+        ref={(el) => addToRefs(el, 4)}
+        className="py-40 px-6 reveal"
+      >
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-4xl md:text-6xl font-semibold text-gray-900 mb-6">
+            {APP_CONFIG.finalCta.headline}
+          </h2>
+          <p className="text-xl text-gray-500 font-light mb-10">
+            {APP_CONFIG.finalCta.subtext}
+          </p>
+          <button className="btn-primary">
+            {APP_CONFIG.finalCta.buttonText}
+          </button>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-12 px-6 border-t border-gray-100">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-6">
+              <Logo size="sm" />
+              <span className="text-gray-400 text-sm">
+                {APP_CONFIG.footer.tagline}
               </span>
             </div>
 
-            <div className="flex items-center space-x-3">
-              <Link href="/login">
-                <Button
-                  variant="ghost"
-                  className="text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+            <div className="flex items-center gap-8">
+              {APP_CONFIG.footer.links.map((link, index) => (
+                <Link
+                  key={index}
+                  href={link.href}
+                  className="text-gray-400 hover:text-gray-600 text-sm transition-colors"
                 >
-                  {APP_CONFIG.navigation.login}
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-6">
-                  {APP_CONFIG.navigation.signup}
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </header>
-
-        {/* Hero Section */}
-        <main className="pt-20 pb-32">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
-            <h1 className="text-7xl font-normal leading-tight text-gray-900">
-              {APP_CONFIG.hero.title.main}
-              <br />
-              <span className="font-light">
-                {APP_CONFIG.hero.title.subtitle}
-              </span>
-            </h1>
-
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-              {APP_CONFIG.hero.description}
-              <sup className="text-sm">{APP_CONFIG.hero.footnote}</sup>
-            </p>
-          </div>
-
-          {/* Dashboard Preview */}
-          <div className="mt-20 max-w-5xl mx-auto">
-            <div className="rounded-2xl shadow-2xl overflow-hidden border border-gray-200 bg-white">
-              <div className="bg-gradient-to-br from-purple-50 via-blue-50 to-cyan-50 p-8">
-                {/* Mock Dashboard Header */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mock Dashboard Content */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="h-6 w-40 bg-gray-200 rounded animate-pulse"></div>
-                        <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-                      </div>
-                      <div className="h-32 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg"></div>
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="h-16 bg-gray-100 rounded"></div>
-                        <div className="h-16 bg-gray-100 rounded"></div>
-                        <div className="h-16 bg-gray-100 rounded"></div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <div className="space-y-3">
-                      <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="space-y-2">
-                        <div className="h-12 bg-gray-100 rounded"></div>
-                        <div className="h-12 bg-gray-100 rounded"></div>
-                        <div className="h-12 bg-gray-100 rounded"></div>
-                        <div className="h-12 bg-gray-100 rounded"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </main>
-
-        {/* Features Section */}
-        <section className="py-20 border-t border-gray-200">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-              <div className="space-y-4">
-                <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
-                  <svg
-                    className="w-6 h-6 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-2xl font-semibold text-gray-900">
-                  {APP_CONFIG.features.security.title}
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {APP_CONFIG.features.security.description}
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
-                  <svg
-                    className="w-6 h-6 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-2xl font-semibold text-gray-900">
-                  {APP_CONFIG.features.performance.title}
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {APP_CONFIG.features.performance.description}
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
-                  <svg
-                    className="w-6 h-6 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-2xl font-semibold text-gray-900">
-                  {APP_CONFIG.features.management.title}
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {APP_CONFIG.features.management.description}
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="py-12 border-t border-gray-200">
-          <div className="flex items-center justify-between text-sm text-gray-500">
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 bg-gray-900 rounded flex items-center justify-center">
-                <span className="text-xs font-bold text-white">
-                  {APP_CONFIG.shortName}
-                </span>
-              </div>
-              <span className="text-gray-900 font-medium">
-                {APP_CONFIG.name}
+                  {link.label}
+                </Link>
+              ))}
+              <span className="text-gray-400 text-sm">
+                {APP_CONFIG.footer.copyright} {APP_CONFIG.name}
               </span>
             </div>
-            <div className="text-xs">
-              <sup>{APP_CONFIG.hero.footnote}</sup>{" "}
-              {APP_CONFIG.footer.disclaimer}
-            </div>
           </div>
-        </footer>
-      </div>
+        </div>
+      </footer>
     </div>
   );
 }

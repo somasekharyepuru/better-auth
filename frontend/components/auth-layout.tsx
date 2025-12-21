@@ -2,7 +2,7 @@
 
 import { ReactNode } from "react";
 import Link from "next/link";
-import { APP_CONFIG } from "@/config/app.constants";
+import { Logo } from "@/components/ui/logo";
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -12,75 +12,54 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen flex">
-      {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="relative z-10 flex flex-col justify-between p-12 text-white">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-blue-600 font-bold text-lg">
-                {APP_CONFIG.shortName}
-              </span>
-            </div>
-            <span className="text-xl font-semibold">{APP_CONFIG.name}</span>
-          </div>
-
-          <div className="space-y-4">
-            <h1 className="text-4xl font-bold leading-tight">
-              {APP_CONFIG.authLayout.title}
-            </h1>
-            <p className="text-blue-100 text-lg">
-              {APP_CONFIG.authLayout.subtitle}
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-2 text-sm text-blue-100">
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 bg-white/20 rounded flex items-center justify-center">
-                <span className="text-xs font-bold">
-                  {APP_CONFIG.shortName}
-                </span>
-              </div>
-              <span>{APP_CONFIG.name}</span>
-            </div>
-            <span>•</span>
-            <span>{APP_CONFIG.authLayout.tagline}</span>
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-white px-4 py-12">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="flex justify-center mb-12">
+          <Link href="/">
+            <Logo size="md" />
+          </Link>
         </div>
-      </div>
 
-      {/* Right side - Auth form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-gray-50">
-        <div className="w-full max-w-md space-y-8">
-          <div className="lg:hidden flex items-center justify-center space-x-2 mb-8">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">
-                {APP_CONFIG.shortName}
-              </span>
-            </div>
-            <span className="text-xl font-semibold">{APP_CONFIG.name}</span>
+        {/* Card */}
+        <div className="space-y-8">
+          {/* Header */}
+          <div className="text-center space-y-3">
+            <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">
+              {title}
+            </h1>
+            {subtitle && (
+              <p className="text-gray-500 text-base leading-relaxed max-w-sm mx-auto">
+                {subtitle}
+              </p>
+            )}
           </div>
 
-          <div className="text-center space-y-2">
-            <h2 className="text-3xl font-bold text-gray-900">{title}</h2>
-            {subtitle && <p className="text-gray-600">{subtitle}</p>}
-          </div>
+          {/* Content */}
+          <div>{children}</div>
+        </div>
 
-          {children}
-
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
-              <Link href="/privacy" className="hover:text-gray-700">
-                Privacy
-              </Link>
-              <Link href="/terms" className="hover:text-gray-700">
-                Terms
-              </Link>
-              <Link href="/help" className="hover:text-gray-700">
-                Help
-              </Link>
-            </div>
+        {/* Footer Links */}
+        <div className="mt-12 text-center">
+          <div className="flex items-center justify-center gap-6 text-sm text-gray-400">
+            <Link
+              href="/privacy"
+              className="hover:text-gray-600 transition-colors"
+            >
+              Privacy
+            </Link>
+            <Link
+              href="/terms"
+              className="hover:text-gray-600 transition-colors"
+            >
+              Terms
+            </Link>
+            <Link
+              href="/"
+              className="hover:text-gray-600 transition-colors"
+            >
+              Home
+            </Link>
           </div>
         </div>
       </div>
