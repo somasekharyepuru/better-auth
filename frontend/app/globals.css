@@ -142,3 +142,132 @@ a {
   color: #0077ed;
   text-decoration: underline;
 }
+
+/* Premium Card Styles - Apple-inspired */
+.card-premium {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 10px 20px -5px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.02);
+  padding: 28px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 12px -2px rgba(0, 0, 0, 0.08),
+    0 16px 32px -8px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.02);
+}
+
+/* Subtle card without hover lift */
+.card-subtle {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 20px;
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.03),
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  padding: 28px;
+}
+
+/* Premium background for dashboard */
+.bg-premium {
+  background: linear-gradient(180deg, #f8f9fa 0%, #f5f5f7 100%);
+  min-height: 100vh;
+}
+
+/* Refined progress bar */
+.progress-premium {
+  background: linear-gradient(90deg, #1d1d1f 0%, #3d3d3f 100%);
+  border-radius: 999px;
+  transition: width 0.5s ease-out;
+}
+
+/* Premium input styles */
+.input-premium {
+  background: rgba(248, 249, 250, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 12px;
+  padding: 12px 16px;
+  transition: all 0.2s ease;
+}
+
+.input-premium:focus {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.03);
+  outline: none;
+}
+
+/* Premium checkbox */
+.checkbox-premium {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.checkbox-premium:hover {
+  border-color: #9ca3af;
+}
+
+.checkbox-premium.checked {
+  background: linear-gradient(135deg, #1d1d1f 0%, #3d3d3f 100%);
+  border-color: transparent;
+}
+
+/* Typography refinements */
+.text-heading {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #1d1d1f;
+}
+
+.text-subheading {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #1d1d1f;
+}
+
+.text-body {
+  font-weight: 400;
+  color: #424245;
+  line-height: 1.6;
+}
+
+.text-muted {
+  font-weight: 400;
+  color: #86868b;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}

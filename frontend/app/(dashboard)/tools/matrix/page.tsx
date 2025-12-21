@@ -144,7 +144,7 @@ export default function EisenhowerPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="bg-premium">
             <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8">
@@ -155,10 +155,10 @@ export default function EisenhowerPage() {
                         <ChevronLeft className="w-5 h-5" />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-semibold text-gray-900">
+                        <h1 className="text-2xl text-heading">
                             Eisenhower Matrix
                         </h1>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted">
                             Prioritize by urgency and importance
                         </p>
                     </div>
@@ -178,10 +178,10 @@ export default function EisenhowerPage() {
                                 {/* Quadrant Header */}
                                 <div className="flex items-center justify-between mb-4">
                                     <div>
-                                        <h3 className="font-semibold text-gray-900">
+                                        <h3 className="text-subheading">
                                             {quadrant.title}
                                         </h3>
-                                        <p className="text-xs text-gray-500">{quadrant.subtitle}</p>
+                                        <p className="text-xs text-muted">{quadrant.subtitle}</p>
                                     </div>
                                     {!isAdding && (
                                         <button
@@ -198,9 +198,9 @@ export default function EisenhowerPage() {
                                     {quadrantTasks.map((task) => (
                                         <div
                                             key={task.id}
-                                            className="group flex items-center gap-2 bg-white rounded-lg px-3 py-2 shadow-sm"
+                                            className="group flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-2.5 shadow-sm hover:shadow transition-shadow"
                                         >
-                                            <span className="flex-1 text-sm text-gray-900 truncate" title={task.title}>
+                                            <span className="flex-1 text-sm text-body truncate" title={task.title}>
                                                 {task.title}
                                             </span>
                                             <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">

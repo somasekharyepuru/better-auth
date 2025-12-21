@@ -70,7 +70,7 @@ export default function ToolsPage() {
     const enabledTools = TOOLS.filter((tool) => settings[tool.settingsKey]);
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="bg-premium">
             <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8">
@@ -81,18 +81,18 @@ export default function ToolsPage() {
                         <ChevronLeft className="w-5 h-5" />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-semibold text-gray-900">Tools</h1>
-                        <p className="text-sm text-gray-500">Productivity utilities</p>
+                        <h1 className="text-2xl text-heading">Tools</h1>
+                        <p className="text-sm text-muted">Productivity utilities</p>
                     </div>
                 </div>
 
                 {/* Tools Grid */}
                 {enabledTools.length === 0 ? (
-                    <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
-                        <p className="text-gray-500">No tools enabled</p>
+                    <div className="card-subtle text-center py-16">
+                        <p className="text-muted">No tools enabled</p>
                         <button
                             onClick={() => router.push("/settings")}
-                            className="mt-4 text-blue-600 hover:underline"
+                            className="mt-4 text-body hover:text-gray-900 underline underline-offset-2"
                         >
                             Enable tools in settings
                         </button>
@@ -103,15 +103,15 @@ export default function ToolsPage() {
                             <button
                                 key={tool.key}
                                 onClick={() => router.push(tool.href)}
-                                className="group bg-white rounded-2xl border border-gray-200 p-6 text-left hover:border-gray-300 hover:shadow-sm transition-all"
+                                className="card-premium text-left group"
                             >
-                                <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mb-4 group-hover:bg-gray-200 transition-colors">
-                                    <tool.icon className="w-6 h-6 text-gray-600" />
+                                <div className="w-12 h-12 rounded-2xl bg-gray-100/80 flex items-center justify-center mb-4 group-hover:bg-gray-200/80 transition-colors">
+                                    <tool.icon className="w-6 h-6 text-body" />
                                 </div>
-                                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                                <h3 className="text-lg text-subheading mb-1">
                                     {tool.name}
                                 </h3>
-                                <p className="text-sm text-gray-500">{tool.description}</p>
+                                <p className="text-sm text-muted">{tool.description}</p>
                             </button>
                         ))}
                     </div>

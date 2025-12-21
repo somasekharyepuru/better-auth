@@ -68,16 +68,16 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3 }: ToDiscussProp
     const canAddMore = maxItems > 0 && items.length < maxItems;
 
     return (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-5">
+        <div className="card-premium">
+            <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
-                    <MessageCircle className="w-5 h-5 text-gray-400" />
-                    <h2 className="text-lg font-semibold text-gray-900">To Discuss</h2>
+                    <MessageCircle className="w-5 h-5 text-muted" />
+                    <h2 className="text-lg text-subheading">To Discuss</h2>
                 </div>
                 {canAddMore && !isAdding && (
                     <button
                         onClick={() => setIsAdding(true)}
-                        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                        className="flex items-center gap-1.5 text-sm text-muted hover:text-gray-700 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Add
@@ -89,10 +89,10 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3 }: ToDiscussProp
                 {items.map((item, index) => (
                     <div
                         key={item.id}
-                        className="group flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                        className="group flex items-start gap-4 p-4 rounded-2xl hover:bg-black/[0.02] transition-all"
                     >
                         {/* Number badge */}
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-sm font-medium flex items-center justify-center">
+                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100/80 text-muted text-sm font-medium flex items-center justify-center">
                             {index + 1}
                         </span>
 

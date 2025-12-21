@@ -176,7 +176,7 @@ export default function DecisionLogPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="bg-premium">
             <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8">
@@ -187,13 +187,13 @@ export default function DecisionLogPage() {
                         <ChevronLeft className="w-5 h-5" />
                     </button>
                     <div className="flex-1">
-                        <h1 className="text-2xl font-semibold text-gray-900">Decision Log</h1>
-                        <p className="text-sm text-gray-500">Track important decisions</p>
+                        <h1 className="text-2xl text-heading">Decision Log</h1>
+                        <p className="text-sm text-muted">Track important decisions</p>
                     </div>
                     {!isAdding && (
                         <button
                             onClick={() => setIsAdding(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-gray-800 to-gray-900 text-white rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg shadow-gray-900/20"
                         >
                             <Plus className="w-4 h-4" />
                             New
@@ -203,8 +203,8 @@ export default function DecisionLogPage() {
 
                 {/* Add/Edit Form */}
                 {isAdding && (
-                    <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
-                        <h3 className="font-semibold text-gray-900 mb-4">
+                    <div className="card-premium mb-6">
+                        <h3 className="text-subheading mb-4">
                             {editingId ? "Edit Decision" : "New Decision"}
                         </h3>
                         <div className="space-y-4">
@@ -312,8 +312,8 @@ export default function DecisionLogPage() {
                 {!isAdding && (
                     <div className="space-y-4">
                         {decisions.length === 0 ? (
-                            <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
-                                <p className="text-gray-500">
+                            <div className="card-subtle text-center py-16">
+                                <p className="text-muted">
                                     {searchQuery ? "No decisions found" : "No decisions yet"}
                                 </p>
                             </div>
@@ -321,10 +321,10 @@ export default function DecisionLogPage() {
                             decisions.map((decision) => (
                                 <div
                                     key={decision.id}
-                                    className="bg-white rounded-2xl border border-gray-200 p-5 group"
+                                    className="card-premium group"
                                 >
                                     <div className="flex items-start justify-between mb-3">
-                                        <h3 className="font-semibold text-gray-900">{decision.title}</h3>
+                                        <h3 className="text-subheading">{decision.title}</h3>
                                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button
                                                 onClick={() => handleEdit(decision)}

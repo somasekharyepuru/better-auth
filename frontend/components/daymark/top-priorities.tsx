@@ -77,13 +77,13 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3 }: TopP
     const canAddMore = priorities.length < maxItems;
 
     return (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-5">
-                <h2 className="text-lg font-semibold text-gray-900">Top {maxItems} Priorities</h2>
+        <div className="card-premium">
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg text-subheading">Top {maxItems} Priorities</h2>
                 {canAddMore && !isAdding && (
                     <button
                         onClick={() => setIsAdding(true)}
-                        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                        className="flex items-center gap-1.5 text-sm text-muted hover:text-gray-700 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Add
@@ -95,14 +95,14 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3 }: TopP
                 {priorities.map((priority) => (
                     <div
                         key={priority.id}
-                        className="group flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors overflow-hidden"
+                        className="group flex items-center gap-4 p-4 rounded-2xl hover:bg-black/[0.02] transition-all overflow-hidden"
                     >
                         {/* Checkbox */}
                         <button
                             onClick={() => handleToggle(priority.id)}
-                            className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${priority.completed
-                                ? "bg-gray-900 border-gray-900"
-                                : "border-gray-300 hover:border-gray-400"
+                            className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${priority.completed
+                                ? "bg-gradient-to-br from-gray-800 to-gray-900 border-transparent"
+                                : "border-gray-300 hover:border-gray-400 hover:scale-105"
                                 }`}
                         >
                             {priority.completed && <Check className="w-3.5 h-3.5 text-white" />}
@@ -119,7 +119,7 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3 }: TopP
                                     if (e.key === "Enter") handleEdit(priority.id);
                                     if (e.key === "Escape") setEditingId(null);
                                 }}
-                                className="flex-1 bg-transparent text-gray-900 outline-none border-b border-gray-300 focus:border-gray-900"
+                                className="flex-1 bg-transparent text-body outline-none border-b border-gray-200 focus:border-gray-400 py-1"
                                 autoFocus
                             />
                         ) : (
@@ -129,7 +129,7 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3 }: TopP
                                     setEditTitle(priority.title);
                                 }}
                                 title={priority.title}
-                                className={`flex-1 cursor-text truncate ${priority.completed ? "text-gray-400 line-through" : "text-gray-900"
+                                className={`flex-1 cursor-text truncate transition-colors ${priority.completed ? "text-muted line-through" : "text-body"
                                     }`}
                             >
                                 {priority.title}

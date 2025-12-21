@@ -163,7 +163,7 @@ export default function PomodoroPage() {
     const progress = (remainingSeconds / getDuration(mode)) * 100;
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="bg-premium">
             <main className="max-w-lg mx-auto px-4 sm:px-6 py-8">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8">
@@ -174,13 +174,13 @@ export default function PomodoroPage() {
                         <ChevronLeft className="w-5 h-5" />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-semibold text-gray-900">Pomodoro Timer</h1>
-                        <p className="text-sm text-gray-500">Focus on what matters</p>
+                        <h1 className="text-2xl text-heading">Pomodoro Timer</h1>
+                        <p className="text-sm text-muted">Focus on what matters</p>
                     </div>
                 </div>
 
                 {/* Timer Card */}
-                <div className="bg-white rounded-2xl border border-gray-200 p-8">
+                <div className="card-premium">
                     {/* Mode Tabs */}
                     <div className="flex gap-2 mb-8">
                         {(Object.keys(MODE_CONFIG) as TimerMode[]).map((m) => {
@@ -190,9 +190,9 @@ export default function PomodoroPage() {
                                 <button
                                     key={m}
                                     onClick={() => switchMode(m)}
-                                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${isActive
-                                            ? "bg-gray-900 text-white"
-                                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                    className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all ${isActive
+                                        ? "bg-gradient-to-br from-gray-800 to-gray-900 text-white shadow-lg shadow-gray-900/20"
+                                        : "bg-gray-100/80 text-muted hover:bg-gray-200/80"
                                         }`}
                                 >
                                     {config.label}
@@ -261,7 +261,7 @@ export default function PomodoroPage() {
                 </div>
 
                 {/* Current Settings Info */}
-                <div className="mt-6 text-center text-sm text-gray-500">
+                <div className="mt-6 text-center text-sm text-muted">
                     Focus: {settings.pomodoroFocusDuration}min •
                     Short: {settings.pomodoroShortBreak}min •
                     Long: {settings.pomodoroLongBreak}min

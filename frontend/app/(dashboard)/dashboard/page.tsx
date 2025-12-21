@@ -126,7 +126,7 @@ export default function DashboardPage() {
   const showReviewButton = settings.endOfDayReviewEnabled;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-premium">
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
           {/* Header with date navigation */}
@@ -148,9 +148,9 @@ export default function DashboardPage() {
               </div>
 
               <div>
-                <h1 className="text-2xl font-semibold text-gray-900">{displayDate}</h1>
+                <h1 className="text-2xl text-heading">{displayDate}</h1>
                 {isToday && (
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted">
                     Welcome back, {user.name.split(" ")[0]}
                   </p>
                 )}
@@ -191,7 +191,7 @@ export default function DashboardPage() {
 
           {/* Day Progress */}
           {showProgress && (
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="card-subtle">
               <DayProgress completed={completedCount} total={totalCount} />
             </div>
           )}
@@ -224,7 +224,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Right Column */}
-              <div className="space-y-6">
+              <div className="flex flex-col gap-6 h-full">
                 {showSchedule && (
                   <TimeBlocks
                     date={currentDate}
@@ -239,6 +239,7 @@ export default function DashboardPage() {
                     date={currentDate}
                     note={dayData?.quickNote || null}
                     onUpdate={loadDayData}
+                    className="flex-1 min-h-[300px]"
                   />
                 )}
               </div>

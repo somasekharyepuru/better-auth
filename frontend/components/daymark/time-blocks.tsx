@@ -138,16 +138,16 @@ export function TimeBlocks({ date, blocks, onUpdate, defaultDuration = 60, defau
     );
 
     return (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-5">
+        <div className="card-premium">
+            <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-gray-400" />
-                    <h2 className="text-lg font-semibold text-gray-900">Today's Schedule</h2>
+                    <Clock className="w-5 h-5 text-muted" />
+                    <h2 className="text-lg text-subheading">Today's Schedule</h2>
                 </div>
                 {!isAdding && !editingId && (
                     <button
                         onClick={() => setIsAdding(true)}
-                        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                        className="flex items-center gap-1.5 text-sm text-muted hover:text-gray-700 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Add
@@ -155,7 +155,7 @@ export function TimeBlocks({ date, blocks, onUpdate, defaultDuration = 60, defau
                 )}
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
                 {sortedBlocks.map((block) =>
                     editingId === block.id ? (
                         <TimeBlockForm
@@ -172,10 +172,10 @@ export function TimeBlocks({ date, blocks, onUpdate, defaultDuration = 60, defau
                     ) : (
                         <div
                             key={block.id}
-                            className="group flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors overflow-hidden"
+                            className="group flex items-center gap-4 p-4 rounded-2xl hover:bg-black/[0.02] transition-all overflow-hidden"
                         >
                             {/* Time */}
-                            <div className="text-sm text-gray-500 w-32 flex-shrink-0">
+                            <div className="text-sm text-muted w-32 flex-shrink-0">
                                 {formatTime(block.startTime)} - {formatTime(block.endTime)}
                             </div>
 
@@ -188,7 +188,7 @@ export function TimeBlocks({ date, blocks, onUpdate, defaultDuration = 60, defau
                             </span>
 
                             {/* Title */}
-                            <span title={block.title} className="flex-1 text-gray-900 truncate min-w-0">{block.title}</span>
+                            <span title={block.title} className="flex-1 text-body truncate min-w-0">{block.title}</span>
 
                             {/* Actions */}
                             <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-all">

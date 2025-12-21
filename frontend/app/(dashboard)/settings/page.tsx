@@ -145,7 +145,7 @@ export default function SettingsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="bg-premium">
             <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8">
@@ -160,18 +160,18 @@ export default function SettingsPage() {
                             <Settings className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
-                            <p className="text-sm text-gray-500">Customize your dashboard</p>
+                            <h1 className="text-2xl text-heading">Settings</h1>
+                            <p className="text-sm text-muted">Customize your dashboard</p>
                         </div>
                     </div>
                 </div>
 
                 <div className="space-y-6">
                     {/* Dashboard Preferences */}
-                    <section className="bg-white rounded-2xl border border-gray-200 p-6">
-                        <div className="flex items-center gap-2 mb-5">
-                            <ListChecks className="w-5 h-5 text-gray-400" />
-                            <h2 className="text-lg font-semibold text-gray-900">Dashboard Preferences</h2>
+                    <section className="card-premium">
+                        <div className="flex items-center gap-2 mb-6">
+                            <ListChecks className="w-5 h-5 text-muted" />
+                            <h2 className="text-lg text-subheading">Dashboard Preferences</h2>
                         </div>
 
                         <div className="space-y-5">
@@ -224,7 +224,7 @@ export default function SettingsPage() {
                     </section>
 
                     {/* Section Visibility */}
-                    <section className="bg-white rounded-2xl border border-gray-200 p-6">
+                    <section className="card-premium">
                         <div className="flex items-center gap-2 mb-5">
                             <Eye className="w-5 h-5 text-gray-400" />
                             <h2 className="text-lg font-semibold text-gray-900">Section Visibility</h2>
@@ -252,7 +252,7 @@ export default function SettingsPage() {
                     </section>
 
                     {/* Scheduling Preferences */}
-                    <section className="bg-white rounded-2xl border border-gray-200 p-6">
+                    <section className="card-premium">
                         <div className="flex items-center gap-2 mb-5">
                             <Clock className="w-5 h-5 text-gray-400" />
                             <h2 className="text-lg font-semibold text-gray-900">Scheduling Defaults</h2>
@@ -301,7 +301,7 @@ export default function SettingsPage() {
                     </section>
 
                     {/* Tools Settings */}
-                    <section className="bg-white rounded-2xl border border-gray-200 p-6">
+                    <section className="card-premium">
                         <div className="flex items-center gap-2 mb-5">
                             <Wrench className="w-5 h-5 text-gray-400" />
                             <h2 className="text-lg font-semibold text-gray-900">Tools</h2>
@@ -444,7 +444,7 @@ export default function SettingsPage() {
                     </section>
 
                     {/* Review Preferences */}
-                    <section className="bg-white rounded-2xl border border-gray-200 p-6">
+                    <section className="card-premium">
                         <div className="flex items-center gap-2 mb-5">
                             <Moon className="w-5 h-5 text-gray-400" />
                             <h2 className="text-lg font-semibold text-gray-900">Review Preferences</h2>
@@ -465,7 +465,7 @@ export default function SettingsPage() {
                     </section>
 
                     {/* Daily Behavior */}
-                    <section className="bg-white rounded-2xl border border-gray-200 p-6">
+                    <section className="card-premium">
                         <div className="flex items-center gap-2 mb-5">
                             <Zap className="w-5 h-5 text-gray-400" />
                             <h2 className="text-lg font-semibold text-gray-900">Daily Behavior</h2>

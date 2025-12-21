@@ -4,13 +4,16 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { QuickNote, quickNotesApi } from "@/lib/daymark-api";
 import { FileText, Check, Loader2 } from "lucide-react";
 
+import { cn } from "@/lib/utils";
+
 interface QuickNotesProps {
     date: string;
     note: QuickNote | null;
     onUpdate: () => void;
+    className?: string;
 }
 
-export function QuickNotes({ date, note, onUpdate }: QuickNotesProps) {
+export function QuickNotes({ date, note, onUpdate, className }: QuickNotesProps) {
     const [content, setContent] = useState(note?.content || "");
     const [isSaving, setIsSaving] = useState(false);
     const [showSaved, setShowSaved] = useState(false);
@@ -63,11 +66,11 @@ export function QuickNotes({ date, note, onUpdate }: QuickNotesProps) {
     }, []);
 
     return (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 h-full flex flex-col">
+        <div className={cn("card-premium h-full flex flex-col", className)}>
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-gray-400" />
-                    <h2 className="text-lg font-semibold text-gray-900">Quick Notes</h2>
+                    <FileText className="w-5 h-5 text-muted" />
+                    <h2 className="text-lg text-subheading">Quick Notes</h2>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                     {isSaving && (
@@ -89,7 +92,7 @@ export function QuickNotes({ date, note, onUpdate }: QuickNotesProps) {
                 value={content}
                 onChange={handleChange}
                 placeholder="Jot down your thoughts, meeting notes, or ideas..."
-                className="flex-1 w-full bg-gray-50 rounded-xl p-4 text-gray-700 outline-none resize-none placeholder:text-gray-400 focus:bg-gray-100 transition-colors min-h-[200px]"
+                className="flex-1 w-full bg-gray-50/50 rounded-xl p-4 text-body resize-none placeholder:text-muted outline-none border border-transparent focus:border-gray-200 focus:bg-white/80 transition-all min-h-[200px]"
             />
         </div>
     );

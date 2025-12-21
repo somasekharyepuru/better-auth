@@ -11,29 +11,29 @@ export function DayProgress({ completed, total }: DayProgressProps) {
     return (
         <div className="flex items-center gap-4">
             <div className="flex-1">
-                <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-700">
+                <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-body">
                         {completed} of {total} priorities completed
                     </span>
-                    <span className="text-sm font-medium text-gray-500">{percentage}%</span>
+                    <span className="text-sm text-muted">{percentage}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                     <div
-                        className="bg-gray-900 h-2 rounded-full transition-all duration-300 ease-out"
+                        className="progress-premium h-2"
                         style={{ width: `${percentage}%` }}
                     />
                 </div>
             </div>
             {/* Completion dots */}
-            <div className="flex gap-1.5">
+            <div className="flex gap-2">
                 {[0, 1, 2].map((i) => (
                     <div
                         key={i}
-                        className={`w-3 h-3 rounded-full transition-colors duration-200 ${i < completed
-                                ? "bg-gray-900"
-                                : i < total
-                                    ? "bg-gray-300"
-                                    : "bg-gray-100 border border-gray-200"
+                        className={`w-3 h-3 rounded-full transition-all duration-300 ${i < completed
+                            ? "bg-gradient-to-br from-gray-700 to-gray-900 scale-100"
+                            : i < total
+                                ? "bg-gray-200"
+                                : "bg-gray-100"
                             }`}
                     />
                 ))}
