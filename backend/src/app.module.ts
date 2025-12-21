@@ -11,6 +11,7 @@ import { DiscussionItemsModule } from './discussion-items/discussion-items.modul
 import { TimeBlocksModule } from './time-blocks/time-blocks.module';
 import { QuickNotesModule } from './quick-notes/quick-notes.module';
 import { DailyReviewModule } from './daily-review/daily-review.module';
+import { SettingsModule } from './settings/settings.module';
 import { AuthMiddleware } from './auth/auth.middleware';
 
 @Module({
@@ -27,6 +28,7 @@ import { AuthMiddleware } from './auth/auth.middleware';
     TimeBlocksModule,
     QuickNotesModule,
     DailyReviewModule,
+    SettingsModule,
   ],
 })
 export class AppModule implements NestModule {

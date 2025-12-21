@@ -238,3 +238,37 @@ model DailyReview {
 
   @@map("daily_review")
 }
+
+// ==========================================
+// User Settings - Dashboard Customization
+// ==========================================
+
+model UserSettings {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  // Dashboard Preferences
+  maxTopPriorities   Int @default(3) // 1-5
+  maxDiscussionItems Int @default(3) // 0-5
+
+  // Section Visibility (JSON array of enabled section keys)
+  // Default: ["priorities", "discussion", "schedule", "notes", "progress", "review"]
+  enabledSections String @default("[\"priorities\",\"discussion\",\"schedule\",\"notes\",\"progress\",\"review\"]")
+
+  // Scheduling Preferences
+  defaultTimeBlockDuration Int    @default(60) // minutes
+  defaultTimeBlockType     String @default("Deep Work")
+
+  // Review Preferences
+  endOfDayReviewEnabled Boolean @default(true)
+
+  // Daily Behavior Rules
+  autoCarryForward  Boolean @default(true)
+  autoCreateNextDay Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("user_settings")
+}

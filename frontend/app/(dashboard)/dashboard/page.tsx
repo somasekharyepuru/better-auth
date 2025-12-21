@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { daysApi, formatDate, Day } from "@/lib/daymark-api";
+import { useSettings } from "@/lib/settings-context";
 import { Spinner } from "@/components/ui/spinner";
 import { DayProgress } from "@/components/daymark/day-progress";
 import { TopPriorities } from "@/components/daymark/top-priorities";
@@ -11,7 +12,7 @@ import { ToDiscuss } from "@/components/daymark/to-discuss";
 import { TimeBlocks } from "@/components/daymark/time-blocks";
 import { QuickNotes } from "@/components/daymark/quick-notes";
 import { EndOfDayReview } from "@/components/daymark/end-of-day-review";
-import { ChevronLeft, ChevronRight, Moon, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Moon, Calendar, Settings } from "lucide-react";
 
 interface User {
   id: string;
@@ -27,6 +28,7 @@ export default function DashboardPage() {
   const [isDayLoading, setIsDayLoading] = useState(false);
   const [showReview, setShowReview] = useState(false);
   const router = useRouter();
+  const { settings, isSectionEnabled } = useSettings();
 
   // Auth check
   useEffect(() => {
@@ -115,6 +117,14 @@ export default function DashboardPage() {
   // Get incomplete priorities for review
   const incompletePriorities = dayData?.priorities.filter((p) => !p.completed) || [];
 
+  // Check which sections to show
+  const showProgress = isSectionEnabled("progress");
+  const showPriorities = isSectionEnabled("priorities");
+  const showDiscussion = isSectionEnabled("discussion");
+  const showSchedule = isSectionEnabled("schedule");
+  const showNotes = isSectionEnabled("notes");
+  const showReviewButton = settings.endOfDayReviewEnabled;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -157,20 +167,34 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* End of day review button */}
-            <button
-              onClick={() => setShowReview(true)}
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
-            >
-              <Moon className="w-4 h-4" />
-              End of Day
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Settings button */}
+              <button
+                onClick={() => router.push("/settings")}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+
+              {/* End of day review button */}
+              {showReviewButton && (
+                <button
+                  onClick={() => setShowReview(true)}
+                  className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  <Moon className="w-4 h-4" />
+                  End of Day
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Day Progress */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <DayProgress completed={completedCount} total={totalCount} />
-          </div>
+          {showProgress && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <DayProgress completed={completedCount} total={totalCount} />
+            </div>
+          )}
 
           {/* Main Grid */}
           {isDayLoading ? (
@@ -181,30 +205,42 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left Column */}
               <div className="space-y-6">
-                <TopPriorities
-                  date={currentDate}
-                  priorities={dayData?.priorities || []}
-                  onUpdate={loadDayData}
-                />
-                <ToDiscuss
-                  date={currentDate}
-                  items={dayData?.discussionItems || []}
-                  onUpdate={loadDayData}
-                />
+                {showPriorities && (
+                  <TopPriorities
+                    date={currentDate}
+                    priorities={dayData?.priorities || []}
+                    onUpdate={loadDayData}
+                    maxItems={settings.maxTopPriorities}
+                  />
+                )}
+                {showDiscussion && (
+                  <ToDiscuss
+                    date={currentDate}
+                    items={dayData?.discussionItems || []}
+                    onUpdate={loadDayData}
+                    maxItems={settings.maxDiscussionItems}
+                  />
+                )}
               </div>
 
               {/* Right Column */}
               <div className="space-y-6">
-                <TimeBlocks
-                  date={currentDate}
-                  blocks={dayData?.timeBlocks || []}
-                  onUpdate={loadDayData}
-                />
-                <QuickNotes
-                  date={currentDate}
-                  note={dayData?.quickNote || null}
-                  onUpdate={loadDayData}
-                />
+                {showSchedule && (
+                  <TimeBlocks
+                    date={currentDate}
+                    blocks={dayData?.timeBlocks || []}
+                    onUpdate={loadDayData}
+                    defaultDuration={settings.defaultTimeBlockDuration}
+                    defaultType={settings.defaultTimeBlockType}
+                  />
+                )}
+                {showNotes && (
+                  <QuickNotes
+                    date={currentDate}
+                    note={dayData?.quickNote || null}
+                    onUpdate={loadDayData}
+                  />
+                )}
               </div>
             </div>
           )}
@@ -223,3 +259,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

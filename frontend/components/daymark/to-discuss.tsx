@@ -8,9 +8,10 @@ interface ToDiscussProps {
     date: string;
     items: DiscussionItem[];
     onUpdate: () => void;
+    maxItems?: number;
 }
 
-export function ToDiscuss({ date, items, onUpdate }: ToDiscussProps) {
+export function ToDiscuss({ date, items, onUpdate, maxItems = 3 }: ToDiscussProps) {
     const [isAdding, setIsAdding] = useState(false);
     const [newContent, setNewContent] = useState("");
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -64,7 +65,7 @@ export function ToDiscuss({ date, items, onUpdate }: ToDiscussProps) {
         }
     };
 
-    const canAddMore = items.length < 3;
+    const canAddMore = maxItems > 0 && items.length < maxItems;
 
     return (
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
@@ -115,7 +116,8 @@ export function ToDiscuss({ date, items, onUpdate }: ToDiscussProps) {
                                     setEditingId(item.id);
                                     setEditContent(item.content);
                                 }}
-                                className="flex-1 text-gray-700 cursor-text"
+                                title={item.content}
+                                className="flex-1 text-gray-700 cursor-text truncate"
                             >
                                 {item.content}
                             </span>
@@ -132,7 +134,7 @@ export function ToDiscuss({ date, items, onUpdate }: ToDiscussProps) {
                 ))}
 
                 {/* Empty slots */}
-                {Array.from({ length: 3 - items.length }).map((_, i) => (
+                {maxItems > 0 && Array.from({ length: Math.max(0, maxItems - items.length) }).map((_, i) => (
                     <div
                         key={`empty-${i}`}
                         className="flex items-start gap-3 p-3 rounded-xl border-2 border-dashed border-gray-200"
@@ -187,9 +189,9 @@ export function ToDiscuss({ date, items, onUpdate }: ToDiscussProps) {
                 )}
 
                 {/* Max reached notice */}
-                {!canAddMore && (
+                {maxItems > 0 && !canAddMore && (
                     <p className="text-xs text-gray-400 text-center pt-2">
-                        Maximum 3 discussion items
+                        Maximum {maxItems} discussion items
                     </p>
                 )}
             </div>

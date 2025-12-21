@@ -8,9 +8,10 @@ interface TopPrioritiesProps {
     date: string;
     priorities: TopPriority[];
     onUpdate: () => void;
+    maxItems?: number;
 }
 
-export function TopPriorities({ date, priorities, onUpdate }: TopPrioritiesProps) {
+export function TopPriorities({ date, priorities, onUpdate, maxItems = 3 }: TopPrioritiesProps) {
     const [isAdding, setIsAdding] = useState(false);
     const [newTitle, setNewTitle] = useState("");
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -73,12 +74,12 @@ export function TopPriorities({ date, priorities, onUpdate }: TopPrioritiesProps
         }
     };
 
-    const canAddMore = priorities.length < 3;
+    const canAddMore = priorities.length < maxItems;
 
     return (
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-5">
-                <h2 className="text-lg font-semibold text-gray-900">Top 3 Priorities</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Top {maxItems} Priorities</h2>
                 {canAddMore && !isAdding && (
                     <button
                         onClick={() => setIsAdding(true)}
@@ -94,14 +95,14 @@ export function TopPriorities({ date, priorities, onUpdate }: TopPrioritiesProps
                 {priorities.map((priority) => (
                     <div
                         key={priority.id}
-                        className="group flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                        className="group flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors overflow-hidden"
                     >
                         {/* Checkbox */}
                         <button
                             onClick={() => handleToggle(priority.id)}
                             className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${priority.completed
-                                    ? "bg-gray-900 border-gray-900"
-                                    : "border-gray-300 hover:border-gray-400"
+                                ? "bg-gray-900 border-gray-900"
+                                : "border-gray-300 hover:border-gray-400"
                                 }`}
                         >
                             {priority.completed && <Check className="w-3.5 h-3.5 text-white" />}
@@ -127,7 +128,8 @@ export function TopPriorities({ date, priorities, onUpdate }: TopPrioritiesProps
                                     setEditingId(priority.id);
                                     setEditTitle(priority.title);
                                 }}
-                                className={`flex-1 cursor-text ${priority.completed ? "text-gray-400 line-through" : "text-gray-900"
+                                title={priority.title}
+                                className={`flex-1 cursor-text truncate ${priority.completed ? "text-gray-400 line-through" : "text-gray-900"
                                     }`}
                             >
                                 {priority.title}
@@ -145,7 +147,7 @@ export function TopPriorities({ date, priorities, onUpdate }: TopPrioritiesProps
                 ))}
 
                 {/* Empty slots */}
-                {Array.from({ length: 3 - priorities.length }).map((_, i) => (
+                {Array.from({ length: Math.max(0, maxItems - priorities.length) }).map((_, i) => (
                     <div
                         key={`empty-${i}`}
                         className="flex items-center gap-3 p-3 rounded-xl border-2 border-dashed border-gray-200"
@@ -198,7 +200,7 @@ export function TopPriorities({ date, priorities, onUpdate }: TopPrioritiesProps
                 {/* Max reached notice */}
                 {!canAddMore && (
                     <p className="text-xs text-gray-400 text-center pt-2">
-                        Maximum 3 priorities reached
+                        Maximum {maxItems} priorities reached
                     </p>
                 )}
             </div>

@@ -8,6 +8,8 @@ interface TimeBlocksProps {
     date: string;
     blocks: TimeBlock[];
     onUpdate: () => void;
+    defaultDuration?: number;
+    defaultType?: string;
 }
 
 const TIME_BLOCK_TYPES = ["Deep Work", "Meeting", "Personal", "Break", "Admin"];
@@ -28,23 +30,32 @@ function formatTime(dateString: string) {
     });
 }
 
-export function TimeBlocks({ date, blocks, onUpdate }: TimeBlocksProps) {
+function calculateEndTime(startTime: string, durationMinutes: number): string {
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes + durationMinutes;
+    const endHours = Math.floor(totalMinutes / 60) % 24;
+    const endMinutes = totalMinutes % 60;
+    return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+}
+
+export function TimeBlocks({ date, blocks, onUpdate, defaultDuration = 60, defaultType = "Deep Work" }: TimeBlocksProps) {
     const [isAdding, setIsAdding] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const defaultStartTime = "09:00";
     const [formData, setFormData] = useState({
         title: "",
-        startTime: "09:00",
-        endTime: "10:00",
-        type: "Deep Work",
+        startTime: defaultStartTime,
+        endTime: calculateEndTime(defaultStartTime, defaultDuration),
+        type: defaultType,
     });
     const [isLoading, setIsLoading] = useState(false);
 
     const resetForm = () => {
         setFormData({
             title: "",
-            startTime: "09:00",
-            endTime: "10:00",
-            type: "Deep Work",
+            startTime: defaultStartTime,
+            endTime: calculateEndTime(defaultStartTime, defaultDuration),
+            type: defaultType,
         });
     };
 
@@ -161,7 +172,7 @@ export function TimeBlocks({ date, blocks, onUpdate }: TimeBlocksProps) {
                     ) : (
                         <div
                             key={block.id}
-                            className="group flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                            className="group flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors overflow-hidden"
                         >
                             {/* Time */}
                             <div className="text-sm text-gray-500 w-32 flex-shrink-0">
@@ -177,7 +188,7 @@ export function TimeBlocks({ date, blocks, onUpdate }: TimeBlocksProps) {
                             </span>
 
                             {/* Title */}
-                            <span className="flex-1 text-gray-900">{block.title}</span>
+                            <span title={block.title} className="flex-1 text-gray-900 truncate min-w-0">{block.title}</span>
 
                             {/* Actions */}
                             <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-all">
