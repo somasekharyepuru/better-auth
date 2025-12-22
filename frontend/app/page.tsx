@@ -70,9 +70,9 @@ export default function HomePage() {
             {APP_CONFIG.hero.subheadline}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20 opacity-0-initial animate-fade-in-up delay-400">
-            <button className="btn-primary">
+            <Link href="/signup" className="btn-primary">
               {APP_CONFIG.hero.primaryCta}
-            </button>
+            </Link>
             <button className="btn-secondary">
               {APP_CONFIG.hero.secondaryCta}
             </button>
@@ -175,9 +175,9 @@ export default function HomePage() {
           <p className="text-xl text-gray-500 font-light mb-10">
             {APP_CONFIG.finalCta.subtext}
           </p>
-          <button className="btn-primary">
+          <Link href="/signup" className="btn-primary">
             {APP_CONFIG.finalCta.buttonText}
-          </button>
+          </Link>
         </div>
       </section>
 
