@@ -18,6 +18,7 @@ export interface UpdateSettingsDto {
     pomodoroFocusDuration?: number;
     pomodoroShortBreak?: number;
     pomodoroLongBreak?: number;
+    pomodoroSoundEnabled?: boolean;
     // Life Areas settings
     lifeAreasEnabled?: boolean;
     defaultLifeAreaId?: string | null;
@@ -42,6 +43,7 @@ export interface UserSettingsResponse {
     pomodoroFocusDuration: number;
     pomodoroShortBreak: number;
     pomodoroLongBreak: number;
+    pomodoroSoundEnabled: boolean;
     // Life Areas settings
     lifeAreasEnabled: boolean;
     defaultLifeAreaId: string | null;
@@ -138,6 +140,7 @@ export class SettingsService {
             pomodoroFocusDuration: settings.pomodoroFocusDuration,
             pomodoroShortBreak: settings.pomodoroShortBreak,
             pomodoroLongBreak: settings.pomodoroLongBreak,
+            pomodoroSoundEnabled: settings.pomodoroSoundEnabled,
             // Life Areas settings
             lifeAreasEnabled: settings.lifeAreasEnabled,
             defaultLifeAreaId: settings.defaultLifeAreaId,

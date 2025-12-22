@@ -21,7 +21,7 @@ export const APP_CONFIG = {
     hero: {
         headline: "A better way to plan your day",
         subheadline: "Tasks, notes, habits, and daily focus — designed to work together.",
-        primaryCta: "Join the waitlist",
+        primaryCta: "Get Started",
         secondaryCta: "Learn more",
     },
 
@@ -65,8 +65,8 @@ export const APP_CONFIG = {
     // Final CTA
     finalCta: {
         headline: "Make every day count.",
-        subtext: "Join the early access list.",
-        buttonText: "Get early access",
+        subtext: "Start your productivity journey today.",
+        buttonText: "Get Started Free",
     },
 
     // Footer

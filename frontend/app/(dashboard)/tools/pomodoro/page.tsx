@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { useSettings } from "@/lib/settings-context";
 import { Spinner } from "@/components/ui/spinner";
-import { ChevronLeft, Play, Pause, RotateCcw, Coffee, Brain, Sunset, X } from "lucide-react";
+import { ChevronLeft, Play, Pause, RotateCcw, Coffee, Brain, Sunset, X, Volume2, VolumeX, CheckCircle } from "lucide-react";
 
 type TimerMode = "focus" | "shortBreak" | "longBreak";
 
@@ -16,6 +16,7 @@ const MODE_CONFIG = {
 };
 
 const STORAGE_KEY = "daymark_pomodoro_state";
+const SESSION_STORAGE_KEY = "daymark_pomodoro_sessions";
 
 interface PomodoroState {
     mode: TimerMode;
@@ -30,6 +31,51 @@ function formatTime(seconds: number): string {
     return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
+// Web Audio API sound generation - creates a pleasant chime
+function playNotificationSound(mode: TimerMode) {
+    try {
+        const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (!AudioContextClass) return;
+
+        const audioContext = new AudioContextClass();
+        const now = audioContext.currentTime;
+
+        // Different chime based on mode
+        const frequencies = mode === 'focus'
+            ? [523.25, 659.25, 783.99] // C5, E5, G5 - uplifting major chord for focus complete
+            : [392.00, 493.88, 587.33]; // G4, B4, D5 - gentle chord for break complete
+
+        frequencies.forEach((freq, index) => {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(freq, now);
+
+            // Staggered start for arpeggio effect
+            const startTime = now + index * 0.15;
+            const duration = 0.5;
+
+            gainNode.gain.setValueAtTime(0, startTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+
+            oscillator.start(startTime);
+            oscillator.stop(startTime + duration);
+        });
+
+        // Cleanup after sounds finish
+        setTimeout(() => {
+            audioContext.close();
+        }, 2000);
+    } catch (error) {
+        console.warn('Could not play notification sound:', error);
+    }
+}
+
 export default function PomodoroPage() {
     const router = useRouter();
     const { settings, isLoading: settingsLoading } = useSettings();
@@ -40,6 +86,7 @@ export default function PomodoroPage() {
     const [remainingSeconds, setRemainingSeconds] = useState(25 * 60);
     const [isRunning, setIsRunning] = useState(false);
     const [showCompleteModal, setShowCompleteModal] = useState(false);
+    const [completedSessions, setCompletedSessions] = useState(0);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
     // Get durations from settings
@@ -83,6 +130,24 @@ export default function PomodoroPage() {
         }
     }, []);
 
+    // Load session count from sessionStorage (resets daily)
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const today = new Date().toDateString();
+            const saved = sessionStorage.getItem(SESSION_STORAGE_KEY);
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    if (data.date === today) {
+                        setCompletedSessions(data.count);
+                    }
+                } catch {
+                    // Invalid data
+                }
+            }
+        }
+    }, []);
+
     // Load state from localStorage
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -102,6 +167,9 @@ export default function PomodoroPage() {
                         } else {
                             // Timer finished while away
                             setShowCompleteModal(true);
+                            if (settings.pomodoroSoundEnabled) {
+                                playNotificationSound(state.mode);
+                            }
                         }
                     } else {
                         setRemainingSeconds(state.remainingSeconds);
@@ -111,7 +179,7 @@ export default function PomodoroPage() {
                 }
             }
         }
-    }, []);
+    }, [settings.pomodoroSoundEnabled]);
 
     // Save state to localStorage
     useEffect(() => {
@@ -144,11 +212,30 @@ export default function PomodoroPage() {
                         setIsRunning(false);
                         setShowCompleteModal(true);
 
-                        // Show notification
+                        // Play sound if enabled
+                        if (settings.pomodoroSoundEnabled) {
+                            playNotificationSound(mode);
+                        }
+
+                        // Increment session counter for focus mode
+                        if (mode === 'focus') {
+                            setCompletedSessions(prev => {
+                                const newCount = prev + 1;
+                                // Save to sessionStorage
+                                const today = new Date().toDateString();
+                                sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+                                    date: today,
+                                    count: newCount
+                                }));
+                                return newCount;
+                            });
+                        }
+
+                        // Show browser notification
                         if (Notification.permission === 'granted') {
                             new Notification("Timer Complete!", {
                                 body: `${MODE_CONFIG[mode].label} session finished.`,
-                                icon: "/icon.png" // Assumes standard icon path, fallback by browser if missing
+                                icon: "/logo.png"
                             });
                         }
                         return 0;
@@ -164,7 +251,7 @@ export default function PomodoroPage() {
             }
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isRunning, remainingSeconds]); // Added mode to deps if needed, but safe here
+    }, [isRunning, remainingSeconds, settings.pomodoroSoundEnabled]);
 
     const toggleTimer = () => {
         setIsRunning(!isRunning);
@@ -185,7 +272,7 @@ export default function PomodoroPage() {
 
     if (isLoading || settingsLoading || !isAuthenticated) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
                 <Spinner size="lg" />
             </div>
         );
@@ -201,13 +288,28 @@ export default function PomodoroPage() {
                 <div className="flex items-center gap-4 mb-8">
                     <button
                         onClick={() => router.push("/tools")}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                     >
                         <ChevronLeft className="w-5 h-5" />
                     </button>
-                    <div>
+                    <div className="flex-1">
                         <h1 className="text-2xl text-heading">Pomodoro Timer</h1>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Focus on what matters</p>
+                    </div>
+                    {/* Session Counter */}
+                    {completedSessions > 0 && (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
+                            <CheckCircle className="w-4 h-4" />
+                            {completedSessions}
+                        </div>
+                    )}
+                    {/* Sound indicator */}
+                    <div className="text-gray-400" title={settings.pomodoroSoundEnabled ? "Sound on" : "Sound off"}>
+                        {settings.pomodoroSoundEnabled ? (
+                            <Volume2 className="w-5 h-5" />
+                        ) : (
+                            <VolumeX className="w-5 h-5" />
+                        )}
                     </div>
                 </div>
 
@@ -224,7 +326,7 @@ export default function PomodoroPage() {
                                     onClick={() => switchMode(m)}
                                     className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all ${isActive
                                         ? "bg-gradient-to-br from-gray-800 to-gray-900 text-white shadow-lg shadow-gray-900/20"
-                                        : "bg-gray-100/80 text-muted hover:bg-gray-200/80"
+                                        : "bg-gray-100/80 dark:bg-gray-800/80 text-muted hover:bg-gray-200/80 dark:hover:bg-gray-700/80"
                                         }`}
                                 >
                                     {config.label}
@@ -243,8 +345,9 @@ export default function PomodoroPage() {
                                     cy="128"
                                     r="120"
                                     fill="none"
-                                    stroke="#f3f4f6"
+                                    stroke="currentColor"
                                     strokeWidth="8"
+                                    className="text-gray-200 dark:text-gray-700"
                                 />
                                 <circle
                                     cx="128"
@@ -273,7 +376,7 @@ export default function PomodoroPage() {
                     <div className="flex justify-center gap-4">
                         <button
                             onClick={resetTimer}
-                            className="p-4 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+                            className="p-4 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
                         >
                             <RotateCcw className="w-6 h-6" />
                         </button>
@@ -302,36 +405,46 @@ export default function PomodoroPage() {
 
             {/* Completion Modal */}
             {showCompleteModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full transform scale-100 animate-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 max-w-sm w-full transform scale-100 animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-700">
                         <div className="flex justify-between items-start mb-4">
-                            <h3 className="text-xl font-semibold text-gray-900">
-                                {mode === 'focus' ? 'Great Focus!' : 'Break Over'}
-                            </h3>
+                            <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${mode === 'focus' ? 'bg-blue-100 dark:bg-blue-900/50' : 'bg-green-100 dark:bg-green-900/50'
+                                    }`}>
+                                    {mode === 'focus' ? (
+                                        <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                    ) : (
+                                        <Coffee className="w-5 h-5 text-green-600 dark:text-green-400" />
+                                    )}
+                                </div>
+                                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                    {mode === 'focus' ? 'Great Focus!' : 'Break Over'}
+                                </h3>
+                            </div>
                             <button
                                 onClick={() => setShowCompleteModal(false)}
-                                className="text-gray-400 hover:text-gray-600"
+                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                             >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <p className="text-gray-600 mb-6">
+                        <p className="text-gray-600 dark:text-gray-400 mb-6">
                             {mode === 'focus'
-                                ? "You've completed your focus session. Time for a break?"
+                                ? `You've completed your focus session${completedSessions > 0 ? ` (${completedSessions} today)` : ''}. Time for a break?`
                                 : "Hope you're refreshed. Ready to focus again?"}
                         </p>
 
                         <div className="flex gap-3">
                             <button
                                 onClick={() => switchMode(mode === 'focus' ? 'shortBreak' : 'focus')}
-                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
+                                className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
                             >
                                 {mode === 'focus' ? 'Start Break' : 'Start Focus'}
                             </button>
                             <button
                                 onClick={() => setShowCompleteModal(false)}
-                                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+                                className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
                             >
                                 Close
                             </button>
@@ -342,3 +455,4 @@ export default function PomodoroPage() {
         </div>
     );
 }
+

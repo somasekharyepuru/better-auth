@@ -296,6 +296,7 @@ model UserSettings {
   pomodoroFocusDuration    Int @default(25)  // minutes
   pomodoroShortBreak       Int @default(5)   // minutes
   pomodoroLongBreak        Int @default(15)  // minutes
+  pomodoroSoundEnabled     Boolean @default(true)  // notification sound
 
   // Life Areas Settings
   lifeAreasEnabled   Boolean @default(true)

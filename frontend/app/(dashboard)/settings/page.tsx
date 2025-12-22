@@ -59,6 +59,7 @@ export default function SettingsPage() {
     const [focusDuration, setFocusDuration] = useState(25);
     const [shortBreak, setShortBreak] = useState(5);
     const [longBreak, setLongBreak] = useState(15);
+    const [pomodoroSoundEnabled, setPomodoroSoundEnabled] = useState(true);
 
     // Auth check
     useEffect(() => {
@@ -101,6 +102,7 @@ export default function SettingsPage() {
             setFocusDuration(settings.pomodoroFocusDuration);
             setShortBreak(settings.pomodoroShortBreak);
             setLongBreak(settings.pomodoroLongBreak);
+            setPomodoroSoundEnabled(settings.pomodoroSoundEnabled);
         }
     }, [settings]);
 
@@ -125,6 +127,7 @@ export default function SettingsPage() {
                 pomodoroFocusDuration: focusDuration,
                 pomodoroShortBreak: shortBreak,
                 pomodoroLongBreak: longBreak,
+                pomodoroSoundEnabled,
             });
             setSaveMessage("Settings saved successfully!");
             setTimeout(() => setSaveMessage(""), 3000);
@@ -417,60 +420,80 @@ export default function SettingsPage() {
 
                                     {pomodoroEnabled && (
                                         <div className="border-t border-gray-100 pt-4">
-                                            <p className="text-sm font-medium text-gray-500 mb-3">Pomodoro Durations</p>
+                                            <p className="text-sm font-medium text-gray-500 mb-3">Pomodoro Settings</p>
                                             <div className="space-y-4">
-                                                <div className="flex items-center justify-between">
-                                                    <p className="text-gray-700 dark:text-gray-300">Focus</p>
-                                                    <div className="flex items-center gap-2">
-                                                        <button
-                                                            onClick={() => setFocusDuration((p) => Math.max(5, p - 5))}
-                                                            className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
-                                                        >
-                                                            -
-                                                        </button>
-                                                        <span className="w-16 text-center font-medium">{focusDuration} min</span>
-                                                        <button
-                                                            onClick={() => setFocusDuration((p) => Math.min(120, p + 5))}
-                                                            className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
-                                                        >
-                                                            +
-                                                        </button>
+                                                {/* Sound Toggle */}
+                                                <label className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors">
+                                                    <div>
+                                                        <p className="font-medium text-gray-900 dark:text-gray-100">Notification Sound</p>
+                                                        <p className="text-sm text-gray-500 dark:text-gray-400">Play sound when timer completes</p>
                                                     </div>
-                                                </div>
-                                                <div className="flex items-center justify-between">
-                                                    <p className="text-gray-700 dark:text-gray-300">Short Break</p>
-                                                    <div className="flex items-center gap-2">
-                                                        <button
-                                                            onClick={() => setShortBreak((p) => Math.max(1, p - 1))}
-                                                            className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
-                                                        >
-                                                            -
-                                                        </button>
-                                                        <span className="w-16 text-center font-medium">{shortBreak} min</span>
-                                                        <button
-                                                            onClick={() => setShortBreak((p) => Math.min(30, p + 1))}
-                                                            className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
-                                                        >
-                                                            +
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center justify-between">
-                                                    <p className="text-gray-700 dark:text-gray-300">Long Break</p>
-                                                    <div className="flex items-center gap-2">
-                                                        <button
-                                                            onClick={() => setLongBreak((p) => Math.max(5, p - 5))}
-                                                            className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
-                                                        >
-                                                            -
-                                                        </button>
-                                                        <span className="w-16 text-center font-medium">{longBreak} min</span>
-                                                        <button
-                                                            onClick={() => setLongBreak((p) => Math.min(60, p + 5))}
-                                                            className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
-                                                        >
-                                                            +
-                                                        </button>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={pomodoroSoundEnabled}
+                                                        onChange={(e) => setPomodoroSoundEnabled(e.target.checked)}
+                                                        className="w-5 h-5 rounded text-gray-900 focus:ring-gray-500"
+                                                    />
+                                                </label>
+
+                                                {/* Duration Controls */}
+                                                <div className="pt-2">
+                                                    <p className="text-sm font-medium text-gray-500 mb-3">Durations</p>
+                                                    <div className="space-y-4">
+                                                        <div className="flex items-center justify-between">
+                                                            <p className="text-gray-700 dark:text-gray-300">Focus</p>
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    onClick={() => setFocusDuration((p) => Math.max(5, p - 5))}
+                                                                    className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                                                                >
+                                                                    -
+                                                                </button>
+                                                                <span className="w-16 text-center font-medium">{focusDuration} min</span>
+                                                                <button
+                                                                    onClick={() => setFocusDuration((p) => Math.min(120, p + 5))}
+                                                                    className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                                                                >
+                                                                    +
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <p className="text-gray-700 dark:text-gray-300">Short Break</p>
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    onClick={() => setShortBreak((p) => Math.max(1, p - 1))}
+                                                                    className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                                                                >
+                                                                    -
+                                                                </button>
+                                                                <span className="w-16 text-center font-medium">{shortBreak} min</span>
+                                                                <button
+                                                                    onClick={() => setShortBreak((p) => Math.min(30, p + 1))}
+                                                                    className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                                                                >
+                                                                    +
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <p className="text-gray-700 dark:text-gray-300">Long Break</p>
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    onClick={() => setLongBreak((p) => Math.max(5, p - 5))}
+                                                                    className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                                                                >
+                                                                    -
+                                                                </button>
+                                                                <span className="w-16 text-center font-medium">{longBreak} min</span>
+                                                                <button
+                                                                    onClick={() => setLongBreak((p) => Math.min(60, p + 5))}
+                                                                    className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                                                                >
+                                                                    +
+                                                                </button>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
