@@ -1,14 +1,18 @@
-# 📈 Personal Productivity App
+# Daymark - Personal Productivity Platform
 
-A comprehensive personal productivity platform built with Better Auth, featuring secure user management, task organization, goal tracking, and productivity analytics.
+A comprehensive personal productivity app built with NestJS (backend) and Next.js (frontend), featuring daily planning, time blocking, and productivity tools.
+
+## 🎯 Overview
+
+Daymark helps you organize each day with focused priorities, time-blocked schedules, and reflection tools. Built with secure authentication using Better Auth.
 
 ## 📁 Project Structure
 
 ```
-personal-productivity-app/
-├── backend/          # NestJS backend with Better Auth
-├── frontend/         # Next.js frontend application
-└── README.md         # This file
+daymark/
+├── backend/          # NestJS API with Better Auth
+├── frontend/         # Next.js 15 web application
+└── README.md
 ```
 
 ## 🚀 Quick Start
@@ -19,232 +23,139 @@ personal-productivity-app/
 - Docker & Docker Compose
 - PostgreSQL (via Docker)
 
-### 1. Backend Setup
+### Backend Setup
 
 ```bash
 cd backend
 
-# Install dependencies
-npm install
-
 # Start with Docker (recommended)
 docker-compose up -d
 
-# Or start manually
+# Or manually
+npm install
 npm run start:dev
 ```
 
-**Backend runs on**: `http://localhost:3002`
+**Backend URL**: `http://localhost:3002`
 
-### 2. Frontend Setup
+### Frontend Setup
 
 ```bash
 cd frontend
 
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
 ```
 
-**Frontend runs on**: `http://localhost:3000`
+**Frontend URL**: `http://localhost:3000`
 
 ## ✨ Features
 
-### 🔐 Secure Authentication
+### 📅 Daily Planning (Daymark Core)
 
-- ✅ Email/Password authentication
-- ✅ Email OTP verification
-- ✅ Password reset with OTP
-- ✅ Social login (Google, Microsoft)
-- ✅ Two-factor authentication
-- ✅ Session management
+- **Top Priorities** - Set up to 3-5 key priorities per day
+- **Discussion Items** - Track topics to discuss with others
+- **Time Blocks** - Visual schedule with Deep Work, Meetings, Personal blocks
+- **Quick Notes** - Daily scratchpad for thoughts
+- **Daily Review** - End-of-day reflection (What went well / What didn't)
+- **Carry Forward** - Move incomplete priorities to the next day
 
-### 📝 Task Management
+### 🛠️ Productivity Tools
 
-- 📋 Smart task organization
-- ⏰ Due date tracking
-- 🏷️ Task categorization
-- ✅ Progress monitoring
-- 📊 Productivity insights
+| Tool | Description |
+|------|-------------|
+| **Pomodoro Timer** | Focus sessions with configurable work/break intervals |
+| **Eisenhower Matrix** | Task prioritization by urgency and importance |
+| **Decision Log** | Track decisions with context and outcomes |
 
-### 🎯 Goal Setting & Tracking
+### 🔐 Authentication
 
-- 🎯 SMART goal creation
-- 📈 Progress visualization
-- 🏆 Achievement milestones
-- 📅 Timeline management
-- 📊 Success analytics
+- Email/Password with OTP verification
+- Two-Factor Authentication (TOTP)
+- OAuth (Google, Microsoft)
+- Organization & member management
 
-### 📊 Productivity Analytics
+### ⚡ Security (Production Ready)
 
-- 📈 Performance dashboards
-- ⏱️ Time tracking insights
-- 🔥 Productivity streaks
-- 📋 Task completion rates
-- 🎯 Goal achievement metrics
+- `helmet` - HTTP security headers
+- `@nestjs/throttler` - Rate limiting (60 req/min)
+- `compression` - Response compression
+- RBAC with 5 roles: Owner, Admin, Manager, Member, Viewer
 
-### 📧 Email Integration
+## 🛠️ Tech Stack
 
-- ✅ N8N webhook integration
-- ✅ OTP email delivery
-- ✅ Task reminders
-- ✅ Goal milestone notifications
+| Layer | Technology |
+|-------|------------|
+| **Backend** | NestJS, Prisma, PostgreSQL, Better Auth |
+| **Frontend** | Next.js 15, React 19, TailwindCSS |
+| **Auth** | Better Auth (email OTP, 2FA, organizations) |
+| **Deployment** | Docker (backend), Netlify (frontend) |
 
-## 📚 Documentation
+## 📊 API Endpoints
 
-### Backend Documentation
+### Days & Planning
+- `GET /api/days/:date` - Get day with all related data
+- `POST /api/days/:date/priorities` - Create priority
+- `PUT /api/priorities/:id` - Update priority
+- `PATCH /api/priorities/:id/complete` - Toggle completion
 
-- [`working-api.md`](./backend/working-api.md) - Complete API documentation with tested endpoints
-- [`ORGANIZATION_SYSTEM.md`](./backend/ORGANIZATION_SYSTEM.md) - User management system architecture
-- [`ROLES_AND_PERMISSIONS_SUMMARY.md`](./backend/ROLES_AND_PERMISSIONS_SUMMARY.md) - User role management guide
-- [`PRODUCTION_CHECKLIST.md`](./backend/PRODUCTION_CHECKLIST.md) - Production deployment guide
+### Tools
+- `GET/POST/PUT/DELETE /api/eisenhower` - Matrix tasks
+- `GET/POST/PUT/DELETE /api/decisions` - Decision log entries
 
-### Key Configuration Files
+### Health
+- `GET /health` - Application health
+- `GET /health/ready` - Readiness (DB + email service)
 
-- [`backend/src/auth/auth.config.ts`](./backend/src/auth/auth.config.ts) - Better Auth configuration
-- [`frontend/lib/auth-client.ts`](./frontend/lib/auth-client.ts) - Frontend auth client
-- [`frontend/lib/permissions.ts`](./frontend/lib/permissions.ts) - Permission validation
+## 🔧 Environment Variables
 
-## 🛠️ Technology Stack
-
-### Backend
-
-- **Framework**: NestJS
-- **Authentication**: Better Auth
-- **Database**: PostgreSQL + Prisma ORM
-- **Email**: N8N Webhook Integration
-- **Containerization**: Docker
-
-### Frontend
-
-- **Framework**: Next.js 15
-- **Styling**: Tailwind CSS
-- **Authentication**: Better Auth React Client
-- **UI Components**: Custom component library
-- **TypeScript**: Full type safety
-
-## 🔧 Environment Configuration
-
-### Backend Environment Variables
+### Backend (`backend/.env`)
 
 ```bash
 # Database
 DATABASE_URL=postgresql://postgres:password@db:5432/auth_service
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=password
-POSTGRES_DB=auth_service
 
-# Better Auth
+# Auth (CRITICAL: generate with `openssl rand -base64 32`)
 BETTER_AUTH_SECRET=your-secret-key
 BETTER_AUTH_URL=http://localhost:3002
 
 # Email Service
-N8N_WEBHOOK_URL=https://your-n8n-instance/webhook/auth-email-webhook
+N8N_WEBHOOK_URL=https://your-n8n-instance/webhook/email
 
-# OAuth (Optional)
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-MICROSOFT_CLIENT_ID=your-microsoft-client-id
-MICROSOFT_CLIENT_SECRET=your-microsoft-client-secret
+# CORS (production: your domain only)
+CORS_ORIGIN=http://localhost:3000
 ```
 
-### Frontend Environment Variables
+### Frontend (`frontend/.env`)
 
 ```bash
 NEXT_PUBLIC_AUTH_URL=http://localhost:3002
 ```
 
-## 🧪 Testing
+## 🚢 Deployment
 
-### API Testing
-
-All endpoints have been thoroughly tested. See [`backend/working-api.md`](./backend/working-api.md) for:
-
-- ✅ 15+ tested endpoints
-- ✅ Complete request/response examples
-- ✅ Error handling scenarios
-- ✅ Performance metrics
-
-### Test Results Summary
-
-- **Success Rate**: 100% for configured endpoints
-- **Response Times**: <200ms average
-- **Error Handling**: Comprehensive error codes
-- **Security**: CORS, validation, and session management tested
-
-## 🚀 Deployment
-
-### Development
+### Production Backend (Docker)
 
 ```bash
-# Backend
-cd backend && docker-compose up -d
-
-# Frontend
-cd frontend && npm run dev
+cd backend
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
-### Production
+### Production Frontend (Netlify)
 
 ```bash
-# Backend
-cd backend && docker-compose -f docker-compose.prod.yml up -d
-
-# Frontend
-cd frontend && npm run build && npm start
+cd frontend
+npm run build
+# Deploy to Netlify (netlify.toml configured)
 ```
 
-See [`backend/PRODUCTION_CHECKLIST.md`](./backend/PRODUCTION_CHECKLIST.md) for complete production setup guide.
+## 📚 Documentation
 
-## 🔒 Security Features
-
-- ✅ **CORS Protection** - Configured for allowed origins
-- ✅ **Session Security** - HTTP-only cookies
-- ✅ **Input Validation** - Comprehensive request validation
-- ✅ **SQL Injection Protection** - Prisma ORM
-- ✅ **Rate Limiting** - Built-in Better Auth protection
-- ✅ **Email Verification** - Required for new accounts
-- ✅ **Password Hashing** - Secure password storage
-- ✅ **OTP Expiration** - Time-limited verification codes
-
-## 📊 System Architecture
-
-```mermaid
-graph TD
-    A[Next.js Frontend] --> B[NestJS Backend]
-    B --> C[Better Auth]
-    C --> D[PostgreSQL Database]
-    C --> E[N8N Email Service]
-    B --> F[Task Management System]
-    F --> G[Goal Tracking Engine]
-    G --> H[Analytics Dashboard]
-    H --> I[Productivity Insights]
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 🆘 Support
-
-For issues and questions:
-
-1. Check the documentation in [`backend/working-api.md`](./backend/working-api.md)
-2. Review the user management guide in [`backend/ORGANIZATION_SYSTEM.md`](./backend/ORGANIZATION_SYSTEM.md)
-3. Check the production checklist in [`backend/PRODUCTION_CHECKLIST.md`](./backend/PRODUCTION_CHECKLIST.md)
+- [API Documentation](./backend/working-api.md)
+- [Production Checklist](./backend/PRODUCTION_CHECKLIST.md)
+- [Organization System](./backend/ORGANIZATION_SYSTEM.md)
+- [Design System](./frontend/DESIGN_SYSTEM.md)
 
 ---
 
-**🎉 Ready to boost your productivity with comprehensive task management and goal tracking!**
-
-Built with ❤️ using Better Auth, NestJS, and Next.js
+**Built with ❤️ using NestJS, Next.js, and Better Auth**
