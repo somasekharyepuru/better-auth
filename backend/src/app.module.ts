@@ -1,4 +1,6 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ConfigModule } from './config/config.module';
 import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
@@ -18,6 +20,11 @@ import { AuthMiddleware } from './auth/auth.middleware';
 
 @Module({
   imports: [
+    // Rate limiting - 60 requests per minute
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 60,
+    }]),
     ConfigModule,
     AuthModule,
     MailModule,
@@ -33,6 +40,9 @@ import { AuthMiddleware } from './auth/auth.middleware';
     SettingsModule,
     EisenhowerModule,
     DecisionLogModule,
+  ],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
 export class AppModule implements NestModule {

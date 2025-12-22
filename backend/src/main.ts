@@ -4,6 +4,11 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { toNodeHandler } from 'better-auth/node';
 import { auth } from './auth/auth.config';
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const helmet = require('helmet');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const compression = require('compression');
+
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
@@ -11,6 +16,31 @@ async function bootstrap() {
     bodyParser: false, // Required for Better Auth
     logger: process.env.NODE_ENV === 'production' ? ['error', 'warn'] : ['log', 'error', 'warn', 'debug'],
   });
+
+  // Get Express instance for manual middleware registration
+  const expressApp = app.getHttpAdapter().getInstance();
+
+  // Security middleware - apply before CORS
+  if (process.env.NODE_ENV === 'production') {
+    expressApp.use(helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'"],
+          imgSrc: ["'self'", "data:", "https:"],
+        },
+      },
+      crossOriginEmbedderPolicy: false, // Allow embedding from trusted origins
+    }));
+    logger.log('Helmet security headers enabled');
+  }
+
+  // Compression middleware
+  expressApp.use(compression());
+  logger.log('Response compression enabled');
+
+  // Enable CORS with environment-specific origins - MUST be before Better Auth handler
 
   // Enable CORS with environment-specific origins - MUST be before Better Auth handler
   const corsOrigins = process.env.CORS_ORIGIN
@@ -29,10 +59,6 @@ async function bootstrap() {
         'http://127.0.0.1:4173',
         'http://127.0.0.1:8080',
       ];
-
-  // Get Express instance for manual middleware registration
-  const expressApp = app.getHttpAdapter().getInstance();
-
   // Add CORS middleware BEFORE Better Auth handler
   expressApp.use((req: any, res: any, next: any) => {
     const origin = req.headers.origin;
