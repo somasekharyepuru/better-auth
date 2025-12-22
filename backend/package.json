@@ -26,6 +26,7 @@
     "ba:generate": "npx @better-auth/cli@latest generate"
   },
   "dependencies": {
+    "@better-auth/expo": "^1.4.7",
     "@nestjs/common": "^11.0.10",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.10",

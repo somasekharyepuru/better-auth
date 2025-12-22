@@ -3,6 +3,7 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { PrismaClient } from '@prisma/client';
 import { emailOTP, admin, twoFactor, organization } from 'better-auth/plugins';
 import { createAccessControl } from 'better-auth/plugins/access';
+import { expo } from '@better-auth/expo';
 
 const prisma = new PrismaClient();
 
@@ -115,7 +116,16 @@ export const auth = betterAuth({
       'http://127.0.0.1:5173',
       'http://127.0.0.1:4173',
       'http://127.0.0.1:8080',
+      'mobile://', // Expo mobile app scheme
+      'mobile://*', // Allow all mobile deep link paths
+      'exp://192.168.0.6:8081', // Expo Go dev server
+      'exp+mobile://', // Expo development client
     ],
+  // Advanced settings for mobile app support
+  advanced: {
+    // Allow requests without Origin header (required for mobile apps)
+    disableCSRFCheck: true,
+  },
 
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
@@ -223,6 +233,7 @@ export const auth = betterAuth({
       sendVerificationOnSignUp: true,
       otpLength: 6,
     }),
+    expo(), // Expo mobile app support
     admin(),
     twoFactor({
       issuer: process.env.APP_NAME || 'Auth Service',

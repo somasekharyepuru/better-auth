@@ -1,15 +1,10 @@
 /**
  * Daymark API client for mobile app
- * Ported from frontend/lib/daymark-api.ts with token-based auth
+ * Uses better-auth's official Expo integration for authentication
  */
-
-import * as SecureStore from 'expo-secure-store';
 
 // Use localhost for simulator, or configure via env
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002';
-
-// Token storage key
-const AUTH_TOKEN_KEY = 'auth_token';
 
 // Types (matching frontend)
 export interface LifeArea {
@@ -113,39 +108,26 @@ export interface UserSettings {
     theme: 'light' | 'dark' | 'system';
 }
 
-// Token management
-export async function getAuthToken(): Promise<string | null> {
-    try {
-        return await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
-    } catch {
-        return null;
-    }
-}
+// Session is now managed by authClient in auth-client.ts
+// We use authClient.getCookie() to get the session cookie for API requests
+import { authClient } from './auth-client';
 
-export async function setAuthToken(token: string): Promise<void> {
-    await SecureStore.setItemAsync(AUTH_TOKEN_KEY, token);
-}
-
-export async function clearAuthToken(): Promise<void> {
-    await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
-}
-
-// Helper for authenticated requests
+// Helper for authenticated requests - uses authClient.getCookie() per better-auth docs
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
-    const token = await getAuthToken();
+    const cookies = authClient.getCookie();
 
     const response = await fetch(url, {
         ...options,
+        credentials: 'omit', // 'include' can interfere with manually set cookies
         headers: {
             'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(cookies ? { Cookie: cookies } : {}),
             ...options.headers,
         },
     });
 
     if (!response.ok) {
         if (response.status === 401) {
-            await clearAuthToken();
             throw new Error('Session expired');
         }
         const error = await response.json().catch(() => ({ message: response.statusText }));
@@ -191,6 +173,19 @@ export const lifeAreasApi = {
     async archive(id: string): Promise<LifeArea> {
         return fetchWithAuth(`${API_BASE}/api/life-areas/${id}`, {
             method: 'DELETE',
+        });
+    },
+
+    async restore(id: string): Promise<LifeArea> {
+        return fetchWithAuth(`${API_BASE}/api/life-areas/${id}/restore`, {
+            method: 'POST',
+        });
+    },
+
+    async reorder(orderedIds: string[]): Promise<LifeArea[]> {
+        return fetchWithAuth(`${API_BASE}/api/life-areas/reorder`, {
+            method: 'POST',
+            body: JSON.stringify({ orderedIds }),
         });
     },
 };
@@ -331,7 +326,7 @@ export const settingsApi = {
 
     async update(settings: Partial<UserSettings>): Promise<UserSettings> {
         return fetchWithAuth(`${API_BASE}/api/settings`, {
-            method: 'PATCH',
+            method: 'PUT',
             body: JSON.stringify(settings),
         });
     },
@@ -349,29 +344,36 @@ export interface MatrixTask {
     updatedAt: string;
 }
 
-// Matrix API
+// Matrix API (Eisenhower Matrix)
 export const matrixApi = {
     async getAll(): Promise<MatrixTask[]> {
-        return fetchWithAuth(`${API_BASE}/api/matrix`);
+        return fetchWithAuth(`${API_BASE}/api/eisenhower`);
     },
 
     async create(data: { title: string; quadrant: MatrixTask['quadrant'] }): Promise<MatrixTask> {
-        return fetchWithAuth(`${API_BASE}/api/matrix`, {
+        return fetchWithAuth(`${API_BASE}/api/eisenhower`, {
             method: 'POST',
             body: JSON.stringify(data),
         });
     },
 
     async update(id: string, data: Partial<Pick<MatrixTask, 'title' | 'quadrant' | 'completed'>>): Promise<MatrixTask> {
-        return fetchWithAuth(`${API_BASE}/api/matrix/${id}`, {
-            method: 'PATCH',
+        return fetchWithAuth(`${API_BASE}/api/eisenhower/${id}`, {
+            method: 'PUT',
             body: JSON.stringify(data),
         });
     },
 
     async delete(id: string): Promise<void> {
-        return fetchWithAuth(`${API_BASE}/api/matrix/${id}`, {
+        return fetchWithAuth(`${API_BASE}/api/eisenhower/${id}`, {
             method: 'DELETE',
+        });
+    },
+
+    async promoteToDaily(id: string, date: string): Promise<void> {
+        return fetchWithAuth(`${API_BASE}/api/eisenhower/${id}/promote`, {
+            method: 'POST',
+            body: JSON.stringify({ date }),
         });
     },
 };
@@ -380,9 +382,10 @@ export const matrixApi = {
 export interface Decision {
     id: string;
     title: string;
-    context: string | null;
-    outcome: string | null;
     date: string;
+    context: string | null;
+    decision: string;
+    outcome: string | null;
     userId: string;
     createdAt: string;
     updatedAt: string;
@@ -390,11 +393,12 @@ export interface Decision {
 
 // Decision Log API
 export const decisionsApi = {
-    async getAll(): Promise<Decision[]> {
-        return fetchWithAuth(`${API_BASE}/api/decisions`);
+    async getAll(search?: string): Promise<Decision[]> {
+        const params = search ? `?search=${encodeURIComponent(search)}` : '';
+        return fetchWithAuth(`${API_BASE}/api/decisions${params}`);
     },
 
-    async create(data: { title: string; context?: string; date: string }): Promise<Decision> {
+    async create(data: { title: string; date: string; decision: string; context?: string; outcome?: string }): Promise<Decision> {
         return fetchWithAuth(`${API_BASE}/api/decisions`, {
             method: 'POST',
             body: JSON.stringify(data),
@@ -403,7 +407,7 @@ export const decisionsApi = {
 
     async update(id: string, data: Partial<Pick<Decision, 'title' | 'context' | 'outcome'>>): Promise<Decision> {
         return fetchWithAuth(`${API_BASE}/api/decisions/${id}`, {
-            method: 'PATCH',
+            method: 'PUT',
             body: JSON.stringify(data),
         });
     },

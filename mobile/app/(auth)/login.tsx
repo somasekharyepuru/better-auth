@@ -23,6 +23,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Colors from '@/constants/Colors';
 import { typography, spacing, radius, sizing } from '@/constants/Theme';
 import { useColorScheme } from '@/components/useColorScheme';
+import { Logo } from '@/components/ui/Logo';
 
 export default function LoginScreen() {
     const [email, setEmail] = useState('');
@@ -72,7 +73,7 @@ export default function LoginScreen() {
                 {/* Header */}
                 <View style={styles.header}>
                     <View style={styles.logoContainer}>
-                        <Ionicons name="sunny" size={48} color={colors.accent} />
+                        <Logo size="lg" colors={colors} />
                     </View>
                     <Text style={[styles.title, { color: colors.text }]}>Welcome back</Text>
                     <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
@@ -143,6 +144,30 @@ export default function LoginScreen() {
                             <Text style={styles.buttonText}>Sign In</Text>
                         )}
                     </TouchableOpacity>
+
+                    {/* Divider */}
+                    <View style={styles.divider}>
+                        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+                        <Text style={[styles.dividerText, { color: colors.textTertiary }]}>or</Text>
+                        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+                    </View>
+
+                    {/* Social Login Buttons */}
+                    <TouchableOpacity
+                        style={[styles.socialButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons name="logo-apple" size={20} color={colors.text} />
+                        <Text style={[styles.socialButtonText, { color: colors.text }]}>Continue with Apple</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.socialButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons name="logo-google" size={20} color={colors.text} />
+                        <Text style={[styles.socialButtonText, { color: colors.text }]}>Continue with Google</Text>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Footer */}
@@ -158,8 +183,8 @@ export default function LoginScreen() {
                         </Pressable>
                     </Link>
                 </View>
-            </ScrollView>
-        </KeyboardAvoidingView>
+            </ScrollView >
+        </KeyboardAvoidingView >
     );
 }
 
@@ -252,6 +277,37 @@ const createStyles = (colors: typeof Colors.light) =>
             ...typography.body,
         },
         footerLink: {
+            ...typography.headline,
+        },
+        appName: {
+            ...typography.title2,
+            fontWeight: '700',
+            marginBottom: spacing.sm,
+        },
+        divider: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginVertical: spacing.xl,
+        },
+        dividerLine: {
+            flex: 1,
+            height: 1,
+        },
+        dividerText: {
+            ...typography.subheadline,
+            paddingHorizontal: spacing.md,
+        },
+        socialButton: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: sizing.buttonHeight,
+            borderRadius: radius.md,
+            borderWidth: 1,
+            marginBottom: spacing.md,
+            gap: spacing.sm,
+        },
+        socialButtonText: {
             ...typography.headline,
         },
     });

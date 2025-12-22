@@ -18,6 +18,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import dayjs from 'dayjs';
 
 import { typography, spacing, radius, shadows, sizing } from '@/constants/Theme';
 import { ThemeColors } from '@/constants/Colors';
@@ -51,7 +52,12 @@ const getTypeColor = (type: string, colors: ThemeColors) => {
     }
 };
 
+
 const formatTime = (time: string) => {
+    // Handle both ISO datetime and HH:mm format
+    if (time.includes('T')) {
+        return dayjs(time).format('h:mm A');
+    }
     const [hours, minutes] = time.split(':');
     const hour = parseInt(hours, 10);
     const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -60,17 +66,23 @@ const formatTime = (time: string) => {
 };
 
 const timeToDate = (time: string) => {
+    // Handle both ISO datetime and HH:mm format
+    if (time.includes('T')) {
+        return dayjs(time).toDate();
+    }
     const [hours, minutes] = time.split(':');
-    const date = new Date();
-    date.setHours(parseInt(hours, 10));
-    date.setMinutes(parseInt(minutes, 10));
-    return date;
+    return dayjs().hour(parseInt(hours, 10)).minute(parseInt(minutes, 10)).toDate();
 };
 
 const dateToTime = (date: Date) => {
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
+    return dayjs(date).format('HH:mm');
+};
+
+// Convert Date picker value to ISO datetime string using the day's date
+const dateToISOTime = (date: Date, dateStr: string) => {
+    // Combine the selected time with the day's date for a proper ISO string
+    const time = dayjs(date);
+    return dayjs(dateStr).hour(time.hour()).minute(time.minute()).second(0).toISOString();
 };
 
 export function TimeBlocksCard({
@@ -128,13 +140,18 @@ export function TimeBlocksCard({
             return;
         }
 
-        const startTimeStr = dateToTime(startTime);
-        const endTimeStr = dateToTime(endTime);
+        // Use HH:mm for comparison
+        const startTimeForCompare = dateToTime(startTime);
+        const endTimeForCompare = dateToTime(endTime);
 
-        if (startTimeStr >= endTimeStr) {
+        if (startTimeForCompare >= endTimeForCompare) {
             Alert.alert('Error', 'End time must be after start time');
             return;
         }
+
+        // Use ISO format for API calls
+        const startTimeISO = dateToISOTime(startTime, date);
+        const endTimeISO = dateToISOTime(endTime, date);
 
         setIsSaving(true);
         try {
@@ -142,8 +159,8 @@ export function TimeBlocksCard({
                 // Update existing block
                 const updated = await timeBlocksApi.update(editingBlock.id, {
                     title: title.trim(),
-                    startTime: startTimeStr,
-                    endTime: endTimeStr,
+                    startTime: startTimeISO,
+                    endTime: endTimeISO,
                     type: blockType,
                 });
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -152,8 +169,8 @@ export function TimeBlocksCard({
                 // Create new block
                 const created = await timeBlocksApi.create(date, {
                     title: title.trim(),
-                    startTime: startTimeStr,
-                    endTime: endTimeStr,
+                    startTime: startTimeISO,
+                    endTime: endTimeISO,
                     type: blockType,
                 });
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -161,7 +178,9 @@ export function TimeBlocksCard({
             }
             closeModal();
         } catch (error) {
-            Alert.alert('Error', 'Failed to save time block');
+            const message = error instanceof Error ? error.message : 'Failed to save time block';
+            Alert.alert('Error', message);
+            console.error('Time block save error:', error);
         } finally {
             setIsSaving(false);
         }

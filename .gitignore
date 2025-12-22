@@ -224,3 +224,5 @@ local/
 
 # Nx
 .nx/cache
+# Local Netlify folder
+.netlify
