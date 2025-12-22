@@ -6,18 +6,18 @@ export class DaysService {
     constructor(private prisma: PrismaService) { }
 
     /**
-     * Get or create a day for the given date and user
+     * Get or create a day for the given date, user, and life area
      */
-    async getOrCreateDay(userId: string, dateStr: string) {
+    async getOrCreateDay(userId: string, dateStr: string, lifeAreaId?: string | null) {
         const date = new Date(dateStr);
         date.setHours(0, 0, 0, 0);
 
-        let day = await this.prisma.day.findUnique({
+        // Try to find existing day with the specific lifeAreaId
+        let day = await this.prisma.day.findFirst({
             where: {
-                userId_date: {
-                    userId,
-                    date,
-                },
+                userId,
+                date,
+                lifeAreaId: lifeAreaId || null,
             },
             include: {
                 priorities: { orderBy: { order: 'asc' } },
@@ -25,6 +25,7 @@ export class DaysService {
                 timeBlocks: { orderBy: { startTime: 'asc' } },
                 quickNote: true,
                 dailyReview: true,
+                lifeArea: true,
             },
         });
 
@@ -33,6 +34,7 @@ export class DaysService {
                 data: {
                     userId,
                     date,
+                    lifeAreaId: lifeAreaId || null,
                 },
                 include: {
                     priorities: { orderBy: { order: 'asc' } },
@@ -40,6 +42,7 @@ export class DaysService {
                     timeBlocks: { orderBy: { startTime: 'asc' } },
                     quickNote: true,
                     dailyReview: true,
+                    lifeArea: true,
                 },
             });
         }
@@ -48,18 +51,17 @@ export class DaysService {
     }
 
     /**
-     * Get day progress - how many priorities completed
+     * Get day progress - how many priorities completed (per life area)
      */
-    async getDayProgress(userId: string, dateStr: string) {
+    async getDayProgress(userId: string, dateStr: string, lifeAreaId?: string | null) {
         const date = new Date(dateStr);
         date.setHours(0, 0, 0, 0);
 
-        const day = await this.prisma.day.findUnique({
+        const day = await this.prisma.day.findFirst({
             where: {
-                userId_date: {
-                    userId,
-                    date,
-                },
+                userId,
+                date,
+                lifeAreaId: lifeAreaId || null,
             },
             include: {
                 priorities: true,

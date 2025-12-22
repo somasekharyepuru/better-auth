@@ -18,6 +18,9 @@ export interface UpdateSettingsDto {
     pomodoroFocusDuration?: number;
     pomodoroShortBreak?: number;
     pomodoroLongBreak?: number;
+    // Life Areas settings
+    lifeAreasEnabled?: boolean;
+    defaultLifeAreaId?: string | null;
 }
 
 export interface UserSettingsResponse {
@@ -39,6 +42,9 @@ export interface UserSettingsResponse {
     pomodoroFocusDuration: number;
     pomodoroShortBreak: number;
     pomodoroLongBreak: number;
+    // Life Areas settings
+    lifeAreasEnabled: boolean;
+    defaultLifeAreaId: string | null;
 }
 
 @Injectable()
@@ -132,6 +138,9 @@ export class SettingsService {
             pomodoroFocusDuration: settings.pomodoroFocusDuration,
             pomodoroShortBreak: settings.pomodoroShortBreak,
             pomodoroLongBreak: settings.pomodoroLongBreak,
+            // Life Areas settings
+            lifeAreasEnabled: settings.lifeAreasEnabled,
+            defaultLifeAreaId: settings.defaultLifeAreaId,
         };
     }
 }

@@ -155,13 +155,34 @@ model Invitation {
 // Daymark - Personal Productivity Entities
 // ==========================================
 
-// Core Daymark Entity - One per user per date
+// Life Areas - Context filters for organizing life domains
+model LifeArea {
+  id         String   @id @default(cuid())
+  userId     String
+  name       String
+  color      String?  // Hex color like "#4F46E5"
+  order      Int
+  isArchived Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  days            Day[]
+  eisenhowerTasks EisenhowerTask[]
+  decisionEntries DecisionEntry[]
+
+  @@index([userId])
+  @@map("life_area")
+}
+
+// Core Daymark Entity - One per user per date per life area
 model Day {
-  id        String   @id @default(cuid())
-  date      DateTime @db.Date
-  userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String    @id @default(cuid())
+  date       DateTime  @db.Date
+  userId     String
+  lifeAreaId String?
+  lifeArea   LifeArea? @relation(fields: [lifeAreaId], references: [id], onDelete: SetNull)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   priorities      TopPriority[]
   discussionItems DiscussionItem[]
@@ -169,8 +190,9 @@ model Day {
   quickNote       QuickNote?
   dailyReview     DailyReview?
 
-  @@unique([userId, date])
+  @@unique([userId, date, lifeAreaId])
   @@index([userId])
+  @@index([lifeAreaId])
   @@map("day")
 }
 
@@ -275,6 +297,10 @@ model UserSettings {
   pomodoroShortBreak       Int @default(5)   // minutes
   pomodoroLongBreak        Int @default(15)  // minutes
 
+  // Life Areas Settings
+  lifeAreasEnabled   Boolean @default(true)
+  defaultLifeAreaId  String? // User's preferred default life area
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -287,16 +313,19 @@ model UserSettings {
 // ==========================================
 
 model EisenhowerTask {
-  id       String  @id @default(cuid())
-  userId   String
-  title    String
-  note     String? @db.Text
-  quadrant Int     // 1=Urgent+Important, 2=Not Urgent+Important, 3=Urgent+Not Important, 4=Neither
+  id         String    @id @default(cuid())
+  userId     String
+  lifeAreaId String?
+  lifeArea   LifeArea? @relation(fields: [lifeAreaId], references: [id], onDelete: SetNull)
+  title      String
+  note       String?   @db.Text
+  quadrant   Int       // 1=Urgent+Important, 2=Not Urgent+Important, 3=Urgent+Not Important, 4=Neither
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([lifeAreaId])
   @@map("eisenhower_task")
 }
 
@@ -305,17 +334,20 @@ model EisenhowerTask {
 // ==========================================
 
 model DecisionEntry {
-  id       String   @id @default(cuid())
-  userId   String
-  title    String
-  date     DateTime
-  context  String?  @db.Text
-  decision String   @db.Text
-  outcome  String?  @db.Text
+  id         String    @id @default(cuid())
+  userId     String
+  lifeAreaId String?
+  lifeArea   LifeArea? @relation(fields: [lifeAreaId], references: [id], onDelete: SetNull)
+  title      String
+  date       DateTime
+  context    String?   @db.Text
+  decision   String    @db.Text
+  outcome    String?   @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([lifeAreaId])
   @@map("decision_entry")
 }

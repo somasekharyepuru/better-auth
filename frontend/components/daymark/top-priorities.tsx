@@ -9,9 +9,10 @@ interface TopPrioritiesProps {
     priorities: TopPriority[];
     onUpdate: () => void;
     maxItems?: number;
+    lifeAreaId?: string;
 }
 
-export function TopPriorities({ date, priorities, onUpdate, maxItems = 3 }: TopPrioritiesProps) {
+export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAreaId }: TopPrioritiesProps) {
     const [isAdding, setIsAdding] = useState(false);
     const [newTitle, setNewTitle] = useState("");
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -30,7 +31,7 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3 }: TopP
 
         setIsLoading(true);
         try {
-            await prioritiesApi.create(date, newTitle.trim());
+            await prioritiesApi.create(date, newTitle.trim(), lifeAreaId);
             setNewTitle("");
             setIsAdding(false);
             onUpdate();

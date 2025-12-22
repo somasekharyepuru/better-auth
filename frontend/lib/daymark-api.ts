@@ -2,6 +2,17 @@
 const API_BASE = process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:3002';
 
 // Types
+export interface LifeArea {
+    id: string;
+    userId: string;
+    name: string;
+    color: string | null;
+    order: number;
+    isArchived: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface TopPriority {
     id: string;
     title: string;
@@ -53,6 +64,8 @@ export interface Day {
     id: string;
     date: string;
     userId: string;
+    lifeAreaId: string | null;
+    lifeArea: LifeArea | null;
     createdAt: string;
     updatedAt: string;
     priorities: TopPriority[];
@@ -91,23 +104,73 @@ export function formatDate(date: Date): string {
     return date.toISOString().split('T')[0];
 }
 
-// Days API
-export const daysApi = {
-    async getDay(date: string): Promise<Day> {
-        return fetchWithCredentials(`${API_BASE}/api/days/${date}`);
+// Life Areas API
+export const lifeAreasApi = {
+    async getAll(): Promise<LifeArea[]> {
+        return fetchWithCredentials(`${API_BASE}/api/life-areas`);
     },
 
-    async getProgress(date: string): Promise<DayProgress> {
-        return fetchWithCredentials(`${API_BASE}/api/days/${date}/progress`);
+    async getDefault(): Promise<LifeArea> {
+        return fetchWithCredentials(`${API_BASE}/api/life-areas/default`);
+    },
+
+    async get(id: string): Promise<LifeArea> {
+        return fetchWithCredentials(`${API_BASE}/api/life-areas/${id}`);
+    },
+
+    async create(data: { name: string; color?: string }): Promise<LifeArea> {
+        return fetchWithCredentials(`${API_BASE}/api/life-areas`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
+
+    async update(id: string, data: { name?: string; color?: string; order?: number }): Promise<LifeArea> {
+        return fetchWithCredentials(`${API_BASE}/api/life-areas/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        });
+    },
+
+    async archive(id: string): Promise<LifeArea> {
+        return fetchWithCredentials(`${API_BASE}/api/life-areas/${id}`, {
+            method: 'DELETE',
+        });
+    },
+
+    async restore(id: string): Promise<LifeArea> {
+        return fetchWithCredentials(`${API_BASE}/api/life-areas/${id}/restore`, {
+            method: 'POST',
+        });
+    },
+
+    async reorder(orderedIds: string[]): Promise<LifeArea[]> {
+        return fetchWithCredentials(`${API_BASE}/api/life-areas/reorder`, {
+            method: 'POST',
+            body: JSON.stringify({ orderedIds }),
+        });
+    },
+};
+
+// Days API
+export const daysApi = {
+    async getDay(date: string, lifeAreaId?: string): Promise<Day> {
+        const params = lifeAreaId ? `?lifeAreaId=${lifeAreaId}` : '';
+        return fetchWithCredentials(`${API_BASE}/api/days/${date}${params}`);
+    },
+
+    async getProgress(date: string, lifeAreaId?: string): Promise<DayProgress> {
+        const params = lifeAreaId ? `?lifeAreaId=${lifeAreaId}` : '';
+        return fetchWithCredentials(`${API_BASE}/api/days/${date}/progress${params}`);
     },
 };
 
 // Priorities API
 export const prioritiesApi = {
-    async create(date: string, title: string): Promise<TopPriority> {
+    async create(date: string, title: string, lifeAreaId?: string): Promise<TopPriority> {
         return fetchWithCredentials(`${API_BASE}/api/days/${date}/priorities`, {
             method: 'POST',
-            body: JSON.stringify({ title }),
+            body: JSON.stringify({ title, lifeAreaId }),
         });
     },
 
@@ -215,3 +278,4 @@ export const dailyReviewApi = {
         });
     },
 };
+

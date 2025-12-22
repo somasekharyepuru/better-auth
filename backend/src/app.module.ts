@@ -16,6 +16,7 @@ import { DailyReviewModule } from './daily-review/daily-review.module';
 import { SettingsModule } from './settings/settings.module';
 import { EisenhowerModule } from './eisenhower/eisenhower.module';
 import { DecisionLogModule } from './decision-log/decision-log.module';
+import { LifeAreasModule } from './life-areas/life-areas.module';
 import { AuthMiddleware } from './auth/auth.middleware';
 
 @Module({
@@ -31,6 +32,7 @@ import { AuthMiddleware } from './auth/auth.middleware';
     HealthModule,
     OrganizationModule,
     PrismaModule,
+    LifeAreasModule,
     DaysModule,
     PrioritiesModule,
     DiscussionItemsModule,

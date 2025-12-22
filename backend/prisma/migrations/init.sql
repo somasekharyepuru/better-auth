@@ -113,10 +113,25 @@ CREATE TABLE "invitation" (
 );
 
 -- CreateTable
+CREATE TABLE "life_area" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "color" TEXT,
+    "order" INTEGER NOT NULL,
+    "isArchived" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "life_area_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "day" (
     "id" TEXT NOT NULL,
     "date" DATE NOT NULL,
     "userId" TEXT NOT NULL,
+    "lifeAreaId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -204,6 +219,8 @@ CREATE TABLE "user_settings" (
     "pomodoroFocusDuration" INTEGER NOT NULL DEFAULT 25,
     "pomodoroShortBreak" INTEGER NOT NULL DEFAULT 5,
     "pomodoroLongBreak" INTEGER NOT NULL DEFAULT 15,
+    "lifeAreasEnabled" BOOLEAN NOT NULL DEFAULT true,
+    "defaultLifeAreaId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -214,6 +231,7 @@ CREATE TABLE "user_settings" (
 CREATE TABLE "eisenhower_task" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
+    "lifeAreaId" TEXT,
     "title" TEXT NOT NULL,
     "note" TEXT,
     "quadrant" INTEGER NOT NULL,
@@ -227,6 +245,7 @@ CREATE TABLE "eisenhower_task" (
 CREATE TABLE "decision_entry" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
+    "lifeAreaId" TEXT,
     "title" TEXT NOT NULL,
     "date" TIMESTAMP(3) NOT NULL,
     "context" TEXT,
@@ -278,10 +297,16 @@ CREATE INDEX "invitation_organizationId_idx" ON "invitation"("organizationId");
 CREATE INDEX "invitation_email_idx" ON "invitation"("email");
 
 -- CreateIndex
+CREATE INDEX "life_area_userId_idx" ON "life_area"("userId");
+
+-- CreateIndex
 CREATE INDEX "day_userId_idx" ON "day"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "day_userId_date_key" ON "day"("userId", "date");
+CREATE INDEX "day_lifeAreaId_idx" ON "day"("lifeAreaId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "day_userId_date_lifeAreaId_key" ON "day"("userId", "date", "lifeAreaId");
 
 -- CreateIndex
 CREATE INDEX "top_priority_dayId_idx" ON "top_priority"("dayId");
@@ -308,7 +333,13 @@ CREATE INDEX "user_settings_userId_idx" ON "user_settings"("userId");
 CREATE INDEX "eisenhower_task_userId_idx" ON "eisenhower_task"("userId");
 
 -- CreateIndex
+CREATE INDEX "eisenhower_task_lifeAreaId_idx" ON "eisenhower_task"("lifeAreaId");
+
+-- CreateIndex
 CREATE INDEX "decision_entry_userId_idx" ON "decision_entry"("userId");
+
+-- CreateIndex
+CREATE INDEX "decision_entry_lifeAreaId_idx" ON "decision_entry"("lifeAreaId");
 
 -- AddForeignKey
 ALTER TABLE "session" ADD CONSTRAINT "session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -332,6 +363,9 @@ ALTER TABLE "invitation" ADD CONSTRAINT "invitation_organizationId_fkey" FOREIGN
 ALTER TABLE "invitation" ADD CONSTRAINT "invitation_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "day" ADD CONSTRAINT "day_lifeAreaId_fkey" FOREIGN KEY ("lifeAreaId") REFERENCES "life_area"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "top_priority" ADD CONSTRAINT "top_priority_dayId_fkey" FOREIGN KEY ("dayId") REFERENCES "day"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -345,3 +379,10 @@ ALTER TABLE "quick_note" ADD CONSTRAINT "quick_note_dayId_fkey" FOREIGN KEY ("da
 
 -- AddForeignKey
 ALTER TABLE "daily_review" ADD CONSTRAINT "daily_review_dayId_fkey" FOREIGN KEY ("dayId") REFERENCES "day"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "eisenhower_task" ADD CONSTRAINT "eisenhower_task_lifeAreaId_fkey" FOREIGN KEY ("lifeAreaId") REFERENCES "life_area"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "decision_entry" ADD CONSTRAINT "decision_entry_lifeAreaId_fkey" FOREIGN KEY ("lifeAreaId") REFERENCES "life_area"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+

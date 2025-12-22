@@ -17,11 +17,11 @@ export class PrioritiesController {
     @Post('days/:date/priorities')
     async createPriority(
         @Param('date') date: string,
-        @Body() body: { title: string },
+        @Body() body: { title: string; lifeAreaId?: string },
         @Req() req: Request,
     ) {
         const userId = this.getUserIdFromRequest(req);
-        return this.prioritiesService.createPriority(userId, date, body.title);
+        return this.prioritiesService.createPriority(userId, date, body.title, body.lifeAreaId);
     }
 
     @Put('priorities/:id')

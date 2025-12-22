@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Req, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Param, Query, Req, UnauthorizedException } from '@nestjs/common';
 import { DaysService } from './days.service';
 import { Request } from 'express';
 
@@ -16,14 +16,22 @@ export class DaysController {
     }
 
     @Get(':date')
-    async getDay(@Param('date') date: string, @Req() req: Request) {
+    async getDay(
+        @Param('date') date: string,
+        @Query('lifeAreaId') lifeAreaId: string | undefined,
+        @Req() req: Request,
+    ) {
         const userId = this.getUserIdFromRequest(req);
-        return this.daysService.getOrCreateDay(userId, date);
+        return this.daysService.getOrCreateDay(userId, date, lifeAreaId);
     }
 
     @Get(':date/progress')
-    async getDayProgress(@Param('date') date: string, @Req() req: Request) {
+    async getDayProgress(
+        @Param('date') date: string,
+        @Query('lifeAreaId') lifeAreaId: string | undefined,
+        @Req() req: Request,
+    ) {
         const userId = this.getUserIdFromRequest(req);
-        return this.daysService.getDayProgress(userId, date);
+        return this.daysService.getDayProgress(userId, date, lifeAreaId);
     }
 }

@@ -10,10 +10,10 @@ export class PrioritiesService {
     ) { }
 
     /**
-     * Create a priority (max 3 per day)
+     * Create a priority (max 3 per day per life area)
      */
-    async createPriority(userId: string, dateStr: string, title: string) {
-        const day = await this.daysService.getOrCreateDay(userId, dateStr);
+    async createPriority(userId: string, dateStr: string, title: string, lifeAreaId?: string) {
+        const day = await this.daysService.getOrCreateDay(userId, dateStr, lifeAreaId);
 
         // Check if already at max
         const count = await this.prisma.topPriority.count({

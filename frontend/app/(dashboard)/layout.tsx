@@ -1,5 +1,6 @@
 import { AppHeader } from "@/components/app-header";
 import { SettingsProvider } from "@/lib/settings-context";
+import { LifeAreasProvider } from "@/lib/life-areas-context";
 
 export default function DashboardLayout({
   children,
@@ -8,8 +9,11 @@ export default function DashboardLayout({
 }) {
   return (
     <SettingsProvider>
-      <AppHeader />
-      <div className="pt-16">{children}</div>
+      <LifeAreasProvider>
+        <AppHeader />
+        <div className="pt-16">{children}</div>
+      </LifeAreasProvider>
     </SettingsProvider>
   );
 }
+
