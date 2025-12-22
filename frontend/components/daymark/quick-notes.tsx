@@ -9,11 +9,12 @@ import { cn } from "@/lib/utils";
 interface QuickNotesProps {
     date: string;
     note: QuickNote | null;
-    onUpdate: () => void;
+    onUpdate: (updatedNote: QuickNote | null) => void;
     className?: string;
+    lifeAreaId?: string;
 }
 
-export function QuickNotes({ date, note, onUpdate, className }: QuickNotesProps) {
+export function QuickNotes({ date, note, onUpdate, className, lifeAreaId }: QuickNotesProps) {
     const [content, setContent] = useState(note?.content || "");
     const [isSaving, setIsSaving] = useState(false);
     const [showSaved, setShowSaved] = useState(false);
@@ -25,27 +26,41 @@ export function QuickNotes({ date, note, onUpdate, className }: QuickNotesProps)
         setContent(note?.content || "");
     }, [note, date]);
 
-    // Autosave with debounce
+    // Autosave with debounce - optimistic update
     const saveNote = useCallback(
         async (newContent: string) => {
             if (newContent === (note?.content || "")) return;
 
+            // Optimistic update - update parent immediately
+            const optimisticNote: QuickNote = {
+                id: note?.id || "temp-id",
+                content: newContent,
+                dayId: note?.dayId || "",
+                createdAt: note?.createdAt || new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+            onUpdate(optimisticNote);
+
             setIsSaving(true);
             try {
-                await quickNotesApi.upsert(date, newContent);
+                const savedNote = await quickNotesApi.upsert(date, newContent, lifeAreaId);
+                // Update with actual saved note (has real ID)
+                onUpdate(savedNote);
                 setShowSaved(true);
-                onUpdate();
 
                 // Hide saved indicator after 2 seconds
                 if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
                 savedTimeoutRef.current = setTimeout(() => setShowSaved(false), 2000);
             } catch (error) {
+                // Revert on error
+                onUpdate(note);
+                setContent(note?.content || "");
                 console.error("Failed to save note:", error);
             } finally {
                 setIsSaving(false);
             }
         },
-        [date, note, onUpdate]
+        [date, note, onUpdate, lifeAreaId]
     );
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {

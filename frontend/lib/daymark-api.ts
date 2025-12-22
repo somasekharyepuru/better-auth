@@ -196,10 +196,10 @@ export const prioritiesApi = {
 
 // Discussion Items API
 export const discussionItemsApi = {
-    async create(date: string, content: string): Promise<DiscussionItem> {
+    async create(date: string, content: string, lifeAreaId?: string): Promise<DiscussionItem> {
         return fetchWithCredentials(`${API_BASE}/api/days/${date}/discussion-items`, {
             method: 'POST',
-            body: JSON.stringify({ content }),
+            body: JSON.stringify({ content, lifeAreaId }),
         });
     },
 
@@ -221,11 +221,12 @@ export const discussionItemsApi = {
 export const timeBlocksApi = {
     async create(
         date: string,
-        data: { title: string; startTime: string; endTime: string; type?: string }
+        data: { title: string; startTime: string; endTime: string; type?: string },
+        lifeAreaId?: string
     ): Promise<TimeBlock> {
         return fetchWithCredentials(`${API_BASE}/api/days/${date}/time-blocks`, {
             method: 'POST',
-            body: JSON.stringify(data),
+            body: JSON.stringify({ ...data, lifeAreaId }),
         });
     },
 
@@ -248,10 +249,10 @@ export const timeBlocksApi = {
 
 // Quick Notes API
 export const quickNotesApi = {
-    async upsert(date: string, content: string): Promise<QuickNote> {
+    async upsert(date: string, content: string, lifeAreaId?: string): Promise<QuickNote> {
         return fetchWithCredentials(`${API_BASE}/api/days/${date}/quick-note`, {
             method: 'PUT',
-            body: JSON.stringify({ content }),
+            body: JSON.stringify({ content, lifeAreaId }),
         });
     },
 };

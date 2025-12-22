@@ -1,24 +1,30 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { TopPriority, prioritiesApi } from "@/lib/daymark-api";
 import { Check, Plus, X, Trash2 } from "lucide-react";
 
 interface TopPrioritiesProps {
     date: string;
     priorities: TopPriority[];
-    onUpdate: () => void;
+    onUpdate: (updatedPriorities: TopPriority[]) => void;
     maxItems?: number;
     lifeAreaId?: string;
 }
 
 export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAreaId }: TopPrioritiesProps) {
+    const [localPriorities, setLocalPriorities] = useState<TopPriority[]>(priorities);
     const [isAdding, setIsAdding] = useState(false);
     const [newTitle, setNewTitle] = useState("");
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    // Sync local state with props when priorities change from parent
+    useEffect(() => {
+        setLocalPriorities(priorities);
+    }, [priorities]);
 
     useEffect(() => {
         if (isAdding && inputRef.current) {
@@ -31,10 +37,12 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
 
         setIsLoading(true);
         try {
-            await prioritiesApi.create(date, newTitle.trim(), lifeAreaId);
+            const newPriority = await prioritiesApi.create(date, newTitle.trim(), lifeAreaId);
+            const updated = [...localPriorities, newPriority];
+            setLocalPriorities(updated);
+            onUpdate(updated);
             setNewTitle("");
             setIsAdding(false);
-            onUpdate();
         } catch (error) {
             console.error("Failed to add priority:", error);
         } finally {
@@ -42,24 +50,42 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
         }
     };
 
-    const handleToggle = async (id: string) => {
+    const handleToggle = useCallback(async (id: string) => {
+        // Optimistic update
+        const updated = localPriorities.map(p =>
+            p.id === id ? { ...p, completed: !p.completed } : p
+        );
+        setLocalPriorities(updated);
+        onUpdate(updated);
+
         try {
             await prioritiesApi.toggle(id);
-            onUpdate();
         } catch (error) {
+            // Revert on error
+            setLocalPriorities(localPriorities);
+            onUpdate(localPriorities);
             console.error("Failed to toggle priority:", error);
         }
-    };
+    }, [localPriorities, onUpdate]);
 
     const handleEdit = async (id: string) => {
         if (!editTitle.trim() || isLoading) return;
 
+        // Optimistic update
+        const updated = localPriorities.map(p =>
+            p.id === id ? { ...p, title: editTitle.trim() } : p
+        );
+        setLocalPriorities(updated);
+        onUpdate(updated);
+        setEditingId(null);
+
         setIsLoading(true);
         try {
             await prioritiesApi.update(id, { title: editTitle.trim() });
-            setEditingId(null);
-            onUpdate();
         } catch (error) {
+            // Revert on error
+            setLocalPriorities(localPriorities);
+            onUpdate(localPriorities);
             console.error("Failed to update priority:", error);
         } finally {
             setIsLoading(false);
@@ -67,15 +93,22 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
     };
 
     const handleDelete = async (id: string) => {
+        // Optimistic update
+        const updated = localPriorities.filter(p => p.id !== id);
+        setLocalPriorities(updated);
+        onUpdate(updated);
+
         try {
             await prioritiesApi.delete(id);
-            onUpdate();
         } catch (error) {
+            // Revert on error
+            setLocalPriorities(localPriorities);
+            onUpdate(localPriorities);
             console.error("Failed to delete priority:", error);
         }
     };
 
-    const canAddMore = priorities.length < maxItems;
+    const canAddMore = localPriorities.length < maxItems;
 
     return (
         <div className="card-premium">
@@ -93,7 +126,7 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
             </div>
 
             <div className="space-y-3">
-                {priorities.map((priority) => (
+                {localPriorities.map((priority) => (
                     <div
                         key={priority.id}
                         className="group flex items-center gap-4 p-4 rounded-2xl hover:bg-black/[0.02] transition-all overflow-hidden"
@@ -148,13 +181,13 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
                 ))}
 
                 {/* Empty slots */}
-                {Array.from({ length: Math.max(0, maxItems - priorities.length) }).map((_, i) => (
+                {Array.from({ length: Math.max(0, maxItems - localPriorities.length) }).map((_, i) => (
                     <div
                         key={`empty-${i}`}
                         className="flex items-center gap-3 p-3 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-800"
                     >
                         <div className="w-6 h-6 rounded-full border-2 border-gray-200 dark:border-gray-800" />
-                        <span className="text-gray-300 dark:text-gray-600">Priority {priorities.length + i + 1}</span>
+                        <span className="text-gray-300 dark:text-gray-600">Priority {localPriorities.length + i + 1}</span>
                     </div>
                 ))}
 

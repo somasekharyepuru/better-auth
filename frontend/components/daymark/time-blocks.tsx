@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { TimeBlock, timeBlocksApi } from "@/lib/daymark-api";
 import { Plus, X, Check, Trash2, Clock, Edit2 } from "lucide-react";
 
 interface TimeBlocksProps {
     date: string;
     blocks: TimeBlock[];
-    onUpdate: () => void;
+    onUpdate: (updatedBlocks: TimeBlock[]) => void;
     defaultDuration?: number;
     defaultType?: string;
+    lifeAreaId?: string;
 }
 
 const TIME_BLOCK_TYPES = ["Deep Work", "Meeting", "Personal", "Break", "Admin"];
@@ -38,7 +39,8 @@ function calculateEndTime(startTime: string, durationMinutes: number): string {
     return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
 }
 
-export function TimeBlocks({ date, blocks, onUpdate, defaultDuration = 60, defaultType = "Deep Work" }: TimeBlocksProps) {
+export function TimeBlocks({ date, blocks, onUpdate, defaultDuration = 60, defaultType = "Deep Work", lifeAreaId }: TimeBlocksProps) {
+    const [localBlocks, setLocalBlocks] = useState<TimeBlock[]>(blocks);
     const [isAdding, setIsAdding] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const defaultStartTime = "09:00";
@@ -49,6 +51,11 @@ export function TimeBlocks({ date, blocks, onUpdate, defaultDuration = 60, defau
         type: defaultType,
     });
     const [isLoading, setIsLoading] = useState(false);
+
+    // Sync local state with props
+    useEffect(() => {
+        setLocalBlocks(blocks);
+    }, [blocks]);
 
     const resetForm = () => {
         setFormData({
@@ -67,15 +74,18 @@ export function TimeBlocks({ date, blocks, onUpdate, defaultDuration = 60, defau
             const startTime = new Date(`${date}T${formData.startTime}:00`).toISOString();
             const endTime = new Date(`${date}T${formData.endTime}:00`).toISOString();
 
-            await timeBlocksApi.create(date, {
+            const newBlock = await timeBlocksApi.create(date, {
                 title: formData.title.trim(),
                 startTime,
                 endTime,
                 type: formData.type,
-            });
+            }, lifeAreaId);
+
+            const updated = [...localBlocks, newBlock];
+            setLocalBlocks(updated);
+            onUpdate(updated);
             resetForm();
             setIsAdding(false);
-            onUpdate();
         } catch (error) {
             console.error("Failed to add time block:", error);
         } finally {
@@ -86,35 +96,53 @@ export function TimeBlocks({ date, blocks, onUpdate, defaultDuration = 60, defau
     const handleEdit = async (id: string) => {
         if (!formData.title.trim() || isLoading) return;
 
+        const startTime = new Date(`${date}T${formData.startTime}:00`).toISOString();
+        const endTime = new Date(`${date}T${formData.endTime}:00`).toISOString();
+
+        // Optimistic update
+        const updated = localBlocks.map(block =>
+            block.id === id
+                ? { ...block, title: formData.title.trim(), startTime, endTime, type: formData.type }
+                : block
+        );
+        setLocalBlocks(updated);
+        onUpdate(updated);
+        setEditingId(null);
+        resetForm();
+
         setIsLoading(true);
         try {
-            const startTime = new Date(`${date}T${formData.startTime}:00`).toISOString();
-            const endTime = new Date(`${date}T${formData.endTime}:00`).toISOString();
-
             await timeBlocksApi.update(id, {
                 title: formData.title.trim(),
                 startTime,
                 endTime,
                 type: formData.type,
             });
-            setEditingId(null);
-            resetForm();
-            onUpdate();
         } catch (error) {
+            // Revert on error
+            setLocalBlocks(localBlocks);
+            onUpdate(localBlocks);
             console.error("Failed to update time block:", error);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = useCallback(async (id: string) => {
+        // Optimistic update
+        const updated = localBlocks.filter(block => block.id !== id);
+        setLocalBlocks(updated);
+        onUpdate(updated);
+
         try {
             await timeBlocksApi.delete(id);
-            onUpdate();
         } catch (error) {
+            // Revert on error
+            setLocalBlocks(localBlocks);
+            onUpdate(localBlocks);
             console.error("Failed to delete time block:", error);
         }
-    };
+    }, [localBlocks, onUpdate]);
 
     const startEditing = (block: TimeBlock) => {
         const start = new Date(block.startTime);
@@ -133,7 +161,7 @@ export function TimeBlocks({ date, blocks, onUpdate, defaultDuration = 60, defau
     };
 
     // Sort blocks by start time
-    const sortedBlocks = [...blocks].sort(
+    const sortedBlocks = [...localBlocks].sort(
         (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
     );
 
@@ -210,7 +238,7 @@ export function TimeBlocks({ date, blocks, onUpdate, defaultDuration = 60, defau
                 )}
 
                 {/* Empty state */}
-                {blocks.length === 0 && !isAdding && (
+                {localBlocks.length === 0 && !isAdding && (
                     <div className="text-center py-8 text-gray-400">
                         <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
                         <p className="text-sm">No time blocks scheduled</p>

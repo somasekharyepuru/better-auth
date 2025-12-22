@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { daysApi, formatDate, Day } from "@/lib/daymark-api";
+import { daysApi, formatDate, Day, TopPriority, DiscussionItem, TimeBlock, QuickNote } from "@/lib/daymark-api";
 import { useSettings } from "@/lib/settings-context";
 import { useLifeAreas } from "@/lib/life-areas-context";
 import { Spinner } from "@/components/ui/spinner";
@@ -76,6 +76,31 @@ export default function DashboardPage() {
       loadDayData();
     }
   }, [user, currentDate, selectedLifeArea, loadDayData]);
+
+  // Optimistic update handlers - update specific parts of dayData without refetching everything
+  const updatePriorities = useCallback((priorities: TopPriority[]) => {
+    if (dayData) {
+      setDayData({ ...dayData, priorities });
+    }
+  }, [dayData]);
+
+  const updateDiscussionItems = useCallback((discussionItems: DiscussionItem[]) => {
+    if (dayData) {
+      setDayData({ ...dayData, discussionItems });
+    }
+  }, [dayData]);
+
+  const updateTimeBlocks = useCallback((timeBlocks: TimeBlock[]) => {
+    if (dayData) {
+      setDayData({ ...dayData, timeBlocks });
+    }
+  }, [dayData]);
+
+  const updateQuickNote = useCallback((quickNote: QuickNote | null) => {
+    if (dayData) {
+      setDayData({ ...dayData, quickNote });
+    }
+  }, [dayData]);
 
   // Date navigation
   const goToPreviousDay = () => {
@@ -276,7 +301,7 @@ export default function DashboardPage() {
                   <TopPriorities
                     date={currentDate}
                     priorities={dayData?.priorities || []}
-                    onUpdate={loadDayData}
+                    onUpdate={updatePriorities}
                     maxItems={settings.maxTopPriorities}
                     lifeAreaId={selectedLifeArea?.id}
                   />
@@ -285,8 +310,9 @@ export default function DashboardPage() {
                   <ToDiscuss
                     date={currentDate}
                     items={dayData?.discussionItems || []}
-                    onUpdate={loadDayData}
+                    onUpdate={updateDiscussionItems}
                     maxItems={settings.maxDiscussionItems}
+                    lifeAreaId={selectedLifeArea?.id}
                   />
                 )}
               </div>
@@ -297,17 +323,19 @@ export default function DashboardPage() {
                   <TimeBlocks
                     date={currentDate}
                     blocks={dayData?.timeBlocks || []}
-                    onUpdate={loadDayData}
+                    onUpdate={updateTimeBlocks}
                     defaultDuration={settings.defaultTimeBlockDuration}
                     defaultType={settings.defaultTimeBlockType}
+                    lifeAreaId={selectedLifeArea?.id}
                   />
                 )}
                 {showNotes && (
                   <QuickNotes
                     date={currentDate}
                     note={dayData?.quickNote || null}
-                    onUpdate={loadDayData}
+                    onUpdate={updateQuickNote}
                     className="flex-1 min-h-[200px]"
+                    lifeAreaId={selectedLifeArea?.id}
                   />
                 )}
               </div>

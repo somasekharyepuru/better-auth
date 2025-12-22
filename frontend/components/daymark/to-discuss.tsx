@@ -1,23 +1,30 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { DiscussionItem, discussionItemsApi } from "@/lib/daymark-api";
 import { Plus, X, Check, Trash2, MessageCircle } from "lucide-react";
 
 interface ToDiscussProps {
     date: string;
     items: DiscussionItem[];
-    onUpdate: () => void;
+    onUpdate: (updatedItems: DiscussionItem[]) => void;
     maxItems?: number;
+    lifeAreaId?: string;
 }
 
-export function ToDiscuss({ date, items, onUpdate, maxItems = 3 }: ToDiscussProps) {
+export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId }: ToDiscussProps) {
+    const [localItems, setLocalItems] = useState<DiscussionItem[]>(items);
     const [isAdding, setIsAdding] = useState(false);
     const [newContent, setNewContent] = useState("");
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editContent, setEditContent] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    // Sync local state with props
+    useEffect(() => {
+        setLocalItems(items);
+    }, [items]);
 
     useEffect(() => {
         if (isAdding && inputRef.current) {
@@ -30,10 +37,12 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3 }: ToDiscussProp
 
         setIsLoading(true);
         try {
-            await discussionItemsApi.create(date, newContent.trim());
+            const newItem = await discussionItemsApi.create(date, newContent.trim(), lifeAreaId);
+            const updated = [...localItems, newItem];
+            setLocalItems(updated);
+            onUpdate(updated);
             setNewContent("");
             setIsAdding(false);
-            onUpdate();
         } catch (error) {
             console.error("Failed to add discussion item:", error);
         } finally {
@@ -41,31 +50,47 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3 }: ToDiscussProp
         }
     };
 
-    const handleEdit = async (id: string) => {
+    const handleEdit = useCallback(async (id: string) => {
         if (!editContent.trim() || isLoading) return;
+
+        // Optimistic update
+        const updated = localItems.map(item =>
+            item.id === id ? { ...item, content: editContent.trim() } : item
+        );
+        setLocalItems(updated);
+        onUpdate(updated);
+        setEditingId(null);
 
         setIsLoading(true);
         try {
             await discussionItemsApi.update(id, editContent.trim());
-            setEditingId(null);
-            onUpdate();
         } catch (error) {
+            // Revert on error
+            setLocalItems(localItems);
+            onUpdate(localItems);
             console.error("Failed to update discussion item:", error);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [localItems, onUpdate, editContent, isLoading]);
 
     const handleDelete = async (id: string) => {
+        // Optimistic update
+        const updated = localItems.filter(item => item.id !== id);
+        setLocalItems(updated);
+        onUpdate(updated);
+
         try {
             await discussionItemsApi.delete(id);
-            onUpdate();
         } catch (error) {
+            // Revert on error
+            setLocalItems(localItems);
+            onUpdate(localItems);
             console.error("Failed to delete discussion item:", error);
         }
     };
 
-    const canAddMore = maxItems > 0 && items.length < maxItems;
+    const canAddMore = maxItems > 0 && localItems.length < maxItems;
 
     return (
         <div className="card-premium">
@@ -86,7 +111,7 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3 }: ToDiscussProp
             </div>
 
             <div className="space-y-3">
-                {items.map((item, index) => (
+                {localItems.map((item, index) => (
                     <div
                         key={item.id}
                         className="group flex items-start gap-4 p-4 rounded-2xl hover:bg-black/[0.02] transition-all"
@@ -133,13 +158,13 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3 }: ToDiscussProp
                 ))}
 
                 {/* Empty slots */}
-                {maxItems > 0 && Array.from({ length: Math.max(0, maxItems - items.length) }).map((_, i) => (
+                {maxItems > 0 && Array.from({ length: Math.max(0, maxItems - localItems.length) }).map((_, i) => (
                     <div
                         key={`empty-${i}`}
                         className="flex items-start gap-3 p-3 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-800"
                     >
                         <span className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800/50 text-gray-300 dark:text-gray-600 text-sm font-medium flex items-center justify-center">
-                            {items.length + i + 1}
+                            {localItems.length + i + 1}
                         </span>
                         <span className="text-gray-300 dark:text-gray-600">Discussion point</span>
                     </div>
@@ -149,7 +174,7 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3 }: ToDiscussProp
                 {isAdding && (
                     <div className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                         <span className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm font-medium flex items-center justify-center">
-                            {items.length + 1}
+                            {localItems.length + 1}
                         </span>
                         <input
                             ref={inputRef}

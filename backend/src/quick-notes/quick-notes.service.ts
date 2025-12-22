@@ -10,10 +10,10 @@ export class QuickNotesService {
     ) { }
 
     /**
-     * Create or update quick note (upsert - one note per day)
+     * Create or update quick note (upsert - one note per day per life area)
      */
-    async upsertQuickNote(userId: string, dateStr: string, content: string) {
-        const day = await this.daysService.getOrCreateDay(userId, dateStr);
+    async upsertQuickNote(userId: string, dateStr: string, content: string, lifeAreaId?: string) {
+        const day = await this.daysService.getOrCreateDay(userId, dateStr, lifeAreaId);
 
         return this.prisma.quickNote.upsert({
             where: { dayId: day.id },

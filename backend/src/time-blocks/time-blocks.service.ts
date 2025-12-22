@@ -16,8 +16,9 @@ export class TimeBlocksService {
         userId: string,
         dateStr: string,
         data: { title: string; startTime: string; endTime: string; type?: string },
+        lifeAreaId?: string,
     ) {
-        const day = await this.daysService.getOrCreateDay(userId, dateStr);
+        const day = await this.daysService.getOrCreateDay(userId, dateStr, lifeAreaId);
 
         return this.prisma.timeBlock.create({
             data: {

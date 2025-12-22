@@ -17,11 +17,11 @@ export class DiscussionItemsController {
     @Post('days/:date/discussion-items')
     async createItem(
         @Param('date') date: string,
-        @Body() body: { content: string },
+        @Body() body: { content: string; lifeAreaId?: string },
         @Req() req: Request,
     ) {
         const userId = this.getUserIdFromRequest(req);
-        return this.discussionItemsService.createItem(userId, date, body.content);
+        return this.discussionItemsService.createItem(userId, date, body.content, body.lifeAreaId);
     }
 
     @Put('discussion-items/:id')

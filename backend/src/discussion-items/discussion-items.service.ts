@@ -10,10 +10,10 @@ export class DiscussionItemsService {
     ) { }
 
     /**
-     * Create a discussion item (max 3 per day)
+     * Create a discussion item (max 3 per day per life area)
      */
-    async createItem(userId: string, dateStr: string, content: string) {
-        const day = await this.daysService.getOrCreateDay(userId, dateStr);
+    async createItem(userId: string, dateStr: string, content: string, lifeAreaId?: string) {
+        const day = await this.daysService.getOrCreateDay(userId, dateStr, lifeAreaId);
 
         const count = await this.prisma.discussionItem.count({
             where: { dayId: day.id },

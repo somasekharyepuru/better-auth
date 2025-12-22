@@ -17,11 +17,12 @@ export class TimeBlocksController {
     @Post('days/:date/time-blocks')
     async createTimeBlock(
         @Param('date') date: string,
-        @Body() body: { title: string; startTime: string; endTime: string; type?: string },
+        @Body() body: { title: string; startTime: string; endTime: string; type?: string; lifeAreaId?: string },
         @Req() req: Request,
     ) {
         const userId = this.getUserIdFromRequest(req);
-        return this.timeBlocksService.createTimeBlock(userId, date, body);
+        const { lifeAreaId, ...data } = body;
+        return this.timeBlocksService.createTimeBlock(userId, date, data, lifeAreaId);
     }
 
     @Put('time-blocks/:id')

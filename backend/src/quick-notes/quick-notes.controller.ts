@@ -17,10 +17,10 @@ export class QuickNotesController {
     @Put('days/:date/quick-note')
     async upsertQuickNote(
         @Param('date') date: string,
-        @Body() body: { content: string },
+        @Body() body: { content: string; lifeAreaId?: string },
         @Req() req: Request,
     ) {
         const userId = this.getUserIdFromRequest(req);
-        return this.quickNotesService.upsertQuickNote(userId, date, body.content);
+        return this.quickNotesService.upsertQuickNote(userId, date, body.content, body.lifeAreaId);
     }
 }
