@@ -219,6 +219,7 @@ CREATE TABLE "user_settings" (
     "pomodoroFocusDuration" INTEGER NOT NULL DEFAULT 25,
     "pomodoroShortBreak" INTEGER NOT NULL DEFAULT 5,
     "pomodoroLongBreak" INTEGER NOT NULL DEFAULT 15,
+    "pomodoroSoundEnabled" BOOLEAN NOT NULL DEFAULT true,
     "lifeAreasEnabled" BOOLEAN NOT NULL DEFAULT true,
     "defaultLifeAreaId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -385,4 +386,3 @@ ALTER TABLE "eisenhower_task" ADD CONSTRAINT "eisenhower_task_lifeAreaId_fkey" F
 
 -- AddForeignKey
 ALTER TABLE "decision_entry" ADD CONSTRAINT "decision_entry_lifeAreaId_fkey" FOREIGN KEY ("lifeAreaId") REFERENCES "life_area"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
