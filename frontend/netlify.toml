@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "pnpm run build"
   publish = ".next"
 
 # Use the Netlify Next.js plugin for optimal deployment
@@ -9,14 +9,6 @@
 # Environment variables available at build time
 [build.environment]
   NODE_VERSION = "20"
-
-# Redirect all requests to Next.js for handling
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/___netlify-handler"
-  status = 200
-  conditions = {Role = ["admin"]}
-  force = false
 
 # Headers for security
 [[headers]]

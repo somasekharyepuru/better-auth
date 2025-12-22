@@ -45,8 +45,7 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // Output configuration for Netlify
-  output: 'standalone',
+  // Netlify deployment handled by @netlify/plugin-nextjs
 };
 
 export default nextConfig;
