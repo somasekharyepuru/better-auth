@@ -142,6 +142,7 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId }: T
                                     setEditContent(item.content);
                                 }}
                                 title={item.content}
+                                className="flex-1"
                             >
                                 {item.content}
                             </span>
@@ -150,7 +151,7 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId }: T
                         {/* Delete button */}
                         <button
                             onClick={() => handleDelete(item.id)}
-                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-all"
+                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-all h-6 w-6 flex items-center justify-center"
                         >
                             <Trash2 className="w-4 h-4" />
                         </button>
