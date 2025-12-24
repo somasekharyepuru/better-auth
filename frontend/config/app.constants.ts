@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 /**
  * Application Configuration Constants
  * 
@@ -22,7 +24,6 @@ export const APP_CONFIG = {
         headline: "A better way to plan your day",
         subheadline: "Tasks, notes, habits, and daily focus — designed to work together.",
         primaryCta: "Get Started",
-        secondaryCta: "Learn more",
     },
 
     // Philosophy Section
@@ -71,11 +72,12 @@ export const APP_CONFIG = {
 
     // Footer
     footer: {
-        copyright: "© 2024",
+        copyright: `© ${dayjs().format('YYYY')}`,
         tagline: "Calm productivity, by design.",
         links: [
             { label: "Privacy", href: "/privacy" },
             { label: "Terms", href: "/terms" },
+            { label: "Contact", href: "mailto:somasekharyepuru@gmail.com" },
         ],
     },
 

@@ -117,7 +117,7 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
                 {canAddMore && !isAdding && (
                     <button
                         onClick={() => setIsAdding(true)}
-                        className="flex items-center gap-1.5 text-sm text-muted hover:text-gray-700 transition-colors"
+                        className="flex items-center gap-1.5 text-sm text-muted hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Add
@@ -129,17 +129,17 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
                 {localPriorities.map((priority) => (
                     <div
                         key={priority.id}
-                        className="group flex items-center gap-4 p-4 rounded-2xl hover:bg-black/[0.02] transition-all overflow-hidden"
+                        className="group flex items-center gap-4 p-4 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-all overflow-hidden"
                     >
                         {/* Checkbox */}
                         <button
                             onClick={() => handleToggle(priority.id)}
                             className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${priority.completed
-                                ? "bg-gradient-to-br from-gray-800 to-gray-900 border-transparent"
-                                : "border-gray-300 hover:border-gray-400 hover:scale-105"
+                                ? "bg-gradient-to-br from-gray-800 to-gray-900 dark:from-gray-200 dark:to-gray-100 border-transparent"
+                                : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 hover:scale-105"
                                 }`}
                         >
-                            {priority.completed && <Check className="w-3.5 h-3.5 text-white" />}
+                            {priority.completed && <Check className="w-3.5 h-3.5 text-white dark:text-gray-900" />}
                         </button>
 
                         {/* Title */}
@@ -153,7 +153,7 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
                                     if (e.key === "Enter") handleEdit(priority.id);
                                     if (e.key === "Escape") setEditingId(null);
                                 }}
-                                className="flex-1 bg-transparent text-body outline-none border-b border-gray-200 focus:border-gray-400 py-1"
+                                className="flex-1 bg-transparent text-gray-900 dark:text-gray-100 outline-none border-b border-gray-200 dark:border-gray-700 focus:border-gray-400 dark:focus:border-gray-500 py-1"
                                 autoFocus
                             />
                         ) : (
@@ -163,7 +163,7 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
                                     setEditTitle(priority.title);
                                 }}
                                 title={priority.title}
-                                className={`flex-1 cursor-text truncate transition-colors ${priority.completed ? "text-muted line-through" : "text-body"
+                                className={`flex-1 cursor-text truncate transition-colors ${priority.completed ? "text-gray-400 dark:text-gray-500 line-through" : "text-gray-900 dark:text-gray-100"
                                     }`}
                             >
                                 {priority.title}

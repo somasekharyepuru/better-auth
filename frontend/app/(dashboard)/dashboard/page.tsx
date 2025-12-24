@@ -270,14 +270,6 @@ export default function DashboardPage() {
                   <span className="hidden sm:inline">End of Day</span>
                 </button>
               )}
-
-              {/* Settings button */}
-              <button
-                onClick={() => router.push("/settings")}
-                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
             </div>
           </div>
 

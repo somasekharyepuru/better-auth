@@ -102,7 +102,7 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId }: T
                 {canAddMore && !isAdding && (
                     <button
                         onClick={() => setIsAdding(true)}
-                        className="flex items-center gap-1.5 text-sm text-muted hover:text-gray-700 transition-colors"
+                        className="flex items-center gap-1.5 text-sm text-muted hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Add
@@ -114,7 +114,7 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId }: T
                 {localItems.map((item, index) => (
                     <div
                         key={item.id}
-                        className="group flex items-start gap-4 p-4 rounded-2xl hover:bg-black/[0.02] transition-all"
+                        className="group flex items-start gap-4 p-4 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-all"
                     >
                         {/* Number badge */}
                         <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100/80 dark:bg-gray-800 text-muted dark:text-gray-400 text-sm font-medium flex items-center justify-center">
@@ -142,7 +142,7 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId }: T
                                     setEditContent(item.content);
                                 }}
                                 title={item.content}
-                                className="flex-1"
+                                className="flex-1 text-gray-900 dark:text-gray-100 cursor-text"
                             >
                                 {item.content}
                             </span>

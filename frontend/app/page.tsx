@@ -5,6 +5,14 @@ import { useEffect, useRef } from "react";
 import { APP_CONFIG } from "@/config/app.constants";
 import { AppMockup } from "@/components/landing/AppMockup";
 import { Logo } from "@/components/ui/logo";
+import { LayoutDashboard, Focus, Sparkles } from "lucide-react";
+
+// Feature icons mapped by index
+const featureIcons = [
+  LayoutDashboard, // Your day, at a glance
+  Focus,           // Focus without distraction  
+  Sparkles,        // Reflect and improve
+];
 
 export default function HomePage() {
   const sectionsRef = useRef<(HTMLElement | null)[]>([]);
@@ -73,9 +81,6 @@ export default function HomePage() {
             <Link href="/signup" className="btn-primary">
               {APP_CONFIG.hero.primaryCta}
             </Link>
-            <button className="btn-secondary">
-              {APP_CONFIG.hero.secondaryCta}
-            </button>
           </div>
           <div className="opacity-0-initial animate-fade-in-scale delay-600">
             <AppMockup />
@@ -105,20 +110,23 @@ export default function HomePage() {
       >
         <div className="max-w-4xl mx-auto">
           <div className="space-y-24">
-            {APP_CONFIG.features.map((feature, index) => (
-              <div key={index} className="text-center">
-                {/* Feature Icon Placeholder */}
-                <div className="w-16 h-16 mx-auto mb-8 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-50 border border-gray-200/60 flex items-center justify-center">
-                  <div className="w-6 h-6 rounded-lg bg-gray-900/10" />
+            {APP_CONFIG.features.map((feature, index) => {
+              const Icon = featureIcons[index];
+              return (
+                <div key={index} className="text-center">
+                  {/* Feature Icon */}
+                  <div className="w-16 h-16 mx-auto mb-8 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-50 border border-gray-200/60 flex items-center justify-center">
+                    <Icon className="w-7 h-7 text-gray-700" />
+                  </div>
+                  <h3 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-4">
+                    {feature.title}
+                  </h3>
+                  <p className="text-xl text-gray-500 font-light max-w-md mx-auto">
+                    {feature.description}
+                  </p>
                 </div>
-                <h3 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-4">
-                  {feature.title}
-                </h3>
-                <p className="text-xl text-gray-500 font-light max-w-md mx-auto">
-                  {feature.description}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
