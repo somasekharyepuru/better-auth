@@ -16,6 +16,7 @@ import {
     Info,
     HelpCircle
 } from "lucide-react";
+import { Tooltip } from "@/components/ui/tooltip";
 
 const API_BASE = process.env.NEXT_PUBLIC_AUTH_URL || "http://localhost:3002";
 
@@ -191,13 +192,14 @@ export default function EisenhowerPage() {
                             </p>
                         </div>
                     </div>
-                    <button
-                        onClick={() => setShowInfo(true)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="How to use"
-                    >
-                        <HelpCircle className="w-6 h-6" />
-                    </button>
+                    <Tooltip content="How to use">
+                        <button
+                            onClick={() => setShowInfo(true)}
+                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                            <HelpCircle className="w-6 h-6" />
+                        </button>
+                    </Tooltip>
                 </div>
 
                 {/* Matrix Grid */}
@@ -243,32 +245,35 @@ export default function EisenhowerPage() {
                                             key={task.id}
                                             className="group flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-2.5 shadow-sm hover:shadow transition-shadow"
                                         >
-                                            <span className="flex-1 text-sm text-body truncate text-gray-700" title={task.title}>
-                                                {task.title}
-                                            </span>
+                                            <Tooltip content={task.title}>
+                                                <span className="flex-1 text-sm text-body truncate text-gray-700">
+                                                    {task.title}
+                                                </span>
+                                            </Tooltip>
                                             <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
                                                 {/* Move to other quadrants */}
                                                 {QUADRANTS.filter((q) => q.id !== quadrant.id)
                                                     .slice(0, 2)
                                                     .map((q) => (
-                                                        <button
-                                                            key={q.id}
-                                                            onClick={() => handleMoveTask(task.id, q.id)}
-                                                            className="p-1 text-gray-400 hover:text-gray-600 rounded"
-                                                            title={`Move to ${q.title}`}
-                                                        >
-                                                            <ArrowRight className="w-3 h-3" />
-                                                        </button>
+                                                        <Tooltip content={`Move to ${q.title}`} key={q.id}>
+                                                            <button
+                                                                onClick={() => handleMoveTask(task.id, q.id)}
+                                                                className="p-1 text-gray-400 hover:text-gray-600 rounded"
+                                                            >
+                                                                <ArrowRight className="w-3 h-3" />
+                                                            </button>
+                                                        </Tooltip>
                                                     ))}
                                                 {/* Promote to daily */}
                                                 {quadrant.id <= 2 && (
-                                                    <button
-                                                        onClick={() => handlePromoteToDaily(task.id)}
-                                                        className="p-1 text-yellow-500 hover:text-yellow-600 rounded"
-                                                        title="Promote to Today's Priorities"
-                                                    >
-                                                        <Star className="w-3 h-3" />
-                                                    </button>
+                                                    <Tooltip content="Promote to Today's Priorities">
+                                                        <button
+                                                            onClick={() => handlePromoteToDaily(task.id)}
+                                                            className="p-1 text-yellow-500 hover:text-yellow-600 rounded"
+                                                        >
+                                                            <Star className="w-3 h-3" />
+                                                        </button>
+                                                    </Tooltip>
                                                 )}
                                                 {/* Delete */}
                                                 <button

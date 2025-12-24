@@ -24,6 +24,7 @@ export interface LifeAreaResponse {
 }
 
 const DEFAULT_LIFE_AREA_NAME = 'Personal';
+const DEFAULT_LIFE_AREA_COLOR = '#4F46E5'; // Indigo - default color for Personal life area
 const MAX_LIFE_AREAS = 5;
 
 @Injectable()
@@ -209,6 +210,7 @@ export class LifeAreasService {
             data: {
                 userId,
                 name: DEFAULT_LIFE_AREA_NAME,
+                color: DEFAULT_LIFE_AREA_COLOR,
                 order: 1,
             },
         });

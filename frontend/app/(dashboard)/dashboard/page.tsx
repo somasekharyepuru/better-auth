@@ -7,6 +7,7 @@ import { daysApi, formatDate, Day, TopPriority, DiscussionItem, TimeBlock, Quick
 import { useSettings } from "@/lib/settings-context";
 import { useLifeAreas } from "@/lib/life-areas-context";
 import { Spinner } from "@/components/ui/spinner";
+import { DatePickerIcon } from "@/components/ui/date-picker";
 import { DayProgress } from "@/components/daymark/day-progress";
 import { TopPriorities } from "@/components/daymark/top-priorities";
 import { ToDiscuss } from "@/components/daymark/to-discuss";
@@ -14,7 +15,7 @@ import { TimeBlocks } from "@/components/daymark/time-blocks";
 import { QuickNotes } from "@/components/daymark/quick-notes";
 import { EndOfDayReview } from "@/components/daymark/end-of-day-review";
 import { LifeAreaSelector } from "@/components/daymark/life-area-selector";
-import { ChevronLeft, ChevronRight, Moon, Settings, CalendarDays } from "lucide-react";
+import { ChevronLeft, ChevronRight, Moon } from "lucide-react";
 
 interface User {
   id: string;
@@ -29,10 +30,9 @@ export default function DashboardPage() {
   const [dayData, setDayData] = useState<Day | null>(null);
   const [isDayLoading, setIsDayLoading] = useState(false);
   const [showReview, setShowReview] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const router = useRouter();
   const { settings, isSectionEnabled } = useSettings();
-  const { selectedLifeArea, isLoading: isLifeAreasLoading } = useLifeAreas();
+  const { selectedLifeArea, lifeAreas, isLoading: isLifeAreasLoading } = useLifeAreas();
 
   // Auth check
   useEffect(() => {
@@ -120,6 +120,7 @@ export default function DashboardPage() {
   };
 
   const isToday = currentDate === formatDate(new Date());
+  const isPastDay = new Date(currentDate) < new Date(formatDate(new Date()));
 
   // Format display date
   const displayDate = new Date(currentDate).toLocaleDateString("en-US", {
@@ -222,26 +223,10 @@ export default function DashboardPage() {
                 )}
 
                 {/* Date Picker */}
-                <div className="relative">
-                  <button
-                    onClick={() => setShowDatePicker(!showDatePicker)}
-                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
-                    title="Pick a date"
-                  >
-                    <CalendarDays className="w-5 h-5" />
-                  </button>
-                  <input
-                    type="date"
-                    value={currentDate}
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        setCurrentDate(e.target.value);
-                        setShowDatePicker(false);
-                      }
-                    }}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                </div>
+                <DatePickerIcon
+                  value={currentDate}
+                  onChange={(date) => setCurrentDate(date)}
+                />
               </div>
             </div>
 
@@ -273,6 +258,15 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Past Day Indicator */}
+          {isPastDay && (
+            <div className="flex items-center justify-center gap-2 py-2 text-gray-500 dark:text-gray-400">
+              <span className="text-sm">
+                Viewing past day • Notes and review are still editable
+              </span>
+            </div>
+          )}
+
           {/* Day Progress */}
           {showProgress && (
             <div className="card-subtle">
@@ -296,6 +290,9 @@ export default function DashboardPage() {
                     onUpdate={updatePriorities}
                     maxItems={settings.maxTopPriorities}
                     lifeAreaId={selectedLifeArea?.id}
+                    readOnly={isPastDay}
+                    lifeAreas={lifeAreas}
+                    onMove={loadDayData}
                   />
                 )}
                 {showDiscussion && (
@@ -305,6 +302,9 @@ export default function DashboardPage() {
                     onUpdate={updateDiscussionItems}
                     maxItems={settings.maxDiscussionItems}
                     lifeAreaId={selectedLifeArea?.id}
+                    readOnly={isPastDay}
+                    lifeAreas={lifeAreas}
+                    onMove={loadDayData}
                   />
                 )}
               </div>
@@ -319,6 +319,7 @@ export default function DashboardPage() {
                     defaultDuration={settings.defaultTimeBlockDuration}
                     defaultType={settings.defaultTimeBlockType}
                     lifeAreaId={selectedLifeArea?.id}
+                    readOnly={isPastDay}
                   />
                 )}
                 {showNotes && (

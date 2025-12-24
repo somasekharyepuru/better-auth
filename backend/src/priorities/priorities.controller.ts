@@ -45,4 +45,23 @@ export class PrioritiesController {
         const userId = this.getUserIdFromRequest(req);
         return this.prioritiesService.deletePriority(id, userId);
     }
+
+    @Patch('priorities/reorder')
+    async reorderPriorities(
+        @Body() body: { priorities: Array<{ id: string; order: number }> },
+        @Req() req: Request,
+    ) {
+        const userId = this.getUserIdFromRequest(req);
+        return this.prioritiesService.reorderPriorities(userId, body.priorities);
+    }
+
+    @Patch('priorities/:id/move')
+    async movePriority(
+        @Param('id') id: string,
+        @Body() body: { targetLifeAreaId: string | null; date: string },
+        @Req() req: Request,
+    ) {
+        const userId = this.getUserIdFromRequest(req);
+        return this.prioritiesService.moveToLifeArea(id, userId, body.targetLifeAreaId, body.date);
+    }
 }

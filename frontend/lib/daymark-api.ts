@@ -192,6 +192,20 @@ export const prioritiesApi = {
             method: 'DELETE',
         });
     },
+
+    async reorder(priorities: Array<{ id: string; order: number }>): Promise<TopPriority[]> {
+        return fetchWithCredentials(`${API_BASE}/api/priorities/reorder`, {
+            method: 'PATCH',
+            body: JSON.stringify({ priorities }),
+        });
+    },
+
+    async move(id: string, targetLifeAreaId: string | null, date: string): Promise<TopPriority> {
+        return fetchWithCredentials(`${API_BASE}/api/priorities/${id}/move`, {
+            method: 'PATCH',
+            body: JSON.stringify({ targetLifeAreaId, date }),
+        });
+    },
 };
 
 // Discussion Items API
@@ -213,6 +227,13 @@ export const discussionItemsApi = {
     async delete(id: string): Promise<void> {
         return fetchWithCredentials(`${API_BASE}/api/discussion-items/${id}`, {
             method: 'DELETE',
+        });
+    },
+
+    async move(id: string, targetLifeAreaId: string | null, date: string): Promise<DiscussionItem> {
+        return fetchWithCredentials(`${API_BASE}/api/discussion-items/${id}/move`, {
+            method: 'PATCH',
+            body: JSON.stringify({ targetLifeAreaId, date }),
         });
     },
 };

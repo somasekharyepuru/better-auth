@@ -1,4 +1,4 @@
-import { Controller, Post, Put, Delete, Param, Body, Req, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Put, Patch, Delete, Param, Body, Req, UnauthorizedException } from '@nestjs/common';
 import { DiscussionItemsService } from './discussion-items.service';
 import { Request } from 'express';
 
@@ -38,5 +38,15 @@ export class DiscussionItemsController {
     async deleteItem(@Param('id') id: string, @Req() req: Request) {
         const userId = this.getUserIdFromRequest(req);
         return this.discussionItemsService.deleteItem(id, userId);
+    }
+
+    @Patch('discussion-items/:id/move')
+    async moveItem(
+        @Param('id') id: string,
+        @Body() body: { targetLifeAreaId: string | null; date: string },
+        @Req() req: Request,
+    ) {
+        const userId = this.getUserIdFromRequest(req);
+        return this.discussionItemsService.moveToLifeArea(id, userId, body.targetLifeAreaId, body.date);
     }
 }

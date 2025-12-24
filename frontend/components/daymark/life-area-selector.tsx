@@ -1,6 +1,7 @@
 "use client";
 
 import { useLifeAreas } from "@/lib/life-areas-context";
+import { Tooltip } from "@/components/ui/tooltip";
 import { Plus, Settings2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
@@ -112,13 +113,14 @@ export function LifeAreaSelector({ className = "", showSettings = false }: LifeA
 
                 {/* Add Button (inside pill container) */}
                 {lifeAreas.length < 5 && !isCreating && (
-                    <button
-                        onClick={() => setIsCreating(true)}
-                        className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50 rounded-full transition-colors"
-                        title="Add Life Area"
-                    >
-                        <Plus className="w-4 h-4" />
-                    </button>
+                    <Tooltip content="Add Life Area">
+                        <button
+                            onClick={() => setIsCreating(true)}
+                            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50 rounded-full transition-colors"
+                        >
+                            <Plus className="w-4 h-4" />
+                        </button>
+                    </Tooltip>
                 )}
             </div>
 
@@ -147,16 +149,16 @@ export function LifeAreaSelector({ className = "", showSettings = false }: LifeA
                     {/* Color Dots */}
                     <div className="flex gap-0.5">
                         {COLOR_OPTIONS.slice(1, 5).map((color) => (
-                            <button
-                                key={color.name}
-                                onClick={() => setNewAreaColor(color.value)}
-                                className={`w-4 h-4 rounded-full transition-all ${newAreaColor === color.value
+                            <Tooltip content={color.name} key={color.name}>
+                                <button
+                                    onClick={() => setNewAreaColor(color.value)}
+                                    className={`w-4 h-4 rounded-full transition-all ${newAreaColor === color.value
                                         ? "ring-2 ring-offset-1 ring-gray-400 scale-110"
                                         : "hover:scale-110"
-                                    }`}
-                                style={{ backgroundColor: color.value || "#E5E7EB" }}
-                                title={color.name}
-                            />
+                                        }`}
+                                    style={{ backgroundColor: color.value || "#E5E7EB" }}
+                                />
+                            </Tooltip>
                         ))}
                     </div>
 
@@ -172,12 +174,13 @@ export function LifeAreaSelector({ className = "", showSettings = false }: LifeA
 
             {/* Settings Button (optional) */}
             {showSettings && (
-                <button
-                    className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                    title="Manage Life Areas"
-                >
-                    <Settings2 className="w-4 h-4" />
-                </button>
+                <Tooltip content="Manage Life Areas">
+                    <button
+                        className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    >
+                        <Settings2 className="w-4 h-4" />
+                    </button>
+                </Tooltip>
             )}
         </div>
     );
