@@ -20,11 +20,16 @@ export function QuickNotes({ date, note, onUpdate, className, lifeAreaId }: Quic
     const [showSaved, setShowSaved] = useState(false);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const previousDateRef = useRef<string>(date);
 
-    // Update content when note changes (day navigation)
+    // Only reset content when date actually changes (day navigation)
+    // NOT when note updates from saving - that was causing data loss
     useEffect(() => {
-        setContent(note?.content || "");
-    }, [note, date]);
+        if (previousDateRef.current !== date) {
+            setContent(note?.content || "");
+            previousDateRef.current = date;
+        }
+    }, [date, note]);
 
     // Autosave with debounce - optimistic update
     const saveNote = useCallback(
