@@ -91,10 +91,10 @@ export default function ToolsPage() {
                     <div className="card-subtle text-center py-16">
                         <p className="text-muted">No tools enabled</p>
                         <button
-                            onClick={() => router.push("/settings")}
+                            onClick={() => router.push("/profile?tab=preferences")}
                             className="mt-4 text-body hover:text-gray-900 underline underline-offset-2"
                         >
-                            Enable tools in settings
+                            Enable tools in preferences
                         </button>
                     </div>
                 ) : (

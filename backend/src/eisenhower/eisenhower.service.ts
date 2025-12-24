@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
 
 export interface CreateEisenhowerTaskDto {
     title: string;
@@ -15,7 +16,10 @@ export interface UpdateEisenhowerTaskDto {
 
 @Injectable()
 export class EisenhowerService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private settingsService: SettingsService,
+    ) { }
 
     async getAllTasks(userId: string) {
         return this.prisma.eisenhowerTask.findMany({
@@ -77,6 +81,10 @@ export class EisenhowerService {
     }
 
     async promoteToDaily(id: string, userId: string, date: string) {
+        // Get user's max priorities setting
+        const settings = await this.settingsService.getSettings(userId);
+        const maxPriorities = settings.maxTopPriorities;
+
         // Get the task
         const task = await this.prisma.eisenhowerTask.findFirst({
             where: { id, userId },
@@ -101,6 +109,11 @@ export class EisenhowerService {
         const priorityCount = await this.prisma.topPriority.count({
             where: { dayId: day.id },
         });
+
+        // Check if at max capacity
+        if (priorityCount >= maxPriorities) {
+            throw new BadRequestException(`Maximum ${maxPriorities} priorities per day already reached`);
+        }
 
         // Create priority
         const priority = await this.prisma.topPriority.create({

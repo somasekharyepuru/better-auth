@@ -386,3 +386,34 @@ a {
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* Date Picker Styles */
+.date-picker-calendar {
+  animation: datePickerFadeIn 0.1s ease-out;
+}
+
+@keyframes datePickerFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.date-picker-root {
+  position: relative;
+}
+
+/* Fix for react-day-picker button styling */
+.date-picker-calendar button[name="day"] {
+  all: unset;
+  cursor: pointer;
+}
+
+.date-picker-calendar .rdp-button_reset {
+  all: unset;
+  cursor: pointer;
+}
+

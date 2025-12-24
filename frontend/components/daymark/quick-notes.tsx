@@ -107,7 +107,7 @@ export function QuickNotes({ date, note, onUpdate, className, lifeAreaId }: Quic
                 value={content}
                 onChange={handleChange}
                 placeholder="Jot down your thoughts, meeting notes, or ideas..."
-                className="flex-1 w-full bg-gray-50/50 rounded-xl p-4 text-body resize-none placeholder:text-muted outline-none border border-transparent focus:border-gray-200 focus:bg-white/80 transition-all min-h-[200px]"
+                className="flex-1 w-full bg-gray-50/50 dark:bg-gray-800/50 rounded-xl p-4 text-gray-900 dark:text-gray-100 resize-none placeholder:text-gray-500 dark:placeholder:text-gray-400 outline-none border border-transparent focus:border-gray-200 dark:focus:border-gray-700 focus:bg-white/80 dark:focus:bg-gray-800/80 transition-all min-h-[200px]"
             />
         </div>
     );

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { useSettings } from "@/lib/settings-context";
 import { Spinner } from "@/components/ui/spinner";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
     ChevronLeft,
     Plus,
@@ -209,7 +210,7 @@ export default function DecisionLogPage() {
                         </h3>
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Title *
                                 </label>
                                 <input
@@ -221,18 +222,16 @@ export default function DecisionLogPage() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Date
                                 </label>
-                                <input
-                                    type="date"
+                                <DatePicker
                                     value={formData.date}
-                                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                    className="px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-gray-400"
+                                    onChange={(date) => setFormData({ ...formData, date })}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Context
                                 </label>
                                 <textarea
@@ -244,7 +243,7 @@ export default function DecisionLogPage() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Decision *
                                 </label>
                                 <textarea
@@ -256,7 +255,7 @@ export default function DecisionLogPage() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Outcome (optional)
                                 </label>
                                 <textarea

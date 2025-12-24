@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { useSettings } from "@/lib/settings-context";
 import { Spinner } from "@/components/ui/spinner";
+import { Tooltip } from "@/components/ui/tooltip";
 import { ChevronLeft, Play, Pause, RotateCcw, Coffee, Brain, Sunset, X, Volume2, VolumeX, CheckCircle } from "lucide-react";
 
 type TimerMode = "focus" | "shortBreak" | "longBreak";
@@ -304,13 +305,15 @@ export default function PomodoroPage() {
                         </div>
                     )}
                     {/* Sound indicator */}
-                    <div className="text-gray-400" title={settings.pomodoroSoundEnabled ? "Sound on" : "Sound off"}>
-                        {settings.pomodoroSoundEnabled ? (
-                            <Volume2 className="w-5 h-5" />
-                        ) : (
-                            <VolumeX className="w-5 h-5" />
-                        )}
-                    </div>
+                    <Tooltip content={settings.pomodoroSoundEnabled ? "Sound on" : "Sound off"}>
+                        <div className="text-gray-400">
+                            {settings.pomodoroSoundEnabled ? (
+                                <Volume2 className="w-5 h-5" />
+                            ) : (
+                                <VolumeX className="w-5 h-5" />
+                            )}
+                        </div>
+                    </Tooltip>
                 </div>
 
                 {/* Timer Card */}

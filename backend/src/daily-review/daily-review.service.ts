@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { DaysService } from '../days/days.service';
+import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
 export class DailyReviewService {
     constructor(
         private prisma: PrismaService,
         private daysService: DaysService,
+        private settingsService: SettingsService,
     ) { }
 
     /**
@@ -33,6 +35,10 @@ export class DailyReviewService {
      * Carry forward incomplete priorities to next day
      */
     async carryForwardPriorities(userId: string, fromDateStr: string, toDateStr: string) {
+        // Get user settings for maxTopPriorities
+        const settings = await this.settingsService.getSettings(userId);
+        const maxPriorities = settings.maxTopPriorities;
+
         const fromDay = await this.daysService.getOrCreateDay(userId, fromDateStr);
         const toDay = await this.daysService.getOrCreateDay(userId, toDateStr);
 
@@ -49,7 +55,8 @@ export class DailyReviewService {
             where: { dayId: toDay.id },
         });
 
-        const availableSlots = 3 - existingCount;
+        // Use user's maxTopPriorities setting instead of hardcoded 3
+        const availableSlots = Math.max(0, maxPriorities - existingCount);
         const toCarry = incompletePriorities.slice(0, availableSlots);
 
         // Create new priorities in target day
@@ -69,6 +76,7 @@ export class DailyReviewService {
             carried: carried.length,
             skipped: incompletePriorities.length - carried.length,
             priorities: carried,
+            maxPriorities, // Include in response for transparency
         };
     }
 }

@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { DiscussionItem, discussionItemsApi } from "@/lib/daymark-api";
+import { DiscussionItem, LifeArea, discussionItemsApi } from "@/lib/daymark-api";
+import { Tooltip } from "@/components/ui/tooltip";
 import { Plus, X, Check, Trash2, MessageCircle } from "lucide-react";
+import { ContextMenu } from "@/components/ui/context-menu";
 
 interface ToDiscussProps {
     date: string;
@@ -10,9 +12,12 @@ interface ToDiscussProps {
     onUpdate: (updatedItems: DiscussionItem[]) => void;
     maxItems?: number;
     lifeAreaId?: string;
+    readOnly?: boolean;
+    lifeAreas?: LifeArea[];
+    onMove?: () => void;
 }
 
-export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId }: ToDiscussProps) {
+export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId, readOnly = false, lifeAreas = [], onMove }: ToDiscussProps) {
     const [localItems, setLocalItems] = useState<DiscussionItem[]>(items);
     const [isAdding, setIsAdding] = useState(false);
     const [newContent, setNewContent] = useState("");
@@ -90,7 +95,59 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId }: T
         }
     };
 
+    const handleMove = async (itemId: string, targetLifeAreaId: string | null) => {
+        try {
+            await discussionItemsApi.move(itemId, targetLifeAreaId, date);
+            // Remove from local state and trigger parent refresh
+            const updated = localItems.filter(item => item.id !== itemId);
+            setLocalItems(updated);
+            onUpdate(updated);
+            // Notify parent to refresh data for the new life area
+            onMove?.();
+        } catch (error) {
+            console.error("Failed to move discussion item:", error);
+        }
+    };
+
     const canAddMore = maxItems > 0 && localItems.length < maxItems;
+
+    // Read-only summary view for past days
+    if (readOnly) {
+        return (
+            <div className="card-premium">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                        <MessageCircle className="w-5 h-5 text-muted" />
+                        <h2 className="text-lg text-subheading">To Discuss</h2>
+                    </div>
+                    <span className="text-sm text-muted">{localItems.length} items</span>
+                </div>
+
+                <div className="space-y-3">
+                    {localItems.length === 0 ? (
+                        <p className="text-center text-gray-400 dark:text-gray-500 py-4">No items to discuss</p>
+                    ) : (
+                        localItems.map((item, index) => (
+                            <div
+                                key={item.id}
+                                className="flex items-start gap-4 p-4 rounded-2xl bg-gray-50/50 dark:bg-gray-800/30"
+                            >
+                                {/* Number badge */}
+                                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-200/80 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm font-medium flex items-center justify-center">
+                                    {index + 1}
+                                </span>
+
+                                {/* Content */}
+                                <span className="flex-1 text-gray-900 dark:text-gray-100">
+                                    {item.content}
+                                </span>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="card-premium">
@@ -102,7 +159,7 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId }: T
                 {canAddMore && !isAdding && (
                     <button
                         onClick={() => setIsAdding(true)}
-                        className="flex items-center gap-1.5 text-sm text-muted hover:text-gray-700 transition-colors"
+                        className="flex items-center gap-1.5 text-sm text-muted hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Add
@@ -112,50 +169,58 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId }: T
 
             <div className="space-y-3">
                 {localItems.map((item, index) => (
-                    <div
+                    <ContextMenu
                         key={item.id}
-                        className="group flex items-start gap-4 p-4 rounded-2xl hover:bg-black/[0.02] transition-all"
+                        lifeAreas={lifeAreas}
+                        currentLifeAreaId={lifeAreaId || null}
+                        onMove={(targetId) => handleMove(item.id, targetId)}
+                        disabled={readOnly || lifeAreas.length <= 1}
                     >
-                        {/* Number badge */}
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100/80 dark:bg-gray-800 text-muted dark:text-gray-400 text-sm font-medium flex items-center justify-center">
-                            {index + 1}
-                        </span>
-
-                        {/* Content */}
-                        {editingId === item.id ? (
-                            <input
-                                type="text"
-                                value={editContent}
-                                onChange={(e) => setEditContent(e.target.value)}
-                                onBlur={() => handleEdit(item.id)}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") handleEdit(item.id);
-                                    if (e.key === "Escape") setEditingId(null);
-                                }}
-                                className="flex-1 bg-transparent text-gray-900 dark:text-gray-100 outline-none border-b border-gray-300 dark:border-gray-600 focus:border-gray-900 dark:focus:border-gray-400"
-                                autoFocus
-                            />
-                        ) : (
-                            <span
-                                onClick={() => {
-                                    setEditingId(item.id);
-                                    setEditContent(item.content);
-                                }}
-                                title={item.content}
-                                className="flex-1"
-                            >
-                                {item.content}
-                            </span>
-                        )}
-
-                        {/* Delete button */}
-                        <button
-                            onClick={() => handleDelete(item.id)}
-                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-all h-6 w-6 flex items-center justify-center"
+                        <div
+                            className="group flex items-start gap-4 p-4 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-all"
                         >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
-                    </div>
+                            {/* Number badge */}
+                            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100/80 dark:bg-gray-800 text-muted dark:text-gray-400 text-sm font-medium flex items-center justify-center">
+                                {index + 1}
+                            </span>
+
+                            {/* Content */}
+                            {editingId === item.id ? (
+                                <input
+                                    type="text"
+                                    value={editContent}
+                                    onChange={(e) => setEditContent(e.target.value)}
+                                    onBlur={() => handleEdit(item.id)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") handleEdit(item.id);
+                                        if (e.key === "Escape") setEditingId(null);
+                                    }}
+                                    className="flex-1 bg-transparent text-gray-900 dark:text-gray-100 outline-none border-b border-gray-300 dark:border-gray-600 focus:border-gray-900 dark:focus:border-gray-400"
+                                    autoFocus
+                                />
+                            ) : (
+                                <Tooltip content={item.content}>
+                                    <span
+                                        onClick={() => {
+                                            setEditingId(item.id);
+                                            setEditContent(item.content);
+                                        }}
+                                        className="flex-1 text-gray-900 dark:text-gray-100 cursor-text truncate"
+                                    >
+                                        {item.content}
+                                    </span>
+                                </Tooltip>
+                            )}
+
+                            {/* Delete button */}
+                            <button
+                                onClick={() => handleDelete(item.id)}
+                                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-all h-6 w-6 flex items-center justify-center"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </ContextMenu>
                 ))}
 
                 {/* Empty slots */}
