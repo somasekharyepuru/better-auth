@@ -109,7 +109,7 @@ export function EndOfDayReview({
                     <View style={styles.header}>
                         <View style={styles.headerLeft}>
                             <View style={[styles.iconContainer, { backgroundColor: colors.backgroundSecondary }]}>
-                                <Ionicons name="moon" size={20} color={colors.text} />
+                                <Ionicons name="moon-outline" size={20} color={colors.text} />
                             </View>
                             <View>
                                 <Text style={[styles.title, { color: colors.text }]}>End of Day Review</Text>

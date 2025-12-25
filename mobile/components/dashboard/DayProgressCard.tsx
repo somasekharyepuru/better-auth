@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 import { typography, spacing, radius, shadows } from '@/constants/Theme';
 import { ThemeColors } from '@/constants/Colors';
 
@@ -18,31 +19,58 @@ export function DayProgressCard({ completed, total, colors }: DayProgressCardPro
     const progress = total > 0 ? completed / total : 0;
     const percentage = Math.round(progress * 100);
 
+    // SVG circular progress parameters
+    const size = 64;
+    const strokeWidth = 5;
+    const center = size / 2;
+    const r = center - strokeWidth / 2;
+    const circumference = 2 * Math.PI * r;
+    const strokeDashoffset = circumference * (1 - progress);
+
     return (
         <View style={[styles.card, { backgroundColor: colors.cardSolid }, shadows.sm]}>
             <View style={styles.content}>
                 <View style={styles.progressContainer}>
-                    {/* Simple circular progress */}
-                    <View style={[styles.progressCircle, { borderColor: colors.border }]}>
-                        <View
-                            style={[
-                                styles.progressFill,
-                                {
-                                    borderColor: colors.accent,
-                                    transform: [{ rotate: `${progress * 360}deg` }],
-                                },
-                            ]}
+                    {/* SVG Circular Progress */}
+                    <Svg width={size} height={size} style={styles.svg}>
+                        {/* Background Circle */}
+                        <Circle
+                            cx={center}
+                            cy={center}
+                            r={r}
+                            stroke={colors.border}
+                            strokeWidth={strokeWidth}
+                            fill="none"
                         />
-                        <View style={[styles.progressInner, { backgroundColor: colors.cardSolid }]}>
-                            <Text style={[styles.percentageText, { color: colors.text }]}>{percentage}%</Text>
-                        </View>
+                        {/* Progress Circle */}
+                        <Circle
+                            cx={center}
+                            cy={center}
+                            r={r}
+                            stroke={colors.accent}
+                            strokeWidth={strokeWidth}
+                            fill="none"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={strokeDashoffset}
+                            strokeLinecap="round"
+                            transform={`rotate(-90 ${center} ${center})`}
+                        />
+                    </Svg>
+                    {/* Percentage Text */}
+                    <View style={styles.percentageContainer}>
+                        <Text style={[styles.percentageText, { color: colors.text }]}>
+                            {percentage}%
+                        </Text>
                     </View>
                 </View>
 
                 <View style={styles.stats}>
                     <Text style={[styles.statsTitle, { color: colors.text }]}>Daily Progress</Text>
                     <Text style={[styles.statsSubtitle, { color: colors.textSecondary }]}>
-                        {completed} of {total} priorities completed
+                        {total > 0
+                            ? `${completed} of ${total} priorities completed`
+                            : 'No priorities yet'
+                        }
                     </Text>
                     {total === 0 && (
                         <Text style={[styles.hint, { color: colors.textTertiary }]}>
@@ -66,36 +94,22 @@ const styles = StyleSheet.create({
         gap: spacing.lg,
     },
     progressContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    progressCircle: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        borderWidth: 4,
-        alignItems: 'center',
-        justifyContent: 'center',
         position: 'relative',
-    },
-    progressFill: {
-        position: 'absolute',
         width: 64,
         height: 64,
-        borderRadius: 32,
-        borderWidth: 4,
-        borderRightColor: 'transparent',
-        borderBottomColor: 'transparent',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    progressInner: {
-        width: 52,
-        height: 52,
-        borderRadius: 26,
+    svg: {
+        position: 'absolute',
+    },
+    percentageContainer: {
         alignItems: 'center',
         justifyContent: 'center',
     },
     percentageText: {
         ...typography.headline,
+        fontSize: 16,
     },
     stats: {
         flex: 1,
@@ -112,3 +126,4 @@ const styles = StyleSheet.create({
         marginTop: spacing.xs,
     },
 });
+

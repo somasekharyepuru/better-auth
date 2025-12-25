@@ -179,15 +179,16 @@ export async function getTwoFactorStatus(): Promise<{ enabled: boolean } | { err
 }
 
 // Enable 2FA - returns TOTP URI for QR code
-export async function enableTwoFactor(): Promise<{ totpURI: string; backupCodes: string[] } | { error: AuthError }> {
+export async function enableTwoFactor(password: string): Promise<{ totpURI: string; backupCodes: string[] } | { error: AuthError }> {
     try {
-        // The enable method requires the user's password for security
-        // This is a simplified version - in a real app, you'd prompt for password
+        if (!password) {
+            return { error: { message: 'Password is required to enable 2FA' } };
+        }
         const result = await (authClient.twoFactor as any)?.enable?.({
-            password: '', // User must provide password
+            password,
         });
         if (!result || result.error) {
-            return { error: { message: result?.error?.message || 'Password required to enable 2FA' } };
+            return { error: { message: result?.error?.message || 'Failed to enable 2FA' } };
         }
         return {
             totpURI: result.data?.totpURI || '',
@@ -197,6 +198,7 @@ export async function enableTwoFactor(): Promise<{ totpURI: string; backupCodes:
         return { error: { message: 'Network error. Please try again.' } };
     }
 }
+
 
 // Verify 2FA code to complete setup
 export async function verifyTwoFactor(code: string): Promise<{ success: boolean } | { error: AuthError }> {

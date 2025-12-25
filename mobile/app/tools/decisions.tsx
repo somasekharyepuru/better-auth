@@ -3,7 +3,7 @@
  * Track important decisions and their context - synced with backend
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     View,
     Text,
@@ -14,6 +14,7 @@ import {
     ActivityIndicator,
     Alert,
     RefreshControl,
+    Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
@@ -34,14 +35,34 @@ export default function DecisionsScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [editingDecision, setEditingDecision] = useState<Decision | null>(null);
     const [newTitle, setNewTitle] = useState('');
     const [newContext, setNewContext] = useState('');
+    const [newOutcome, setNewOutcome] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const loadDecisions = useCallback(async () => {
+    // Debounce search query
+    useEffect(() => {
+        if (searchTimeout.current) {
+            clearTimeout(searchTimeout.current);
+        }
+        searchTimeout.current = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+        }, 300);
+        return () => {
+            if (searchTimeout.current) {
+                clearTimeout(searchTimeout.current);
+            }
+        };
+    }, [searchQuery]);
+
+    const loadDecisions = useCallback(async (search?: string) => {
         try {
-            const data = await decisionsApi.getAll();
+            const data = await decisionsApi.getAll(search);
             setDecisions(data);
         } catch (error) {
             console.error('Failed to load decisions:', error);
@@ -55,42 +76,98 @@ export default function DecisionsScreen() {
         loadDecisions();
     }, [loadDecisions]);
 
+    // Reload when search changes
+    useEffect(() => {
+        if (!isLoading) {
+            loadDecisions(debouncedSearch || undefined);
+        }
+    }, [debouncedSearch, loadDecisions, isLoading]);
+
     const handleRefresh = () => {
         setIsRefreshing(true);
-        loadDecisions();
+        loadDecisions(debouncedSearch || undefined);
     };
 
-    const handleAddDecision = async () => {
+    const resetForm = () => {
+        setNewTitle('');
+        setNewContext('');
+        setNewOutcome('');
+        setEditingDecision(null);
+    };
+
+    const handleOpenAddModal = () => {
+        resetForm();
+        setShowAddModal(true);
+    };
+
+    const handleOpenEditModal = (decision: Decision) => {
+        setNewTitle(decision.title);
+        setNewContext(decision.context || '');
+        setNewOutcome(decision.outcome || '');
+        setEditingDecision(decision);
+        setShowAddModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setShowAddModal(false);
+        resetForm();
+    };
+
+    const handleSaveDecision = async () => {
         if (!newTitle.trim()) return;
 
         setIsSaving(true);
         try {
-            const newDecision = await decisionsApi.create({
-                title: newTitle.trim(),
-                decision: newTitle.trim(),
-                context: newContext.trim() || undefined,
-                date: formatDate(new Date()),
-            });
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            setDecisions([newDecision, ...decisions]);
-            setNewTitle('');
-            setNewContext('');
-            setShowAddModal(false);
+            if (editingDecision) {
+                // Update existing decision
+                const updated = await decisionsApi.update(editingDecision.id, {
+                    title: newTitle.trim(),
+                    context: newContext.trim() || undefined,
+                    outcome: newOutcome.trim() || undefined,
+                });
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                setDecisions(decisions.map(d => d.id === updated.id ? updated : d));
+            } else {
+                // Create new decision
+                const newDecision = await decisionsApi.create({
+                    title: newTitle.trim(),
+                    decision: newTitle.trim(),
+                    context: newContext.trim() || undefined,
+                    outcome: newOutcome.trim() || undefined,
+                    date: formatDate(new Date()),
+                });
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                setDecisions([newDecision, ...decisions]);
+            }
+            handleCloseModal();
         } catch (error) {
-            Alert.alert('Error', 'Failed to add decision');
+            Alert.alert('Error', editingDecision ? 'Failed to update decision' : 'Failed to add decision');
         } finally {
             setIsSaving(false);
         }
     };
 
     const handleDeleteDecision = async (id: string) => {
-        try {
-            await decisionsApi.delete(id);
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            setDecisions(decisions.filter((d) => d.id !== id));
-        } catch (error) {
-            Alert.alert('Error', 'Failed to delete decision');
-        }
+        Alert.alert(
+            'Delete Decision',
+            'Are you sure you want to delete this decision?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await decisionsApi.delete(id);
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            setDecisions(decisions.filter((d) => d.id !== id));
+                        } catch (error) {
+                            Alert.alert('Error', 'Failed to delete decision');
+                        }
+                    },
+                },
+            ]
+        );
     };
 
     const formatDisplayDate = (dateString: string) => {
@@ -108,12 +185,15 @@ export default function DecisionsScreen() {
                 options={{
                     title: 'Decision Log',
                     headerLeft: () => (
-                        <TouchableOpacity onPress={() => router.back()}>
+                        <TouchableOpacity
+                            onPress={() => router.back()}
+                            style={{ width: 32, height: 32, alignItems: 'center', justifyContent: 'center', }}
+                        >
                             <Ionicons name="chevron-back" size={24} color={colors.accent} />
                         </TouchableOpacity>
                     ),
                     headerRight: () => (
-                        <TouchableOpacity onPress={() => setShowAddModal(true)}>
+                        <TouchableOpacity onPress={handleOpenAddModal}>
                             <Ionicons name="add" size={24} color={colors.accent} />
                         </TouchableOpacity>
                     ),
@@ -131,7 +211,26 @@ export default function DecisionsScreen() {
                         tintColor={colors.accent}
                     />
                 }
+                keyboardShouldPersistTaps="handled"
             >
+                {/* Search Bar */}
+                <View style={[styles.searchContainer, { backgroundColor: colors.backgroundSecondary }]}>
+                    <Ionicons name="search" size={18} color={colors.textTertiary} />
+                    <TextInput
+                        style={[styles.searchInput, { color: colors.text }]}
+                        placeholder="Search decisions..."
+                        placeholderTextColor={colors.textTertiary}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        returnKeyType="search"
+                    />
+                    {searchQuery.length > 0 && (
+                        <TouchableOpacity onPress={() => setSearchQuery('')}>
+                            <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
+                        </TouchableOpacity>
+                    )}
+                </View>
+
                 {/* Info Card */}
                 <View style={[styles.infoCard, { backgroundColor: colors.warningLight }]}>
                     <Ionicons name="bulb" size={20} color={colors.warning} />
@@ -148,10 +247,10 @@ export default function DecisionsScreen() {
                     <View style={styles.emptyContainer}>
                         <Ionicons name="book-outline" size={48} color={colors.textTertiary} />
                         <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                            No decisions logged
+                            {searchQuery ? 'No decisions found' : 'No decisions logged'}
                         </Text>
                         <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                            Tap + to log your first decision
+                            {searchQuery ? 'Try a different search term' : 'Tap + to log your first decision'}
                         </Text>
                     </View>
                 ) : (
@@ -170,26 +269,48 @@ export default function DecisionsScreen() {
                                             {decision.title}
                                         </Text>
                                     </View>
-                                    <TouchableOpacity
-                                        onPress={() => handleDeleteDecision(decision.id)}
-                                        style={styles.deleteButton}
-                                    >
-                                        <Ionicons name="trash-outline" size={18} color={colors.textTertiary} />
-                                    </TouchableOpacity>
+                                    <View style={styles.actionButtons}>
+                                        <TouchableOpacity
+                                            onPress={() => handleOpenEditModal(decision)}
+                                            style={styles.actionButton}
+                                        >
+                                            <Ionicons name="pencil-outline" size={18} color={colors.textSecondary} />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            onPress={() => handleDeleteDecision(decision.id)}
+                                            style={styles.actionButton}
+                                        >
+                                            <Ionicons name="trash-outline" size={18} color={colors.textTertiary} />
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
 
                                 <Text style={[styles.decisionDate, { color: colors.textSecondary }]}>
                                     {formatDisplayDate(decision.createdAt)}
                                 </Text>
 
-                                {expandedId === decision.id && decision.context && (
-                                    <View style={[styles.decisionContext, { borderTopColor: colors.border }]}>
-                                        <Text style={[styles.contextLabel, { color: colors.textSecondary }]}>
-                                            Context
-                                        </Text>
-                                        <Text style={[styles.contextText, { color: colors.text }]}>
-                                            {decision.context}
-                                        </Text>
+                                {expandedId === decision.id && (
+                                    <View style={[styles.decisionDetails, { borderTopColor: colors.border }]}>
+                                        {decision.context && (
+                                            <View style={styles.detailSection}>
+                                                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
+                                                    Context
+                                                </Text>
+                                                <Text style={[styles.detailText, { color: colors.text }]}>
+                                                    {decision.context}
+                                                </Text>
+                                            </View>
+                                        )}
+                                        {decision.outcome && (
+                                            <View style={styles.detailSection}>
+                                                <Text style={[styles.detailLabel, { color: colors.success }]}>
+                                                    Outcome
+                                                </Text>
+                                                <Text style={[styles.detailText, { color: colors.text }]}>
+                                                    {decision.outcome}
+                                                </Text>
+                                            </View>
+                                        )}
                                     </View>
                                 )}
 
@@ -206,50 +327,74 @@ export default function DecisionsScreen() {
                 )}
             </ScrollView>
 
-            {/* Add Decision Modal */}
+            {/* Add/Edit Decision Modal */}
             {showAddModal && (
                 <View style={[styles.modalOverlay, { backgroundColor: colors.modalBackground }]}>
                     <View style={[styles.modal, { backgroundColor: colors.cardSolid }, shadows.lg]}>
                         <View style={styles.modalHeader}>
                             <Text style={[styles.modalTitle, { color: colors.text }]}>
-                                Log Decision
+                                {editingDecision ? 'Edit Decision' : 'Log Decision'}
                             </Text>
-                            <TouchableOpacity onPress={() => setShowAddModal(false)}>
+                            <TouchableOpacity onPress={handleCloseModal}>
                                 <Ionicons name="close" size={24} color={colors.textSecondary} />
                             </TouchableOpacity>
                         </View>
 
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>DECISION</Text>
-                            <TextInput
-                                style={[
-                                    styles.input,
-                                    { backgroundColor: colors.backgroundSecondary, color: colors.text },
-                                ]}
-                                placeholder="What decision did you make?"
-                                placeholderTextColor={colors.textTertiary}
-                                value={newTitle}
-                                onChangeText={setNewTitle}
-                            />
-                        </View>
+                        <ScrollView
+                            style={styles.modalContent}
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled"
+                        >
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>DECISION *</Text>
+                                <TextInput
+                                    style={[
+                                        styles.input,
+                                        { backgroundColor: colors.backgroundSecondary, color: colors.text },
+                                    ]}
+                                    placeholder="What decision did you make?"
+                                    placeholderTextColor={colors.textTertiary}
+                                    value={newTitle}
+                                    onChangeText={setNewTitle}
+                                />
+                            </View>
 
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                                CONTEXT (OPTIONAL)
-                            </Text>
-                            <TextInput
-                                style={[
-                                    styles.textArea,
-                                    { backgroundColor: colors.backgroundSecondary, color: colors.text },
-                                ]}
-                                placeholder="Why did you make this decision? What were the alternatives?"
-                                placeholderTextColor={colors.textTertiary}
-                                value={newContext}
-                                onChangeText={setNewContext}
-                                multiline
-                                textAlignVertical="top"
-                            />
-                        </View>
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                                    CONTEXT (OPTIONAL)
+                                </Text>
+                                <TextInput
+                                    style={[
+                                        styles.textArea,
+                                        { backgroundColor: colors.backgroundSecondary, color: colors.text },
+                                    ]}
+                                    placeholder="Why did you make this decision? What were the alternatives?"
+                                    placeholderTextColor={colors.textTertiary}
+                                    value={newContext}
+                                    onChangeText={setNewContext}
+                                    multiline
+                                    textAlignVertical="top"
+                                />
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                                    OUTCOME (OPTIONAL)
+                                </Text>
+                                <TextInput
+                                    style={[
+                                        styles.textArea,
+                                        { backgroundColor: colors.backgroundSecondary, color: colors.text },
+                                    ]}
+                                    placeholder="How did it turn out?"
+                                    placeholderTextColor={colors.textTertiary}
+                                    value={newOutcome}
+                                    onChangeText={setNewOutcome}
+                                    multiline
+                                    textAlignVertical="top"
+                                />
+                            </View>
+                        </ScrollView>
 
                         <TouchableOpacity
                             style={[
@@ -257,13 +402,15 @@ export default function DecisionsScreen() {
                                 { backgroundColor: colors.warning },
                                 (!newTitle.trim() || isSaving) && { opacity: 0.5 },
                             ]}
-                            onPress={handleAddDecision}
+                            onPress={handleSaveDecision}
                             disabled={!newTitle.trim() || isSaving}
                         >
                             {isSaving ? (
                                 <ActivityIndicator color="#fff" />
                             ) : (
-                                <Text style={styles.submitButtonText}>Log Decision</Text>
+                                <Text style={styles.submitButtonText}>
+                                    {editingDecision ? 'Update Decision' : 'Log Decision'}
+                                </Text>
                             )}
                         </TouchableOpacity>
                     </View>
@@ -409,5 +556,44 @@ const styles = StyleSheet.create({
     submitButtonText: {
         ...typography.headline,
         color: '#fff',
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: spacing.md,
+        height: sizing.inputHeight,
+        borderRadius: radius.md,
+        marginBottom: spacing.lg,
+        gap: spacing.sm,
+    },
+    searchInput: {
+        flex: 1,
+        ...typography.body,
+        height: '100%',
+    },
+    actionButtons: {
+        flexDirection: 'row',
+        gap: spacing.xs,
+    },
+    actionButton: {
+        padding: spacing.xs,
+    },
+    decisionDetails: {
+        marginTop: spacing.md,
+        paddingTop: spacing.md,
+        borderTopWidth: 1,
+        gap: spacing.md,
+    },
+    detailSection: {
+        gap: spacing.xs,
+    },
+    detailLabel: {
+        ...typography.label,
+    },
+    detailText: {
+        ...typography.body,
+    },
+    modalContent: {
+        maxHeight: 300,
     },
 });

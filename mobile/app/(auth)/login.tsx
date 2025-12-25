@@ -20,6 +20,7 @@ import { Link, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { authClient } from '@/lib/auth-client';
 import Colors from '@/constants/Colors';
 import { typography, spacing, radius, sizing } from '@/constants/Theme';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -47,10 +48,36 @@ export default function LoginScreen() {
         setIsLoading(true);
 
         try {
-            const result = await signIn(email.trim(), password);
+            // Use authClient directly to detect special cases
+            const result = await authClient.signIn.email({
+                email: email.trim(),
+                password,
+            });
+
             if (result.error) {
-                setError(result.error);
+                // Handle email not verified
+                if (result.error.code === 'EMAIL_NOT_VERIFIED') {
+                    router.push({
+                        pathname: '/(auth)/verify-email',
+                        params: { email: email.trim() },
+                    });
+                    return;
+                }
+                setError(result.error.message || 'Invalid email or password');
+                return;
             }
+
+            // Check if 2FA is required
+            if (result.data && 'twoFactorRedirect' in result.data && result.data.twoFactorRedirect) {
+                router.push({
+                    pathname: '/(auth)/verify-2fa',
+                    params: { callbackURL: '/(tabs)' },
+                });
+                return;
+            }
+
+            // Normal successful login - refresh auth state
+            await signIn(email.trim(), password);
         } catch (err) {
             setError('An unexpected error occurred');
         } finally {
@@ -73,8 +100,9 @@ export default function LoginScreen() {
                 {/* Header */}
                 <View style={styles.header}>
                     <View style={styles.logoContainer}>
-                        <Logo size="lg" colors={colors} />
+                        <Logo size="lg" showText={false} colors={colors} />
                     </View>
+                    <Text style={[styles.appName, { color: colors.text }]}>Daymark</Text>
                     <Text style={[styles.title, { color: colors.text }]}>Welcome back</Text>
                     <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
                         Sign in to your account
@@ -130,6 +158,17 @@ export default function LoginScreen() {
                                 />
                             </Pressable>
                         </View>
+                    </View>
+
+                    {/* Forgot Password */}
+                    <View style={styles.forgotPasswordContainer}>
+                        <Link href="/(auth)/forgot-password" asChild>
+                            <Pressable>
+                                <Text style={[styles.forgotPasswordText, { color: colors.textSecondary }]}>
+                                    Forgot password?
+                                </Text>
+                            </Pressable>
+                        </Link>
                     </View>
 
                     <TouchableOpacity
@@ -278,6 +317,13 @@ const createStyles = (colors: typeof Colors.light) =>
         },
         footerLink: {
             ...typography.headline,
+        },
+        forgotPasswordContainer: {
+            alignItems: 'flex-end',
+            marginBottom: spacing.sm,
+        },
+        forgotPasswordText: {
+            ...typography.subheadline,
         },
         appName: {
             ...typography.title2,

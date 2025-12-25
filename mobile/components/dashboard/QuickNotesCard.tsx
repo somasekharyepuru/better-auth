@@ -62,19 +62,15 @@ export function QuickNotesCard({
     };
 
     return (
-        <View style={[styles.card, { backgroundColor: colors.cardSolid }, shadows.sm]}>
-            <View style={styles.header}>
-                <Ionicons name="document-text" size={20} color={colors.accent} />
-                <Text style={[styles.title, { color: colors.text }]}>Quick Notes</Text>
-                {isSaving && (
-                    <View style={styles.savingIndicator}>
-                        <ActivityIndicator size="small" color={colors.textTertiary} />
-                        <Text style={[styles.savingText, { color: colors.textTertiary }]}>
-                            Saving...
-                        </Text>
-                    </View>
-                )}
-            </View>
+        <View style={[styles.card, { backgroundColor: colors.cardSolid }]}>
+            {isSaving && (
+                <View style={styles.savingIndicator}>
+                    <ActivityIndicator size="small" color={colors.textTertiary} />
+                    <Text style={[styles.savingText, { color: colors.textTertiary }]}>
+                        Saving...
+                    </Text>
+                </View>
+            )}
 
             {isLoading ? (
                 <View style={styles.loadingContainer}>
@@ -105,23 +101,15 @@ export function QuickNotesCard({
 
 const styles = StyleSheet.create({
     card: {
-        borderRadius: radius.lg,
-        padding: spacing.lg,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.sm,
-        marginBottom: spacing.md,
-    },
-    title: {
-        ...typography.headline,
         flex: 1,
+        padding: spacing.lg,
     },
     savingIndicator: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'flex-end',
         gap: spacing.xs,
+        marginBottom: spacing.sm,
     },
     savingText: {
         ...typography.caption1,
@@ -131,10 +119,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     textArea: {
-        minHeight: 120,
+        flex: 1,
+        minHeight: 200,
         borderRadius: radius.md,
         padding: spacing.md,
         borderWidth: 1,
         ...typography.body,
+        textAlignVertical: 'top',
     },
 });
