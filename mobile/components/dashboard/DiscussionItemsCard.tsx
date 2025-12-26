@@ -64,12 +64,7 @@ export function DiscussionItemsCard({
     };
 
     return (
-        <View style={[styles.card, { backgroundColor: colors.cardSolid }, shadows.sm]}>
-            <View style={styles.header}>
-                <Ionicons name="chatbubbles" size={20} color={colors.warning} />
-                <Text style={[styles.title, { color: colors.text }]}>To Discuss</Text>
-            </View>
-
+        <View style={[styles.card, { backgroundColor: colors.cardSolid }]}>
             {isLoading ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator color={colors.accent} />
@@ -118,6 +113,7 @@ export function DiscussionItemsCard({
                             onChangeText={setNewItem}
                             onSubmitEditing={handleAdd}
                             returnKeyType="done"
+                            blurOnSubmit={false}
                         />
                         <TouchableOpacity
                             onPress={handleAdd}
@@ -145,17 +141,8 @@ export function DiscussionItemsCard({
 
 const styles = StyleSheet.create({
     card: {
-        borderRadius: radius.lg,
+        flex: 1,
         padding: spacing.lg,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.sm,
-        marginBottom: spacing.md,
-    },
-    title: {
-        ...typography.headline,
     },
     loadingContainer: {
         paddingVertical: spacing.xl,

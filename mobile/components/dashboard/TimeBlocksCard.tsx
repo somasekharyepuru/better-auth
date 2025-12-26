@@ -210,12 +210,11 @@ export function TimeBlocksCard({
     };
 
     return (
-        <View style={[styles.card, { backgroundColor: colors.cardSolid }, shadows.sm]}>
+        <View style={[styles.card, { backgroundColor: colors.cardSolid }]}>
             <View style={styles.header}>
-                <Ionicons name="time" size={20} color={colors.success} />
-                <Text style={[styles.title, { color: colors.text }]}>Schedule</Text>
-                <TouchableOpacity onPress={openAddModal} style={styles.addButton}>
-                    <Ionicons name="add" size={20} color={colors.accent} />
+                <View style={styles.headerSpacer} />
+                <TouchableOpacity onPress={openAddModal} style={[styles.addHeaderButton, { backgroundColor: colors.accent }]}>
+                    <Ionicons name="add" size={18} color="#fff" />
                 </TouchableOpacity>
             </View>
 
@@ -406,21 +405,23 @@ export function TimeBlocksCard({
 
 const styles = StyleSheet.create({
     card: {
-        borderRadius: radius.lg,
+        flex: 1,
         padding: spacing.lg,
     },
     header: {
         flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.sm,
-        marginBottom: spacing.md,
+        justifyContent: 'flex-end',
+        marginBottom: spacing.sm,
     },
-    title: {
-        ...typography.headline,
+    headerSpacer: {
         flex: 1,
     },
-    addButton: {
-        padding: spacing.xs,
+    addHeaderButton: {
+        width: 28,
+        height: 28,
+        borderRadius: radius.full,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     loadingContainer: {
         paddingVertical: spacing.xl,

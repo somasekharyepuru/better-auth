@@ -6,6 +6,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LifeArea, lifeAreasApi } from '@/lib/api';
+import { useAuth } from './AuthContext';
 
 const SELECTED_LIFE_AREA_KEY = 'selected_life_area_id';
 
@@ -22,6 +23,7 @@ interface LifeAreasContextType {
 const LifeAreasContext = createContext<LifeAreasContextType | undefined>(undefined);
 
 export function LifeAreasProvider({ children }: { children: React.ReactNode }) {
+    const { isAuthenticated, isLoading: authLoading } = useAuth();
     const [lifeAreas, setLifeAreas] = useState<LifeArea[]>([]);
     const [selectedLifeArea, setSelectedLifeArea] = useState<LifeArea | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -62,9 +64,22 @@ export function LifeAreasProvider({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
+    // Only load life areas when authenticated
     useEffect(() => {
-        loadLifeAreas();
-    }, [loadLifeAreas]);
+        if (authLoading) {
+            // Still checking auth status, wait
+            return;
+        }
+
+        if (isAuthenticated) {
+            loadLifeAreas();
+        } else {
+            // Not authenticated, reset state
+            setLifeAreas([]);
+            setSelectedLifeArea(null);
+            setIsLoading(false);
+        }
+    }, [isAuthenticated, authLoading, loadLifeAreas]);
 
     const selectLifeArea = useCallback(async (id: string) => {
         const area = lifeAreas.find(a => a.id === id);

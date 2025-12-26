@@ -5,7 +5,7 @@
 
 import { createAuthClient } from 'better-auth/react';
 import { expoClient } from '@better-auth/expo/client';
-import { twoFactorClient } from 'better-auth/client/plugins';
+import { twoFactorClient, emailOTPClient } from 'better-auth/client/plugins';
 import * as SecureStore from 'expo-secure-store';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002';
@@ -19,6 +19,7 @@ export const authClient = createAuthClient({
             storage: SecureStore,
         }),
         twoFactorClient(),
+        emailOTPClient(),
     ],
 });
 

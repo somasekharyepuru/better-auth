@@ -26,6 +26,13 @@ export function Logo({ size = 'md', showText = true, colors }: LogoProps) {
     const iconSize = sizes[size].icon;
     const isDark = colors.background === '#000000' || colors.background === '#0a0a0a';
 
+    // Colors matching frontend exactly: gray-300, gray-500, gray-900 (light) / gray-100 (dark)
+    const barColors = {
+        left: '#d1d5db',      // gray-300
+        middle: '#6b7280',    // gray-500
+        right: isDark ? '#f3f4f6' : '#111827',  // gray-100 (dark) / gray-900 (light)
+    };
+
     return (
         <View style={styles.container}>
             {/* Logo Icon - Three bars representing day/progress */}
@@ -36,32 +43,32 @@ export function Logo({ size = 'md', showText = true, colors }: LogoProps) {
                     viewBox="0 0 40 40"
                     fill="none"
                 >
-                    {/* Left bar - lightest */}
+                    {/* Left bar - lightest (gray-300) */}
                     <Rect
                         x={4}
                         y={12}
                         width={6}
                         height={20}
                         rx={3}
-                        fill={isDark ? '#6b7280' : '#d1d5db'}
+                        fill={barColors.left}
                     />
-                    {/* Middle bar - medium (taller) */}
+                    {/* Middle bar - medium, taller (gray-500) */}
                     <Rect
                         x={17}
                         y={6}
                         width={6}
                         height={28}
                         rx={3}
-                        fill={isDark ? '#9ca3af' : '#6b7280'}
+                        fill={barColors.middle}
                     />
-                    {/* Right bar - darkest */}
+                    {/* Right bar - darkest (gray-900/gray-100) */}
                     <Rect
                         x={30}
                         y={10}
                         width={6}
                         height={22}
                         rx={3}
-                        fill={isDark ? '#f3f4f6' : '#111827'}
+                        fill={barColors.right}
                     />
                 </Svg>
             </View>
@@ -86,6 +93,13 @@ export function Logo({ size = 'md', showText = true, colors }: LogoProps) {
 export function LogoIcon({ size = 40, colors }: { size?: number; colors: ThemeColors }) {
     const isDark = colors.background === '#000000' || colors.background === '#0a0a0a';
 
+    // Colors matching frontend exactly: gray-300, gray-500, gray-900 (light) / gray-100 (dark)
+    const barColors = {
+        left: '#d1d5db',      // gray-300
+        middle: '#6b7280',    // gray-500
+        right: isDark ? '#f3f4f6' : '#111827',  // gray-100 (dark) / gray-900 (light)
+    };
+
     return (
         <Svg
             width={size}
@@ -93,36 +107,38 @@ export function LogoIcon({ size = 40, colors }: { size?: number; colors: ThemeCo
             viewBox="0 0 40 40"
             fill="none"
         >
-            {/* Left bar */}
+            {/* Left bar (gray-300) */}
             <Rect
                 x={4}
                 y={12}
                 width={6}
                 height={20}
                 rx={3}
-                fill={isDark ? '#6b7280' : '#d1d5db'}
+                fill={barColors.left}
             />
-            {/* Middle bar (taller) */}
+            {/* Middle bar - taller (gray-500) */}
             <Rect
                 x={17}
                 y={6}
                 width={6}
                 height={28}
                 rx={3}
-                fill={isDark ? '#9ca3af' : '#6b7280'}
+                fill={barColors.middle}
             />
-            {/* Right bar */}
+            {/* Right bar (gray-900/gray-100) */}
             <Rect
                 x={30}
                 y={10}
                 width={6}
                 height={22}
                 rx={3}
-                fill={isDark ? '#f3f4f6' : '#111827'}
+                fill={barColors.right}
             />
         </Svg>
     );
 }
+
+
 
 const styles = StyleSheet.create({
     container: {

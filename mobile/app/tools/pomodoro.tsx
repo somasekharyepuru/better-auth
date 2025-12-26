@@ -190,7 +190,10 @@ export default function PomodoroScreen() {
                 options={{
                     title: 'Pomodoro Timer',
                     headerLeft: () => (
-                        <TouchableOpacity onPress={() => router.back()}>
+                        <TouchableOpacity
+                            onPress={() => router.back()}
+                            style={{ width: 32, height: 32, alignItems: 'center', justifyContent: 'center', }}
+                        >
                             <Ionicons name="chevron-back" size={24} color={colors.accent} />
                         </TouchableOpacity>
                     ),
