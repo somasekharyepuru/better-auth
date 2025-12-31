@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { APP_CONFIG } from "@/config/app.constants";
 import { AppMockup } from "@/components/landing/AppMockup";
 import { Logo } from "@/components/ui/logo";
 import { LayoutDashboard, Focus, Sparkles } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import { Spinner } from "@/components/ui/spinner";
 
 // Feature icons mapped by index
 const featureIcons = [
@@ -16,6 +19,26 @@ const featureIcons = [
 
 export default function HomePage() {
   const sectionsRef = useRef<(HTMLElement | null)[]>([]);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const router = useRouter();
+
+  // Check if user is authenticated and redirect to dashboard
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const session = await authClient.getSession();
+        if (session?.data?.user) {
+          router.replace("/dashboard");
+          return;
+        }
+      } catch (error) {
+        // User is not authenticated, stay on landing page
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+    checkAuth();
+  }, [router]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -39,6 +62,15 @@ export default function HomePage() {
   const addToRefs = (el: HTMLElement | null, index: number) => {
     sectionsRef.current[index] = el;
   };
+
+  // Show loading state while checking auth
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
