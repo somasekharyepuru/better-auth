@@ -370,6 +370,46 @@ export default function SettingsScreen() {
                     </Text>
                 </View>
 
+                {/* Legal Section */}
+                <View style={styles.section}>
+                    <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+                        LEGAL
+                    </Text>
+                    <View style={[styles.sectionCard, { backgroundColor: colors.cardSolid }, shadows.sm]}>
+                        <TouchableOpacity
+                            style={styles.themeItem}
+                            onPress={() => {
+                                Haptics.selectionAsync();
+                                router.push('/legal/privacy' as any);
+                            }}
+                        >
+                            <View style={[styles.itemIcon, { backgroundColor: '#34C75915' }]}>
+                                <Ionicons name="shield-checkmark-outline" size={20} color="#34C759" />
+                            </View>
+                            <Text style={[styles.itemLabel, { color: colors.text, flex: 1 }]}>
+                                Privacy Policy
+                            </Text>
+                            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+                        </TouchableOpacity>
+                        <View style={[styles.separator, { backgroundColor: colors.border }]} />
+                        <TouchableOpacity
+                            style={styles.themeItem}
+                            onPress={() => {
+                                Haptics.selectionAsync();
+                                router.push('/legal/terms' as any);
+                            }}
+                        >
+                            <View style={[styles.itemIcon, { backgroundColor: '#007AFF15' }]}>
+                                <Ionicons name="document-text-outline" size={20} color="#007AFF" />
+                            </View>
+                            <Text style={[styles.itemLabel, { color: colors.text, flex: 1 }]}>
+                                Terms of Service
+                            </Text>
+                            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
             </ScrollView>
 
             {isSaving && (
