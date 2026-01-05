@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { APP_CONFIG } from "@/config/app.constants";
 import { AppMockup } from "@/components/landing/AppMockup";
@@ -18,7 +18,6 @@ const featureIcons = [
 ];
 
 export default function HomePage() {
-  const sectionsRef = useRef<(HTMLElement | null)[]>([]);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const router = useRouter();
 
@@ -52,16 +51,13 @@ export default function HomePage() {
       { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
     );
 
-    sectionsRef.current.forEach((section) => {
-      if (section) observer.observe(section);
-    });
+    // Use querySelectorAll to get all reveal sections after render
+    const sections = document.querySelectorAll('.reveal');
+    sections.forEach((section) => observer.observe(section));
 
     return () => observer.disconnect();
-  }, []);
+  }, [isCheckingAuth]);
 
-  const addToRefs = (el: HTMLElement | null, index: number) => {
-    sectionsRef.current[index] = el;
-  };
 
   // Show loading state while checking auth
   if (isCheckingAuth) {
@@ -121,9 +117,7 @@ export default function HomePage() {
       </section>
 
       {/* Philosophy Section */}
-      <section
-        ref={(el) => addToRefs(el, 0)}
-        className="py-32 px-6 reveal"
+      <section className="py-32 px-6 reveal"
       >
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-semibold text-gray-900 mb-8">
@@ -136,9 +130,7 @@ export default function HomePage() {
       </section>
 
       {/* Feature Highlights */}
-      <section
-        ref={(el) => addToRefs(el, 1)}
-        className="py-32 px-6 bg-gray-50/50 reveal"
+      <section className="py-32 px-6 bg-gray-50/50 reveal"
       >
         <div className="max-w-4xl mx-auto">
           <div className="space-y-24">
@@ -164,9 +156,7 @@ export default function HomePage() {
       </section>
 
       {/* How It Fits Into Your Life */}
-      <section
-        ref={(el) => addToRefs(el, 2)}
-        className="py-32 px-6 reveal"
+      <section className="py-32 px-6 reveal"
       >
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
@@ -182,9 +172,7 @@ export default function HomePage() {
       </section>
 
       {/* Who It's For */}
-      <section
-        ref={(el) => addToRefs(el, 3)}
-        className="py-32 px-6 bg-gray-50/50 reveal"
+      <section className="py-32 px-6 bg-gray-50/50 reveal"
       >
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-12">
@@ -204,9 +192,7 @@ export default function HomePage() {
       </section>
 
       {/* Final CTA */}
-      <section
-        ref={(el) => addToRefs(el, 4)}
-        className="py-40 px-6 reveal"
+      <section className="py-40 px-6 reveal"
       >
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-4xl md:text-6xl font-semibold text-gray-900 mb-6">
