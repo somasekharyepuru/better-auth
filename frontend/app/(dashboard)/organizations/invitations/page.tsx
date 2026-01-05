@@ -10,12 +10,13 @@ interface Invitation {
     email: string;
     role: string;
     status: string;
-    organization: {
+    organizationId?: string;
+    organization?: {
         id: string;
         name: string;
         slug: string;
     };
-    expiresAt: string;
+    expiresAt: string | Date;
 }
 
 export default function InvitationsPage() {
@@ -38,7 +39,7 @@ export default function InvitationsPage() {
                 // This uses the user's email to find their invitations
                 const result = await authClient.organization.listInvitations({});
                 if (result.data) {
-                    setInvitations(Array.isArray(result.data) ? result.data : []);
+                    setInvitations(Array.isArray(result.data) ? result.data as Invitation[] : []);
                 }
             } catch (err) {
                 setError("Failed to load invitations");
