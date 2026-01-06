@@ -34,6 +34,7 @@ import {
   BookOpen,
   Sun,
   Monitor,
+  Calendar,
 } from "lucide-react";
 
 const profileSchema = z.object({
@@ -585,6 +586,25 @@ function ProfilePageContent() {
               </div>
             ) : (
               <>
+                {/* Calendar Integration */}
+                <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
+                  <button
+                    onClick={() => router.push("/settings/calendars")}
+                    className="w-full flex items-center justify-between text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center">
+                        <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">Calendar Connections</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Sync Google, Microsoft, or Apple calendars</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                  </button>
+                </section>
+
                 {/* Theme Preferences */}
                 <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
                   <div className="flex items-center gap-2 mb-6">

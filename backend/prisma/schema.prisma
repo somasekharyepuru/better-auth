@@ -234,7 +234,13 @@ model TimeBlock {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  isFromCalendar   Boolean @default(false)
+  calendarSourceId String?
+  externalEventId  String?
+
   @@index([dayId])
+  @@index([isFromCalendar])
+  @@index([externalEventId])
   @@map("time_block")
 }
 
@@ -351,4 +357,254 @@ model DecisionEntry {
   @@index([userId])
   @@index([lifeAreaId])
   @@map("decision_entry")
+}
+
+// ==========================================
+// Calendar Sync - Enums
+// ==========================================
+
+enum CalendarProvider {
+  GOOGLE
+  MICROSOFT
+  APPLE
+}
+
+enum ConnectionStatus {
+  DISCONNECTED
+  CONNECTING
+  INITIAL_SYNC
+  ACTIVE
+  SYNCING
+  PAUSED
+  ERROR
+  TOKEN_EXPIRED
+}
+
+enum SyncDirection {
+  READ_ONLY
+  WRITE_ONLY
+  BIDIRECTIONAL
+}
+
+enum PrivacyMode {
+  FULL
+  BUSY_ONLY
+  TITLE_ONLY
+}
+
+enum EventSyncStatus {
+  SYNCED
+  PENDING_INBOUND
+  PENDING_OUTBOUND
+  CONFLICT
+  ERROR
+}
+
+enum ConflictStrategy {
+  LAST_WRITE_WINS
+  SOURCE_PRIORITY
+  MANUAL
+}
+
+// ==========================================
+// Calendar Sync - Models
+// ==========================================
+
+model CalendarConnection {
+  id                String           @id @default(cuid())
+  userId            String
+  provider          CalendarProvider
+  providerAccountId String
+  providerEmail     String?
+
+  status            ConnectionStatus @default(DISCONNECTED)
+  errorMessage      String?
+  lastErrorAt       DateTime?
+
+  lastSyncAt        DateTime?
+  lastSyncDuration  Int?
+  syncToken         String?
+
+  webhookChannelId  String?
+  webhookSecret     String?
+  webhookExpiresAt  DateTime?
+  webhookResourceId String?
+
+  enabled           Boolean          @default(true)
+  syncIntervalMins  Int              @default(15)
+
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  token             CalendarToken?
+  sources           CalendarSource[]
+  conflicts         CalendarConflict[]
+  auditLogs         SyncAuditLog[]
+
+  @@unique([userId, provider, providerAccountId])
+  @@index([userId])
+  @@index([status])
+  @@map("calendar_connection")
+}
+
+model CalendarToken {
+  id                    String             @id @default(cuid())
+  connectionId          String             @unique
+  connection            CalendarConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  accessTokenEncrypted  String             @db.Text
+  refreshTokenEncrypted String?            @db.Text
+  tokenIv               String
+
+  expiresAt             DateTime?
+  scopes                String[]
+  tokenType             String             @default("Bearer")
+
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  @@index([expiresAt])
+  @@map("calendar_token")
+}
+
+model CalendarSource {
+  id                  String             @id @default(cuid())
+  connectionId        String
+  connection          CalendarConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  externalCalendarId  String
+  name                String
+  description         String?
+  color               String?
+  timeZone            String?
+
+  syncEnabled         Boolean            @default(false)
+  syncDirection       SyncDirection      @default(BIDIRECTIONAL)
+  isPrimary           Boolean            @default(false)
+
+  privacyMode         PrivacyMode        @default(FULL)
+  defaultEventType    String             @default("Meeting")
+  excludePatterns     String[]
+
+  calendarSyncToken   String?
+  lastSyncAt          DateTime?
+  eventCount          Int                @default(0)
+
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  eventMappings       EventMapping[]
+
+  @@unique([connectionId, externalCalendarId])
+  @@index([connectionId])
+  @@map("calendar_source")
+}
+
+model EventMapping {
+  id                String          @id @default(cuid())
+  calendarSourceId  String
+  calendarSource    CalendarSource  @relation(fields: [calendarSourceId], references: [id], onDelete: Cascade)
+
+  externalEventId   String
+  externalEtag      String?
+  externalUpdatedAt DateTime?
+
+  timeBlockId       String?
+
+  syncStatus        EventSyncStatus @default(SYNCED)
+  lastSyncDirection String?
+  lastSyncAt        DateTime?
+  syncError         String?
+
+  lastKnownTitle    String?
+  lastKnownStart    DateTime?
+  lastKnownEnd      DateTime?
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([calendarSourceId, externalEventId])
+  @@index([timeBlockId])
+  @@index([syncStatus])
+  @@map("event_mapping")
+}
+
+model CalendarConflict {
+  id              String              @id @default(cuid())
+  connectionId    String
+  connection      CalendarConnection  @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  conflictType    String
+
+  localEventId    String?
+  localTitle      String?
+  localStart      DateTime?
+  localEnd        DateTime?
+  localUpdatedAt  DateTime?
+
+  remoteEventId   String?
+  remoteTitle     String?
+  remoteStart     DateTime?
+  remoteEnd       DateTime?
+  remoteUpdatedAt DateTime?
+
+  resolved        Boolean             @default(false)
+  resolvedAt      DateTime?
+  resolution      String?
+
+  expiresAt       DateTime
+
+  createdAt       DateTime            @default(now())
+
+  @@index([connectionId])
+  @@index([resolved])
+  @@map("calendar_conflict")
+}
+
+model SyncAuditLog {
+  id            String              @id @default(cuid())
+  connectionId  String
+  connection    CalendarConnection  @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  action        String
+  status        String
+
+  eventsProcessed Int?
+  eventsCreated   Int?
+  eventsUpdated   Int?
+  eventsDeleted   Int?
+  conflictsFound  Int?
+  durationMs      Int?
+
+  errorMessage    String?           @db.Text
+  metadata        Json?
+
+  createdAt       DateTime          @default(now())
+
+  @@index([connectionId])
+  @@index([createdAt])
+  @@map("sync_audit_log")
+}
+
+model UserCalendarSettings {
+  id                    String            @id @default(cuid())
+  userId                String            @unique
+
+  defaultSyncDirection  SyncDirection     @default(BIDIRECTIONAL)
+  defaultPrivacyMode    PrivacyMode       @default(FULL)
+  defaultEventType      String            @default("Meeting")
+
+  conflictStrategy      ConflictStrategy  @default(LAST_WRITE_WINS)
+  primaryCalendarId     String?
+  notifyOnConflict      Boolean           @default(true)
+
+  syncRangeMonthsPast   Int               @default(1)
+  syncRangeMonthsFuture Int               @default(6)
+
+  doubleBookingAlert    Boolean           @default(true)
+
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  @@map("user_calendar_settings")
 }

@@ -301,3 +301,131 @@ export const dailyReviewApi = {
     },
 };
 
+// Calendar Types
+export type CalendarProvider = 'GOOGLE' | 'MICROSOFT' | 'APPLE';
+export type ConnectionStatus = 'DISCONNECTED' | 'CONNECTING' | 'INITIAL_SYNC' | 'ACTIVE' | 'SYNCING' | 'PAUSED' | 'ERROR' | 'TOKEN_EXPIRED';
+export type SyncDirection = 'READ_ONLY' | 'WRITE_ONLY' | 'BIDIRECTIONAL';
+export type PrivacyMode = 'FULL' | 'BUSY_ONLY' | 'TITLE_ONLY';
+
+export interface CalendarConnection {
+    id: string;
+    userId: string;
+    provider: CalendarProvider;
+    providerAccountId: string;
+    providerEmail: string | null;
+    status: ConnectionStatus;
+    errorMessage: string | null;
+    lastSyncAt: string | null;
+    enabled: boolean;
+    syncIntervalMins: number;
+    createdAt: string;
+    updatedAt: string;
+    sources?: CalendarSource[];
+}
+
+export interface CalendarSource {
+    id: string;
+    connectionId: string;
+    externalCalendarId: string;
+    name: string;
+    description: string | null;
+    color: string | null;
+    timeZone: string | null;
+    syncEnabled: boolean;
+    syncDirection: SyncDirection;
+    isPrimary: boolean;
+    privacyMode: PrivacyMode;
+    defaultEventType: string;
+    lastSyncAt: string | null;
+    eventCount: number;
+}
+
+export interface UserCalendarSettings {
+    id: string;
+    userId: string;
+    defaultSyncDirection: SyncDirection;
+    defaultPrivacyMode: PrivacyMode;
+    defaultEventType: string;
+    conflictStrategy: 'LAST_WRITE_WINS' | 'SOURCE_PRIORITY' | 'MANUAL';
+    primaryCalendarId: string | null;
+    notifyOnConflict: boolean;
+    syncRangeMonthsPast: number;
+    syncRangeMonthsFuture: number;
+    doubleBookingAlert: boolean;
+}
+
+// Calendar API
+export const calendarApi = {
+    async getConnections(): Promise<CalendarConnection[]> {
+        return fetchWithCredentials(`${API_BASE}/api/calendar/connections`);
+    },
+
+    async getConnection(id: string): Promise<CalendarConnection> {
+        return fetchWithCredentials(`${API_BASE}/api/calendar/connections/${id}`);
+    },
+
+    async initiateConnection(provider: CalendarProvider): Promise<{ authUrl: string; state: string }> {
+        return fetchWithCredentials(`${API_BASE}/api/calendar/connections`, {
+            method: 'POST',
+            body: JSON.stringify({ provider }),
+        });
+    },
+
+    async updateConnection(id: string, data: { enabled?: boolean; syncIntervalMins?: number }): Promise<CalendarConnection> {
+        return fetchWithCredentials(`${API_BASE}/api/calendar/connections/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    },
+
+    async deleteConnection(id: string): Promise<void> {
+        return fetchWithCredentials(`${API_BASE}/api/calendar/connections/${id}`, {
+            method: 'DELETE',
+        });
+    },
+
+    async triggerSync(id: string): Promise<void> {
+        return fetchWithCredentials(`${API_BASE}/api/calendar/connections/${id}/sync`, {
+            method: 'POST',
+        });
+    },
+
+    async getSources(connectionId: string): Promise<CalendarSource[]> {
+        return fetchWithCredentials(`${API_BASE}/api/calendar/connections/${connectionId}/sources`);
+    },
+
+    async updateSource(id: string, data: {
+        syncEnabled?: boolean;
+        syncDirection?: SyncDirection;
+        privacyMode?: PrivacyMode;
+        defaultEventType?: string;
+    }): Promise<CalendarSource> {
+        return fetchWithCredentials(`${API_BASE}/api/calendar/sources/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    },
+
+    async getSettings(): Promise<UserCalendarSettings | null> {
+        try {
+            return await fetchWithCredentials(`${API_BASE}/api/calendar/settings`);
+        } catch {
+            return null;
+        }
+    },
+
+    async updateSettings(data: Partial<UserCalendarSettings>): Promise<UserCalendarSettings> {
+        return fetchWithCredentials(`${API_BASE}/api/calendar/settings`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    },
+
+    async completeAppleConnection(state: string, appleId: string, appSpecificPassword: string): Promise<CalendarConnection> {
+        return fetchWithCredentials(`${API_BASE}/api/calendar/connections/apple/complete`, {
+            method: 'POST',
+            body: JSON.stringify({ state, appleId, appSpecificPassword }),
+        });
+    },
+};
+
