@@ -153,6 +153,7 @@ export interface TokenRefreshJobData {
 
 export interface WebhookProcessJobData {
   connectionId: string;
+  sourceId: string;
   provider: CalendarProvider;
   payload: Record<string, unknown>;
   receivedAt: Date;

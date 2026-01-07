@@ -178,12 +178,21 @@ export function ConnectionCard({ connection, onRefresh }: ConnectionCardProps) {
             </div>
             <div>
               <h3 className="font-semibold text-gray-900 dark:text-gray-100">{provider.name}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {connection.providerEmail || connection.providerAccountId}
-              </p>
-              <div className={`flex items-center gap-1 mt-1 ${status.color}`}>
-                {status.icon}
-                <span className="text-xs">{status.label}</span>
+              {connection.providerEmail && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {connection.providerEmail}
+                </p>
+              )}
+              <div className="flex items-center gap-3 mt-1">
+                <div className={`flex items-center gap-1 ${status.color}`}>
+                  {status.icon}
+                  <span className="text-xs">{status.label}</span>
+                </div>
+                {connection.sources && connection.sources.length > 0 && (
+                  <span className="text-xs text-gray-400">
+                    {connection.sources.filter(s => s.syncEnabled).length}/{connection.sources.length} calendars synced
+                  </span>
+                )}
               </div>
             </div>
           </div>

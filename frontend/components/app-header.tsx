@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronRight, Wrench } from "lucide-react";
+import { ArrowLeft, ChevronRight, Wrench, Calendar } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { useSettings } from "@/lib/settings-context";
 
@@ -43,8 +43,10 @@ export function AppHeader() {
 
   const isProfilePage = pathname === "/profile" || pathname.startsWith("/profile/");
   const isToolsPage = pathname === "/tools" || pathname.startsWith("/tools/");
+  const isCalendarPage = pathname === "/calendar" || pathname.startsWith("/calendar/");
   const isDashboard = pathname === "/dashboard";
   const showToolsLink = settings.toolsTabEnabled && (settings.pomodoroEnabled || settings.eisenhowerEnabled || settings.decisionLogEnabled);
+  const showNavLinks = isDashboard || isCalendarPage;
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 z-50">
@@ -52,7 +54,7 @@ export function AppHeader() {
         <div className="flex justify-between items-center h-16">
           {/* Left side */}
           <div className="flex items-center gap-4">
-            {isProfilePage || isToolsPage ? (
+            {isProfilePage || isToolsPage || isCalendarPage ? (
               <button
                 onClick={() => router.push("/dashboard")}
                 className="flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
@@ -69,7 +71,19 @@ export function AppHeader() {
 
           {/* Right side */}
           <div className="flex items-center gap-4">
-            {isDashboard && showToolsLink && (
+            {showNavLinks && (
+              <button
+                onClick={() => router.push("/calendar")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-colors ${isCalendarPage
+                    ? "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800"
+                  }`}
+              >
+                <Calendar className="w-4 h-4" />
+                Calendar
+              </button>
+            )}
+            {showNavLinks && showToolsLink && (
               <button
                 onClick={() => router.push("/tools")}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors"
@@ -78,7 +92,7 @@ export function AppHeader() {
                 Tools
               </button>
             )}
-            {isDashboard && user && (
+            {showNavLinks && user && (
               <>
                 <span className="text-sm text-gray-500 dark:text-gray-400">
                   {user.name}

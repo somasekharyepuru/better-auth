@@ -96,7 +96,7 @@ export class CalendarConnectionService {
 
     this.logger.log(`Connection ${connection.id} completed with ${calendars.length} calendars`);
 
-    await this.setupWebhook(connection.id);
+    await this.setupWebhooksForConnection(connection.id);
     await this.triggerInitialSync(connection.id);
 
     return { connectionId: connection.id };
@@ -157,10 +157,10 @@ export class CalendarConnectionService {
     return { connectionId: connection.id };
   }
 
-  private async setupWebhook(connectionId: string): Promise<void> {
+  private async setupWebhooksForConnection(connectionId: string): Promise<void> {
     const connection = await this.prisma.calendarConnection.findUnique({
       where: { id: connectionId },
-      include: { sources: { where: { syncEnabled: true, isPrimary: true }, take: 1 } },
+      include: { sources: { where: { syncEnabled: true } } },
     });
 
     if (!connection || connection.provider === 'APPLE') {
@@ -172,37 +172,75 @@ export class CalendarConnectionService {
       return;
     }
 
-    try {
-      const accessToken = await this.tokenService.getValidToken(connectionId);
-      const webhookBaseUrl = process.env.WEBHOOK_BASE_URL || 'http://localhost:3002';
-      const callbackUrl = `${webhookBaseUrl}/api/webhooks/calendar/${connection.provider.toLowerCase()}/${connectionId}`;
+    const accessToken = await this.tokenService.getValidToken(connectionId);
+    const webhookBaseUrl = process.env.WEBHOOK_BASE_URL || 'http://localhost:3002';
 
-      const primarySource = connection.sources[0];
-      if (!primarySource) {
-        this.logger.warn(`No primary source found for webhook setup: ${connectionId}`);
-        return;
+    for (const source of connection.sources) {
+      try {
+        const callbackUrl = `${webhookBaseUrl}/api/webhooks/calendar/${connection.provider.toLowerCase()}/${connectionId}/${source.id}`;
+
+        const channel = await provider.setupWebhook(
+          accessToken,
+          source.externalCalendarId,
+          callbackUrl,
+          randomBytes(32).toString('hex'),
+        );
+
+        await this.prisma.calendarSource.update({
+          where: { id: source.id },
+          data: {
+            webhookChannelId: channel.channelId,
+            webhookResourceId: channel.resourceId,
+            webhookExpiresAt: channel.expiration,
+          },
+        });
+
+        this.logger.log(`Webhook setup for source ${source.id} (${source.name})`);
+      } catch (error) {
+        this.logger.error(`Failed to setup webhook for source ${source.id}:`, error);
       }
+    }
+  }
+
+  async setupWebhookForSource(sourceId: string): Promise<void> {
+    const source = await this.prisma.calendarSource.findUnique({
+      where: { id: sourceId },
+      include: { connection: true },
+    });
+
+    if (!source || !source.syncEnabled || source.connection.provider === 'APPLE') {
+      return;
+    }
+
+    const provider = this.providerFactory.getProvider(source.connection.provider);
+    if (!provider.setupWebhook) {
+      return;
+    }
+
+    try {
+      const accessToken = await this.tokenService.getValidToken(source.connectionId);
+      const webhookBaseUrl = process.env.WEBHOOK_BASE_URL || 'http://localhost:3002';
+      const callbackUrl = `${webhookBaseUrl}/api/webhooks/calendar/${source.connection.provider.toLowerCase()}/${source.connectionId}/${source.id}`;
 
       const channel = await provider.setupWebhook(
         accessToken,
-        primarySource.externalCalendarId,
+        source.externalCalendarId,
         callbackUrl,
-        connection.webhookSecret || randomBytes(32).toString('hex'),
+        randomBytes(32).toString('hex'),
       );
 
-      await this.prisma.calendarConnection.update({
-        where: { id: connectionId },
+      await this.prisma.calendarSource.update({
+        where: { id: sourceId },
         data: {
           webhookChannelId: channel.channelId,
           webhookResourceId: channel.resourceId,
           webhookExpiresAt: channel.expiration,
-          webhookSecret: channel.token,
         },
       });
 
-      this.logger.log(`Webhook setup complete for ${connectionId}, expires: ${channel.expiration}`);
+      this.logger.log(`Webhook setup for source ${sourceId}`);
     } catch (error) {
-      this.logger.error(`Failed to setup webhook for ${connectionId}:`, error);
+      this.logger.error(`Failed to setup webhook for source ${sourceId}:`, error);
     }
   }
 
@@ -278,6 +316,7 @@ export class CalendarConnectionService {
   async disconnectConnection(connectionId: string, userId: string): Promise<void> {
     const connection = await this.prisma.calendarConnection.findFirst({
       where: { id: connectionId, userId },
+      include: { sources: { where: { webhookChannelId: { not: null } } } },
     });
 
     if (!connection) {
@@ -288,12 +327,21 @@ export class CalendarConnectionService {
       const accessToken = await this.tokenService.getValidToken(connectionId);
       const provider = this.providerFactory.getProvider(connection.provider);
 
-      if (connection.webhookChannelId && provider.stopWebhook) {
-        await provider.stopWebhook(
-          accessToken,
-          connection.webhookChannelId,
-          connection.webhookResourceId ?? undefined,
-        );
+      // Stop webhooks for all sources
+      if (provider.stopWebhook) {
+        for (const source of connection.sources) {
+          if (source.webhookChannelId) {
+            try {
+              await provider.stopWebhook(
+                accessToken,
+                source.webhookChannelId,
+                source.webhookResourceId ?? undefined,
+              );
+            } catch (error) {
+              this.logger.warn(`Failed to stop webhook for source ${source.id}:`, error);
+            }
+          }
+        }
       }
 
       await provider.revokeAccess(accessToken);
@@ -306,6 +354,68 @@ export class CalendarConnectionService {
     });
 
     this.logger.log(`Connection ${connectionId} disconnected`);
+  }
+
+  async refreshWebhooks(connectionId: string): Promise<void> {
+    const connection = await this.prisma.calendarConnection.findUnique({
+      where: { id: connectionId },
+      include: { sources: { where: { syncEnabled: true } } },
+    });
+
+    if (!connection || connection.provider === 'APPLE') {
+      return;
+    }
+
+    const provider = this.providerFactory.getProvider(connection.provider);
+    if (!provider.setupWebhook) {
+      return;
+    }
+
+    const accessToken = await this.tokenService.getValidToken(connectionId);
+    const webhookBaseUrl = process.env.WEBHOOK_BASE_URL || 'http://localhost:3002';
+
+    this.logger.log(`Setting up webhooks with base URL: ${webhookBaseUrl}`);
+
+    for (const source of connection.sources) {
+      try {
+        // Stop existing webhook if any
+        if (source.webhookChannelId && provider.stopWebhook) {
+          try {
+            await provider.stopWebhook(
+              accessToken,
+              source.webhookChannelId,
+              source.webhookResourceId ?? undefined,
+            );
+          } catch (error) {
+            this.logger.warn(`Failed to stop old webhook for source ${source.id}:`, error);
+          }
+        }
+
+        const callbackUrl = `${webhookBaseUrl}/api/webhooks/calendar/${connection.provider.toLowerCase()}/${connectionId}/${source.id}`;
+        this.logger.log(`Webhook callback URL: ${callbackUrl}`);
+
+        const channel = await provider.setupWebhook(
+          accessToken,
+          source.externalCalendarId,
+          callbackUrl,
+          randomBytes(32).toString('hex'),
+        );
+
+        await this.prisma.calendarSource.update({
+          where: { id: source.id },
+          data: {
+            webhookChannelId: channel.channelId,
+            webhookResourceId: channel.resourceId,
+            webhookExpiresAt: channel.expiration,
+          },
+        });
+
+        this.logger.log(`Webhook setup for source ${source.id} (${source.name}), expires: ${channel.expiration}`);
+      } catch (error) {
+        this.logger.error(`Failed to setup webhook for source ${source.id}:`, error);
+        throw error;
+      }
+    }
   }
 
   async refreshCalendarList(connectionId: string, userId: string) {

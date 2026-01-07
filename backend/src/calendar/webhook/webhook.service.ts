@@ -36,6 +36,25 @@ export class CalendarWebhookService {
     return connection?.webhookSecret === clientState;
   }
 
+  async verifyGoogleWebhookForSource(sourceId: string, channelId: string): Promise<boolean> {
+    const source = await this.prisma.calendarSource.findFirst({
+      where: { id: sourceId, webhookChannelId: channelId },
+    });
+
+    return !!source;
+  }
+
+  async verifyMicrosoftWebhookForSource(sourceId: string, clientState?: string): Promise<boolean> {
+    if (!clientState) return false;
+
+    const source = await this.prisma.calendarSource.findUnique({
+      where: { id: sourceId },
+      include: { connection: true },
+    });
+
+    return source?.connection.webhookSecret === clientState;
+  }
+
   async markTokenExpired(connectionId: string): Promise<void> {
     await this.prisma.calendarConnection.update({
       where: { id: connectionId },
@@ -107,5 +126,59 @@ export class CalendarWebhookService {
     }
 
     this.logger.log(`Triggered incremental sync for ${connectionId} (${sources.length} sources)`);
+  }
+
+  async markSourceTokenExpired(sourceId: string): Promise<void> {
+    const source = await this.prisma.calendarSource.findUnique({
+      where: { id: sourceId },
+      select: { connectionId: true },
+    });
+
+    if (!source) return;
+
+    await this.prisma.calendarConnection.update({
+      where: { id: source.connectionId },
+      data: {
+        status: 'TOKEN_EXPIRED',
+        errorMessage: 'Token requires reauthorization',
+        lastErrorAt: new Date(),
+      },
+    });
+
+    this.logger.warn(`Marked connection for source ${sourceId} as TOKEN_EXPIRED`);
+  }
+
+  async markSourceWebhookExpired(sourceId: string): Promise<void> {
+    await this.prisma.calendarSource.update({
+      where: { id: sourceId },
+      data: {
+        webhookChannelId: null,
+        webhookExpiresAt: null,
+        webhookResourceId: null,
+      },
+    });
+
+    this.logger.warn(`Cleared webhook for source ${sourceId}`);
+  }
+
+  async triggerSourceFullSync(sourceId: string): Promise<void> {
+    const source = await this.prisma.calendarSource.findUnique({
+      where: { id: sourceId },
+      include: { connection: true },
+    });
+
+    if (!source) return;
+
+    const queue = source.connection.provider === 'GOOGLE' ? this.googleQueue : this.microsoftQueue;
+
+    await queue.add('full-sync', {
+      connectionId: source.connectionId,
+      userId: source.connection.userId,
+      provider: source.connection.provider,
+      sourceId: source.id,
+      triggeredBy: 'webhook-missed',
+    });
+
+    this.logger.log(`Triggered full sync for source ${sourceId} due to missed notifications`);
   }
 }

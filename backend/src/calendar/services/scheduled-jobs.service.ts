@@ -1,21 +1,47 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CALENDAR_QUEUES } from '../queue/calendar-queue.constants';
+import { CalendarConnectionService } from './calendar-connection.service';
 
 @Injectable()
-export class ScheduledJobsService {
+export class ScheduledJobsService implements OnModuleInit {
   private readonly logger = new Logger(ScheduledJobsService.name);
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly connectionService: CalendarConnectionService,
     @InjectQueue(CALENDAR_QUEUES.TOKEN_REFRESH) private tokenQueue: Queue,
     @InjectQueue(CALENDAR_QUEUES.APPLE_SYNC) private appleQueue: Queue,
     @InjectQueue(CALENDAR_QUEUES.GOOGLE_SYNC) private googleQueue: Queue,
     @InjectQueue(CALENDAR_QUEUES.MICROSOFT_SYNC) private microsoftQueue: Queue,
   ) {}
+
+  async onModuleInit() {
+    // Refresh webhooks on startup to ensure they're registered with current URL
+    this.logger.log('Refreshing webhooks on startup...');
+
+    const connections = await this.prisma.calendarConnection.findMany({
+      where: {
+        status: 'ACTIVE',
+        enabled: true,
+        provider: { in: ['GOOGLE', 'MICROSOFT'] },
+      },
+    });
+
+    for (const connection of connections) {
+      try {
+        await this.connectionService.refreshWebhooks(connection.id);
+        this.logger.log(`Refreshed webhooks for connection ${connection.id}`);
+      } catch (error) {
+        this.logger.error(`Failed to refresh webhooks for ${connection.id}:`, error);
+      }
+    }
+
+    this.logger.log(`Webhook refresh complete for ${connections.length} connections`);
+  }
 
   @Cron('*/15 * * * *')
   async checkExpiringTokens() {
@@ -49,26 +75,32 @@ export class ScheduledJobsService {
   async checkExpiringWebhooks() {
     this.logger.log('Checking for expiring webhooks');
 
-    const expiringConnections = await this.prisma.calendarConnection.findMany({
+    // Query sources with expiring webhooks
+    const expiringSources = await this.prisma.calendarSource.findMany({
       where: {
-        status: 'ACTIVE',
+        syncEnabled: true,
         webhookExpiresAt: {
           lte: new Date(Date.now() + 24 * 60 * 60 * 1000),
         },
-        provider: { in: ['GOOGLE', 'MICROSOFT'] },
+        connection: {
+          status: 'ACTIVE',
+          provider: { in: ['GOOGLE', 'MICROSOFT'] },
+        },
       },
+      include: { connection: true },
     });
 
-    for (const connection of expiringConnections) {
-      const queue = connection.provider === 'GOOGLE' ? this.googleQueue : this.microsoftQueue;
+    for (const source of expiringSources) {
+      const queue = source.connection.provider === 'GOOGLE' ? this.googleQueue : this.microsoftQueue;
       await queue.add('renew-webhook', {
-        connectionId: connection.id,
-        provider: connection.provider,
+        connectionId: source.connectionId,
+        sourceId: source.id,
+        provider: source.connection.provider,
       });
     }
 
-    if (expiringConnections.length > 0) {
-      this.logger.log(`Queued ${expiringConnections.length} webhook renewal jobs`);
+    if (expiringSources.length > 0) {
+      this.logger.log(`Queued ${expiringSources.length} webhook renewal jobs`);
     }
   }
 

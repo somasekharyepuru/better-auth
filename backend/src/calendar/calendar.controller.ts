@@ -110,6 +110,22 @@ export class CalendarController {
     return { success: true, message: 'Sync queued' };
   }
 
+  @Post('connections/:id/setup-webhooks')
+  async setupWebhooks(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    const userId = req.user?.id;
+    if (!userId) throw new Error('Unauthorized');
+
+    const connection = await this.connectionService.getConnection(id, userId);
+    if (!connection) throw new Error('Connection not found');
+
+    await this.connectionService.refreshWebhooks(id);
+    return {
+      success: true,
+      message: 'Webhooks refreshed',
+      webhookUrl: process.env.WEBHOOK_BASE_URL,
+    };
+  }
+
   @Get('connections/:id/sources')
   async getSources(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     const userId = req.user?.id;

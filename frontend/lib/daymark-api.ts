@@ -364,10 +364,10 @@ export const calendarApi = {
         return fetchWithCredentials(`${API_BASE}/api/calendar/connections/${id}`);
     },
 
-    async initiateConnection(provider: CalendarProvider): Promise<{ authUrl: string; state: string }> {
+    async initiateConnection(provider: CalendarProvider, redirectUri: string): Promise<{ authUrl: string; state: string }> {
         return fetchWithCredentials(`${API_BASE}/api/calendar/connections`, {
             method: 'POST',
-            body: JSON.stringify({ provider }),
+            body: JSON.stringify({ provider, redirectUri }),
         });
     },
 
@@ -429,3 +429,164 @@ export const calendarApi = {
     },
 };
 
+// Calendar Event Types
+export interface CalendarEvent {
+    id: string;
+    title: string;
+    description: string | null;
+    location: string | null;
+    startTime: string;
+    endTime: string;
+    isAllDay: boolean;
+    type: string;
+
+    // Source info
+    sourceId: string;
+    sourceName: string;
+    sourceColor: string | null;
+    provider: CalendarProvider;
+    providerEmail: string | null;
+
+    // Sync info
+    externalEventId: string | null;
+    isFromCalendar: boolean;
+    syncStatus?: 'SYNCED' | 'PENDING_INBOUND' | 'PENDING_OUTBOUND' | 'CONFLICT' | 'ERROR';
+
+    // Recurrence
+    recurringEventId: string | null;
+    isRecurring: boolean;
+
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CreateCalendarEventInput {
+    sourceId: string;
+    title: string;
+    description?: string;
+    location?: string;
+    startTime: string;
+    endTime: string;
+    isAllDay?: boolean;
+    type?: string;
+}
+
+export interface UpdateCalendarEventInput {
+    title?: string;
+    description?: string;
+    location?: string;
+    startTime?: string;
+    endTime?: string;
+    isAllDay?: boolean;
+    type?: string;
+}
+
+export interface WritableCalendarSource {
+    id: string;
+    name: string;
+    color: string | null;
+    provider: CalendarProvider;
+    providerEmail: string | null;
+    isPrimary: boolean;
+    connectionId: string;
+}
+
+// Busy Time Slot (from any calendar)
+export interface BusyTimeSlot {
+    id: string;
+    title: string;
+    startTime: string;
+    endTime: string;
+    sourceId: string | null;
+    sourceName: string;
+    sourceColor: string;
+    provider: CalendarProvider | null;
+    providerEmail: string | null;
+}
+
+// Conflict Check Result
+export interface ConflictCheckResult {
+    hasConflicts: boolean;
+    conflicts: BusyTimeSlot[];
+}
+
+// Calendar Events API
+export const eventsApi = {
+    /**
+     * Get aggregated events from all connected calendars
+     */
+    async getEvents(start: string, end: string, sourceIds?: string[]): Promise<CalendarEvent[]> {
+        const params = new URLSearchParams({ start, end });
+        if (sourceIds && sourceIds.length > 0) {
+            params.set('sourceIds', sourceIds.join(','));
+        }
+        return fetchWithCredentials(`${API_BASE}/api/calendar/events?${params.toString()}`);
+    },
+
+    /**
+     * Get a single event by ID
+     */
+    async getEvent(id: string): Promise<CalendarEvent> {
+        return fetchWithCredentials(`${API_BASE}/api/calendar/events/${id}`);
+    },
+
+    /**
+     * Get writable calendar sources for event creation
+     */
+    async getWritableSources(): Promise<WritableCalendarSource[]> {
+        return fetchWithCredentials(`${API_BASE}/api/calendar/writable-sources`);
+    },
+
+    /**
+     * Create a new event and sync to the selected calendar
+     */
+    async createEvent(data: CreateCalendarEventInput): Promise<CalendarEvent> {
+        return fetchWithCredentials(`${API_BASE}/api/calendar/events`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
+
+    /**
+     * Update an existing event
+     */
+    async updateEvent(id: string, data: UpdateCalendarEventInput): Promise<CalendarEvent> {
+        return fetchWithCredentials(`${API_BASE}/api/calendar/events/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    },
+
+    /**
+     * Delete an event
+     */
+    async deleteEvent(id: string): Promise<void> {
+        await fetchWithCredentials(`${API_BASE}/api/calendar/events/${id}`, {
+            method: 'DELETE',
+        });
+    },
+
+    /**
+     * Get busy time slots from ALL connected calendars
+     * Used for cross-calendar blocking visualization
+     */
+    async getBusyTimes(start: string, end: string): Promise<BusyTimeSlot[]> {
+        const params = new URLSearchParams({ start, end });
+        return fetchWithCredentials(`${API_BASE}/api/calendar/busy-times?${params.toString()}`);
+    },
+
+    /**
+     * Check if a proposed time range conflicts with existing events
+     * Returns all conflicting events from any calendar source
+     */
+    async checkConflicts(
+        startTime: string,
+        endTime: string,
+        excludeEventId?: string,
+    ): Promise<ConflictCheckResult> {
+        return fetchWithCredentials(`${API_BASE}/api/calendar/check-conflicts`, {
+            method: 'POST',
+            body: JSON.stringify({ startTime, endTime, excludeEventId }),
+        });
+    },
+};

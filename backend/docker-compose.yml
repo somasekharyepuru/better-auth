@@ -36,6 +36,19 @@ services:
     networks:
       - auth-network
 
+  # DEV ONLY: Cloudflare tunnel for webhook testing
+  # Start with: docker compose --profile dev up -d
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: daymark-tunnel
+    profiles: ["dev"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://backend:3002
+    depends_on:
+      - backend
+    networks:
+      - auth-network
+
   backend:
     build:
       context: .
@@ -76,6 +89,8 @@ services:
       - MAIL_MAX_RETRIES=${MAIL_MAX_RETRIES:-3}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3001}
       - REDIS_URL=redis://redis:6379
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
       - .:/app
       - /app/node_modules

@@ -490,6 +490,11 @@ model CalendarSource {
   lastSyncAt          DateTime?
   eventCount          Int                @default(0)
 
+  // Webhook per source for real-time updates
+  webhookChannelId    String?
+  webhookResourceId   String?
+  webhookExpiresAt    DateTime?
+
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 
@@ -497,6 +502,7 @@ model CalendarSource {
 
   @@unique([connectionId, externalCalendarId])
   @@index([connectionId])
+  @@index([webhookExpiresAt])
   @@map("calendar_source")
 }
 
@@ -520,12 +526,19 @@ model EventMapping {
   lastKnownStart    DateTime?
   lastKnownEnd      DateTime?
 
+  // Cross-calendar blocking: tracks if this event was created to block time from another source
+  isBlockingEvent      Boolean  @default(false)
+  blockedByMappingId   String?  // References the original EventMapping that triggered this block
+  blockedByMapping     EventMapping?  @relation("BlockingEvents", fields: [blockedByMappingId], references: [id], onDelete: SetNull)
+  blockingEvents       EventMapping[] @relation("BlockingEvents")
+
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
   @@unique([calendarSourceId, externalEventId])
   @@index([timeBlockId])
   @@index([syncStatus])
+  @@index([blockedByMappingId])
   @@map("event_mapping")
 }
 

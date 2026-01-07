@@ -125,6 +125,7 @@ export class GoogleCalendarProvider implements ICalendarProvider {
       maxResults: options?.maxResults || 250,
       singleEvents: true,
       orderBy: 'startTime',
+      showDeleted: true, // Required to receive deleted/cancelled events
     };
 
     if (options?.syncToken) {

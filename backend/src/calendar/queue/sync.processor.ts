@@ -18,7 +18,7 @@ export class GoogleSyncProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<InitialSyncJobData | IncrementalSyncJobData>): Promise<void> {
+  async process(job: Job<InitialSyncJobData | IncrementalSyncJobData | ContinueSyncJobData>): Promise<void> {
     this.logger.log(`Processing Google sync job ${job.id}: ${job.name}`);
 
     const data = job.data;
@@ -28,19 +28,31 @@ export class GoogleSyncProcessor extends WorkerHost {
         for (const sourceId of data.sourceIds) {
           await this.syncService.performSync(data.connectionId, sourceId);
         }
+      } else if ('pageToken' in data) {
+        // Continue-sync job with pagination
+        await this.syncService.performSync(data.connectionId, data.sourceId, undefined, data.pageToken);
       } else if ('sourceId' in data) {
         await this.syncService.performSync(data.connectionId, data.sourceId, data.syncToken);
       }
 
-      await this.prisma.calendarConnection.update({
-        where: { id: data.connectionId },
-        data: { status: 'ACTIVE', lastSyncAt: new Date() },
-      });
+      // Only update connection status if not a pagination job
+      if (!('pageToken' in data)) {
+        await this.prisma.calendarConnection.update({
+          where: { id: data.connectionId },
+          data: { status: 'ACTIVE', lastSyncAt: new Date() },
+        });
+      }
     } catch (error) {
       this.logger.error(`Google sync failed for ${data.connectionId}:`, error);
       throw error;
     }
   }
+}
+
+interface ContinueSyncJobData {
+  connectionId: string;
+  sourceId: string;
+  pageToken: string;
 }
 
 @Processor(CALENDAR_QUEUES.MICROSOFT_SYNC)
@@ -55,7 +67,7 @@ export class MicrosoftSyncProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<InitialSyncJobData | IncrementalSyncJobData>): Promise<void> {
+  async process(job: Job<InitialSyncJobData | IncrementalSyncJobData | ContinueSyncJobData>): Promise<void> {
     this.logger.log(`Processing Microsoft sync job ${job.id}: ${job.name}`);
 
     const data = job.data;
@@ -65,14 +77,18 @@ export class MicrosoftSyncProcessor extends WorkerHost {
         for (const sourceId of data.sourceIds) {
           await this.syncService.performSync(data.connectionId, sourceId);
         }
+      } else if ('pageToken' in data) {
+        await this.syncService.performSync(data.connectionId, data.sourceId, undefined, data.pageToken);
       } else if ('sourceId' in data) {
         await this.syncService.performSync(data.connectionId, data.sourceId, data.syncToken);
       }
 
-      await this.prisma.calendarConnection.update({
-        where: { id: data.connectionId },
-        data: { status: 'ACTIVE', lastSyncAt: new Date() },
-      });
+      if (!('pageToken' in data)) {
+        await this.prisma.calendarConnection.update({
+          where: { id: data.connectionId },
+          data: { status: 'ACTIVE', lastSyncAt: new Date() },
+        });
+      }
     } catch (error) {
       this.logger.error(`Microsoft sync failed for ${data.connectionId}:`, error);
       throw error;
@@ -92,7 +108,7 @@ export class AppleSyncProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<InitialSyncJobData | IncrementalSyncJobData>): Promise<void> {
+  async process(job: Job<InitialSyncJobData | IncrementalSyncJobData | ContinueSyncJobData>): Promise<void> {
     this.logger.log(`Processing Apple sync job ${job.id}: ${job.name}`);
 
     const data = job.data;
@@ -102,14 +118,18 @@ export class AppleSyncProcessor extends WorkerHost {
         for (const sourceId of data.sourceIds) {
           await this.syncService.performSync(data.connectionId, sourceId);
         }
+      } else if ('pageToken' in data) {
+        await this.syncService.performSync(data.connectionId, data.sourceId, undefined, data.pageToken);
       } else if ('sourceId' in data) {
         await this.syncService.performSync(data.connectionId, data.sourceId);
       }
 
-      await this.prisma.calendarConnection.update({
-        where: { id: data.connectionId },
-        data: { status: 'ACTIVE', lastSyncAt: new Date() },
-      });
+      if (!('pageToken' in data)) {
+        await this.prisma.calendarConnection.update({
+          where: { id: data.connectionId },
+          data: { status: 'ACTIVE', lastSyncAt: new Date() },
+        });
+      }
     } catch (error) {
       this.logger.error(`Apple sync failed for ${data.connectionId}:`, error);
       throw error;

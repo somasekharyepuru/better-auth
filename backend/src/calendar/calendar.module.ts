@@ -3,6 +3,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { CalendarController } from './calendar.controller';
+import { CalendarEventsController } from './events.controller';
 import { CalendarOAuthController } from './calendar-oauth.controller';
 import { CalendarWebhookController } from './webhook/webhook.controller';
 
@@ -14,6 +15,7 @@ import { CalendarProviderFactory } from './providers/calendar-provider.factory';
 import { CalendarTokenService } from './services/calendar-token.service';
 import { CalendarConnectionService } from './services/calendar-connection.service';
 import { CalendarSyncService } from './services/calendar-sync.service';
+import { CalendarEventsService } from './services/events.service';
 import { ScheduledJobsService } from './services/scheduled-jobs.service';
 
 import { CalendarWebhookService } from './webhook/webhook.service';
@@ -47,7 +49,7 @@ import { PrismaModule } from '../prisma/prisma.module';
       { name: CALENDAR_QUEUES.CLEANUP },
     ),
   ],
-  controllers: [CalendarController, CalendarOAuthController, CalendarWebhookController],
+  controllers: [CalendarController, CalendarEventsController, CalendarOAuthController, CalendarWebhookController],
   providers: [
     GoogleCalendarProvider,
     MicrosoftCalendarProvider,
@@ -57,6 +59,7 @@ import { PrismaModule } from '../prisma/prisma.module';
     CalendarTokenService,
     CalendarConnectionService,
     CalendarSyncService,
+    CalendarEventsService,
     ScheduledJobsService,
 
     CalendarWebhookService,
@@ -76,6 +79,7 @@ import { PrismaModule } from '../prisma/prisma.module';
     CalendarTokenService,
     CalendarConnectionService,
     CalendarSyncService,
+    CalendarEventsService,
   ],
 })
-export class CalendarModule {}
+export class CalendarModule { }
