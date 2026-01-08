@@ -6,7 +6,9 @@ import { authClient } from "@/lib/auth-client";
 import { useSettings } from "@/lib/settings-context";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip } from "@/components/ui/tooltip";
-import { ChevronLeft, Play, Pause, RotateCcw, Coffee, Brain, Sunset, X, Volume2, VolumeX, CheckCircle } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
+import { useFocusOptional } from "@/lib/focus-context";
+import { ChevronLeft, Play, Pause, RotateCcw, Coffee, Brain, Sunset, X, Volume2, VolumeX, CheckCircle, AlertTriangle } from "lucide-react";
 
 type TimerMode = "focus" | "shortBreak" | "longBreak";
 
@@ -89,6 +91,11 @@ export default function PomodoroPage() {
     const [showCompleteModal, setShowCompleteModal] = useState(false);
     const [completedSessions, setCompletedSessions] = useState(0);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Check for active focus session from other entry points
+    const focus = useFocusOptional();
+    const hasActiveFocusSession = Boolean(focus && (focus.isRunning || focus.isPaused));
+    const { addToast } = useToast();
 
     // Get durations from settings
     const getDuration = useCallback(
@@ -254,11 +261,37 @@ export default function PomodoroPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isRunning, remainingSeconds, settings.pomodoroSoundEnabled]);
 
-    const toggleTimer = () => {
-        setIsRunning(!isRunning);
+    const toggleTimer = async () => {
+        if (!isRunning) {
+            // Starting - use backend session if focus context available
+            if (focus) {
+                try {
+                    const durationMins = Math.ceil(getDuration(mode) / 60);
+                    await focus.startStandaloneSession(durationMins, mode);
+                    setIsRunning(true);
+                } catch (error) {
+                    addToast({
+                        type: 'error',
+                        title: error instanceof Error ? error.message : 'Failed to start session',
+                    });
+                }
+            } else {
+                // Fallback to local timer
+                setIsRunning(true);
+            }
+        } else {
+            // Stopping/pausing
+            if (focus && focus.activeSession) {
+                focus.pauseTimer();
+            }
+            setIsRunning(false);
+        }
     };
 
-    const resetTimer = () => {
+    const resetTimer = async () => {
+        if (focus && focus.activeSession) {
+            await focus.stopSession(false);
+        }
         setIsRunning(false);
         setRemainingSeconds(getDuration(mode));
         setShowCompleteModal(false);
@@ -315,6 +348,21 @@ export default function PomodoroPage() {
                         </div>
                     </Tooltip>
                 </div>
+
+                {/* Active Focus Session Warning */}
+                {hasActiveFocusSession && (
+                    <div className="mb-6 flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-xl">
+                        <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                        <div className="flex-1">
+                            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                                Focus session already active
+                            </p>
+                            <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+                                {focus?.activePriorityTitle ? `Working on: ${focus.activePriorityTitle}` : "A focus session is running elsewhere"}
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {/* Timer Card */}
                 <div className="card-premium relative z-10">
@@ -379,13 +427,19 @@ export default function PomodoroPage() {
                     <div className="flex justify-center gap-4">
                         <button
                             onClick={resetTimer}
-                            className="p-4 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                            disabled={hasActiveFocusSession}
+                            className={`p-4 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors ${hasActiveFocusSession ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             <RotateCcw className="w-6 h-6" />
                         </button>
                         <button
                             onClick={toggleTimer}
-                            className={`w-16 h-16 rounded-full flex items-center justify-center text-white transition-colors ${isRunning ? "bg-gray-900 hover:bg-gray-800" : "bg-blue-500 hover:bg-blue-600"
+                            disabled={hasActiveFocusSession && !isRunning}
+                            className={`w-16 h-16 rounded-full flex items-center justify-center text-white transition-colors ${hasActiveFocusSession && !isRunning
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : isRunning
+                                    ? "bg-gray-900 hover:bg-gray-800"
+                                    : "bg-blue-500 hover:bg-blue-600"
                                 }`}
                         >
                             {isRunning ? (

@@ -409,6 +409,17 @@ export interface FocusSessionStats {
     averageSessionMinutes: number;
 }
 
+export interface StartFromPriorityResponse {
+    timeBlock: {
+        id: string;
+        title: string;
+        category: string;
+        startTime: string;
+        endTime: string;
+    };
+    session: FocusSession;
+}
+
 export const focusSessionsApi = {
     async getActive(): Promise<FocusSession | null> {
         return fetchWithCredentials(`${API_BASE}/api/focus-sessions/active`);
@@ -438,6 +449,20 @@ export const focusSessionsApi = {
         return fetchWithCredentials(`${API_BASE}/api/focus-sessions/${sessionId}/end`, {
             method: 'POST',
             body: JSON.stringify({ completed, interrupted }),
+        });
+    },
+
+    async startFromPriority(priorityId: string, durationMins?: number): Promise<StartFromPriorityResponse> {
+        return fetchWithCredentials(`${API_BASE}/api/focus-sessions/priority/${priorityId}/start`, {
+            method: 'POST',
+            body: JSON.stringify({ durationMins }),
+        });
+    },
+
+    async startStandalone(durationMins?: number, sessionType?: string): Promise<StartFromPriorityResponse> {
+        return fetchWithCredentials(`${API_BASE}/api/focus-sessions/standalone/start`, {
+            method: 'POST',
+            body: JSON.stringify({ durationMins, sessionType }),
         });
     },
 };

@@ -78,3 +78,8 @@ export function useSettings() {
     }
     return context;
 }
+
+// Optional hook that doesn't throw - returns null if outside provider
+export function useSettingsOptional() {
+    return useContext(SettingsContext);
+}

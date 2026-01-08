@@ -120,6 +120,7 @@ function ProfilePageContent() {
   const [shortBreak, setShortBreak] = useState(5);
   const [longBreak, setLongBreak] = useState(15);
   const [pomodoroSoundEnabled, setPomodoroSoundEnabled] = useState(true);
+  const [focusBlocksCalendar, setFocusBlocksCalendar] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
@@ -189,6 +190,7 @@ function ProfilePageContent() {
       setShortBreak(settings.pomodoroShortBreak);
       setLongBreak(settings.pomodoroLongBreak);
       setPomodoroSoundEnabled(settings.pomodoroSoundEnabled);
+      setFocusBlocksCalendar(settings.focusBlocksCalendar);
     }
   }, [settings]);
 
@@ -292,6 +294,7 @@ function ProfilePageContent() {
         pomodoroShortBreak: shortBreak,
         pomodoroLongBreak: longBreak,
         pomodoroSoundEnabled,
+        focusBlocksCalendar,
       });
       setSaveMessage("Settings saved successfully!");
       addToast({
@@ -861,6 +864,20 @@ function ProfilePageContent() {
                                   type="checkbox"
                                   checked={pomodoroSoundEnabled}
                                   onChange={(e) => setPomodoroSoundEnabled(e.target.checked)}
+                                  className="w-5 h-5 rounded text-gray-900 focus:ring-gray-500"
+                                />
+                              </label>
+
+                              {/* Block External Calendars */}
+                              <label className="flex items-center justify-between p-3 rounded-xl hover:bg-white dark:hover:bg-gray-700 cursor-pointer transition-colors">
+                                <div>
+                                  <p className="font-medium text-gray-900 dark:text-gray-100">Block External Calendars</p>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">Create busy events during focus sessions</p>
+                                </div>
+                                <input
+                                  type="checkbox"
+                                  checked={focusBlocksCalendar}
+                                  onChange={(e) => setFocusBlocksCalendar(e.target.checked)}
                                   className="w-5 h-5 rounded text-gray-900 focus:ring-gray-500"
                                 />
                               </label>

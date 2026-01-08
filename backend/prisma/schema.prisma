@@ -368,6 +368,7 @@ model UserSettings {
   pomodoroShortBreak       Int @default(5)   // minutes
   pomodoroLongBreak        Int @default(15)  // minutes
   pomodoroSoundEnabled     Boolean @default(true)  // notification sound
+  focusBlocksCalendar      Boolean @default(true)  // Block external calendars during focus
 
   // Life Areas Settings
   lifeAreasEnabled   Boolean @default(true)

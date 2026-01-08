@@ -18,19 +18,4 @@ export default function DashboardPage() {
       <Spinner size="lg" />
     </div>
   );
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
-
-  return <DashboardContent user={user} />;
 }
-

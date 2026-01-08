@@ -96,4 +96,36 @@ export class FocusSessionController {
         const userId = this.getUserIdFromRequest(req);
         return this.focusSessionService.endSession(userId, id, body);
     }
+
+    /**
+     * Start a focus session from a priority (creates Quick Focus time block)
+     */
+    @Post('priority/:priorityId/start')
+    async startFromPriority(
+        @Param('priorityId') priorityId: string,
+        @Body() body: { durationMins?: number; sessionType?: string },
+        @Req() req: Request,
+    ) {
+        const userId = this.getUserIdFromRequest(req);
+        return this.focusSessionService.startFromPriority(userId, {
+            priorityId,
+            durationMins: body.durationMins,
+            sessionType: body.sessionType,
+        });
+    }
+
+    /**
+     * Start a standalone pomodoro session (not linked to any priority)
+     */
+    @Post('standalone/start')
+    async startStandalone(
+        @Body() body: { durationMins?: number; sessionType?: string },
+        @Req() req: Request,
+    ) {
+        const userId = this.getUserIdFromRequest(req);
+        return this.focusSessionService.startStandalone(userId, {
+            durationMins: body.durationMins,
+            sessionType: body.sessionType,
+        });
+    }
 }

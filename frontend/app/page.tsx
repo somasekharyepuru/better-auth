@@ -7,6 +7,8 @@ import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { AppHeader } from "@/components/app-header";
 import { SettingsProvider } from "@/lib/settings-context";
 import { LifeAreasProvider } from "@/lib/life-areas-context";
+import { FocusProvider } from "@/lib/focus-context";
+import { FloatingFocusTimer } from "@/components/focus/floating-focus-timer";
 
 interface User {
   id: string;
@@ -84,10 +86,13 @@ export default function HomePage() {
     return (
       <SettingsProvider>
         <LifeAreasProvider>
-          <AppHeader />
-          <div className="pt-16">
-            <DashboardContent user={user} />
-          </div>
+          <FocusProvider>
+            <AppHeader />
+            <div className="pt-16">
+              <DashboardContent user={user} />
+            </div>
+            <FloatingFocusTimer />
+          </FocusProvider>
         </LifeAreasProvider>
       </SettingsProvider>
     );

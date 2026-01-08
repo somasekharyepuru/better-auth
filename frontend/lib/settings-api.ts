@@ -21,6 +21,7 @@ export interface UserSettings {
     pomodoroShortBreak: number;
     pomodoroLongBreak: number;
     pomodoroSoundEnabled: boolean;
+    focusBlocksCalendar: boolean;
 }
 
 export interface UpdateSettingsDto {
@@ -41,6 +42,7 @@ export interface UpdateSettingsDto {
     pomodoroShortBreak?: number;
     pomodoroLongBreak?: number;
     pomodoroSoundEnabled?: boolean;
+    focusBlocksCalendar?: boolean;
 }
 
 // Default settings (used when API fails or loading)
@@ -64,6 +66,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
     pomodoroShortBreak: 5,
     pomodoroLongBreak: 15,
     pomodoroSoundEnabled: true,
+    focusBlocksCalendar: true,
 };
 
 async function fetchWithCredentials(url: string, options: RequestInit = {}) {
