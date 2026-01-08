@@ -76,7 +76,7 @@ export function AppHeader() {
 
           {/* Desktop Navigation */}
           <div className="hidden sm:flex items-center gap-4">
-            {showNavLinks && (
+            {/* {showNavLinks && (
               <button
                 onClick={() => router.push("/calendar")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-colors ${isCalendarPage
@@ -87,7 +87,7 @@ export function AppHeader() {
                 <Calendar className="w-4 h-4" />
                 Calendar
               </button>
-            )}
+            )} */}
             {showNavLinks && showToolsLink && (
               <button
                 onClick={() => router.push("/tools")}

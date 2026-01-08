@@ -212,10 +212,10 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId, rea
                                 </Tooltip>
                             )}
 
-                            {/* Delete button - always visible */}
+                            {/* Delete button - visible on hover */}
                             <button
                                 onClick={() => handleDelete(item.id)}
-                                className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all h-8 w-8 flex items-center justify-center flex-shrink-0"
+                                className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all h-8 w-8 flex items-center justify-center flex-shrink-0 opacity-0 group-hover:opacity-100"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>

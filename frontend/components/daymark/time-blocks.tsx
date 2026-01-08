@@ -291,8 +291,8 @@ export function TimeBlocks({ date, blocks, onUpdate, defaultDuration = 60, defau
                                 <span className="flex-1 text-body truncate min-w-0">{block.title}</span>
                             </Tooltip>
 
-                            {/* Actions - always visible */}
-                            <div className="flex gap-1 flex-shrink-0">
+                            {/* Actions - visible on hover */}
+                            <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
                                     onClick={() => startEditing(block)}
                                     className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
