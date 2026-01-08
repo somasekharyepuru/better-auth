@@ -238,23 +238,120 @@ export const discussionItemsApi = {
     },
 };
 
-// Time Blocks API
+// Time Blocks API - Enhanced with priority linking, categories, recurrence
+export interface EnhancedTimeBlock extends TimeBlock {
+    category: string;
+    priorityId: string | null;
+    blockExternalCalendars: boolean;
+    recurrenceRule: string | null;
+    recurrenceEndDate: string | null;
+    parentBlockId: string | null;
+    priority?: {
+        id: string;
+        title: string;
+        completed: boolean;
+    } | null;
+    focusSessions?: {
+        id: string;
+        startedAt: string;
+        endedAt: string | null;
+        completed: boolean;
+    }[];
+}
+
+export interface CreateTimeBlockInput {
+    title: string;
+    startTime: string;
+    endTime: string;
+    type?: string;
+    category?: string;
+    priorityId?: string;
+    blockExternalCalendars?: boolean;
+    recurrenceRule?: string;
+    recurrenceEndDate?: string;
+}
+
+export interface UpdateTimeBlockInput {
+    title?: string;
+    startTime?: string;
+    endTime?: string;
+    type?: string;
+    category?: string;
+    priorityId?: string | null;
+    blockExternalCalendars?: boolean;
+    recurrenceRule?: string | null;
+    recurrenceEndDate?: string | null;
+}
+
+export interface TimeBlockConflict {
+    hasConflict: boolean;
+    conflictingBlocks: {
+        id: string;
+        title: string;
+        startTime: string;
+        endTime: string;
+        category: string;
+    }[];
+}
+
+export interface TimeBlockStats {
+    totalBlocks: number;
+    focusBlocks: number;
+    meetingBlocks: number;
+    totalFocusMinutes: number;
+    totalMeetingMinutes: number;
+    completedSessions: number;
+}
+
+export const TIME_BLOCK_CATEGORIES = ['focus', 'meeting', 'break', 'deep-work', 'personal'] as const;
+export type TimeBlockCategory = typeof TIME_BLOCK_CATEGORIES[number];
+
 export const timeBlocksApi = {
-    async create(
-        date: string,
-        data: { title: string; startTime: string; endTime: string; type?: string },
-        lifeAreaId?: string
-    ): Promise<TimeBlock> {
+    async getForDate(date: string, lifeAreaId?: string): Promise<EnhancedTimeBlock[]> {
+        const params = lifeAreaId ? `?lifeAreaId=${lifeAreaId}` : '';
+        return fetchWithCredentials(`${API_BASE}/api/days/${date}/time-blocks${params}`);
+    },
+
+    async getForRange(start: string, end: string, lifeAreaId?: string): Promise<EnhancedTimeBlock[]> {
+        const params = new URLSearchParams({ start, end });
+        if (lifeAreaId) params.set('lifeAreaId', lifeAreaId);
+        return fetchWithCredentials(`${API_BASE}/api/time-blocks/range?${params.toString()}`);
+    },
+
+    async getFocusBlocks(start: string, end: string): Promise<EnhancedTimeBlock[]> {
+        const params = new URLSearchParams({ start, end });
+        return fetchWithCredentials(`${API_BASE}/api/time-blocks/focus?${params.toString()}`);
+    },
+
+    async getByCategory(category: TimeBlockCategory, start: string, end: string): Promise<EnhancedTimeBlock[]> {
+        const params = new URLSearchParams({ start, end });
+        return fetchWithCredentials(`${API_BASE}/api/time-blocks/category/${category}?${params.toString()}`);
+    },
+
+    async getStats(start: string, end: string): Promise<TimeBlockStats> {
+        const params = new URLSearchParams({ start, end });
+        return fetchWithCredentials(`${API_BASE}/api/time-blocks/stats?${params.toString()}`);
+    },
+
+    async getCategories(): Promise<{ categories: string[]; descriptions: Record<string, string> }> {
+        return fetchWithCredentials(`${API_BASE}/api/time-blocks/categories`);
+    },
+
+    async checkConflicts(startTime: string, endTime: string, excludeBlockId?: string): Promise<TimeBlockConflict> {
+        return fetchWithCredentials(`${API_BASE}/api/time-blocks/check-conflicts`, {
+            method: 'POST',
+            body: JSON.stringify({ startTime, endTime, excludeBlockId }),
+        });
+    },
+
+    async create(date: string, data: CreateTimeBlockInput, lifeAreaId?: string): Promise<EnhancedTimeBlock> {
         return fetchWithCredentials(`${API_BASE}/api/days/${date}/time-blocks`, {
             method: 'POST',
             body: JSON.stringify({ ...data, lifeAreaId }),
         });
     },
 
-    async update(
-        id: string,
-        data: { title?: string; startTime?: string; endTime?: string; type?: string }
-    ): Promise<TimeBlock> {
+    async update(id: string, data: UpdateTimeBlockInput): Promise<EnhancedTimeBlock> {
         return fetchWithCredentials(`${API_BASE}/api/time-blocks/${id}`, {
             method: 'PUT',
             body: JSON.stringify(data),
@@ -266,7 +363,85 @@ export const timeBlocksApi = {
             method: 'DELETE',
         });
     },
+
+    async linkToPriority(id: string, priorityId: string): Promise<EnhancedTimeBlock> {
+        return fetchWithCredentials(`${API_BASE}/api/time-blocks/${id}/link-priority`, {
+            method: 'PATCH',
+            body: JSON.stringify({ priorityId }),
+        });
+    },
+
+    async unlinkFromPriority(id: string): Promise<EnhancedTimeBlock> {
+        return fetchWithCredentials(`${API_BASE}/api/time-blocks/${id}/unlink-priority`, {
+            method: 'PATCH',
+        });
+    },
 };
+
+// Focus Sessions API - For pomodoro integration with time blocks
+export interface FocusSession {
+    id: string;
+    timeBlockId: string;
+    startedAt: string;
+    endedAt: string | null;
+    duration: number | null;
+    completed: boolean;
+    interrupted: boolean;
+    sessionType: string;
+    targetDuration: number | null;
+    createdAt: string;
+    timeBlock?: {
+        id: string;
+        title: string;
+        category: string;
+        priority?: {
+            id: string;
+            title: string;
+        } | null;
+    };
+}
+
+export interface FocusSessionStats {
+    totalSessions: number;
+    completedSessions: number;
+    interruptedSessions: number;
+    totalFocusMinutes: number;
+    averageSessionMinutes: number;
+}
+
+export const focusSessionsApi = {
+    async getActive(): Promise<FocusSession | null> {
+        return fetchWithCredentials(`${API_BASE}/api/focus-sessions/active`);
+    },
+
+    async getToday(): Promise<FocusSession[]> {
+        return fetchWithCredentials(`${API_BASE}/api/focus-sessions/today`);
+    },
+
+    async getStats(start: string, end: string): Promise<FocusSessionStats> {
+        const params = new URLSearchParams({ start, end });
+        return fetchWithCredentials(`${API_BASE}/api/focus-sessions/stats?${params.toString()}`);
+    },
+
+    async getForTimeBlock(timeBlockId: string): Promise<FocusSession[]> {
+        return fetchWithCredentials(`${API_BASE}/api/focus-sessions/time-block/${timeBlockId}`);
+    },
+
+    async start(timeBlockId: string, sessionType?: string, targetDuration?: number): Promise<FocusSession> {
+        return fetchWithCredentials(`${API_BASE}/api/focus-sessions/start`, {
+            method: 'POST',
+            body: JSON.stringify({ timeBlockId, sessionType, targetDuration }),
+        });
+    },
+
+    async end(sessionId: string, completed?: boolean, interrupted?: boolean): Promise<FocusSession> {
+        return fetchWithCredentials(`${API_BASE}/api/focus-sessions/${sessionId}/end`, {
+            method: 'POST',
+            body: JSON.stringify({ completed, interrupted }),
+        });
+    },
+};
+
 
 // Quick Notes API
 export const quickNotesApi = {
@@ -590,3 +765,134 @@ export const eventsApi = {
         });
     },
 };
+
+// ==========================================
+// Focus Suite v2: Analytics Types
+// ==========================================
+
+export interface TimeByQuadrant {
+    quadrant: number;
+    quadrantLabel: string;
+    totalMinutes: number;
+    sessionCount: number;
+}
+
+export interface TimeByLifeArea {
+    lifeAreaId: string;
+    lifeAreaName: string;
+    lifeAreaColor: string | null;
+    totalMinutes: number;
+    sessionCount: number;
+}
+
+export interface WeeklyDecisionSummary {
+    totalDecisions: number;
+    decisionsWithOutcome: number;
+    outcomeRate: number;
+    decisionsByDay: { date: string; count: number }[];
+}
+
+export interface FocusSuiteAnalytics {
+    timeByQuadrant: TimeByQuadrant[];
+    timeByLifeArea: TimeByLifeArea[];
+    weeklyDecisionSummary: WeeklyDecisionSummary;
+    focusSessionStats: FocusSessionStats;
+}
+
+// ==========================================
+// Focus Suite v2: Matrix Integration Types
+// ==========================================
+
+export interface CreateFocusBlockInput {
+    date: string;  // YYYY-MM-DD format
+    startTime: string;  // ISO datetime
+    endTime: string;    // ISO datetime
+    category?: string;
+}
+
+export interface MatrixTask {
+    id: string;
+    userId: string;
+    title: string;
+    note: string | null;
+    quadrant: number;
+    lifeAreaId?: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface MatrixTaskWithRelations extends MatrixTask {
+    scheduledTimeBlockId?: string | null;
+    promotedDate?: string | null;
+    promotedPriorityId?: string | null;
+    lifeArea?: { id: string; name: string; color: string | null } | null;
+    scheduledTimeBlock?: {
+        id: string;
+        title: string;
+        startTime: string;
+        endTime: string;
+        category: string;
+    } | null;
+    decisions?: { id: string; title: string; date: string }[];
+}
+
+// ==========================================
+// Focus Suite v2: API
+// ==========================================
+
+export const focusSuiteApi = {
+    // Analytics
+    async getAnalytics(start: string, end: string): Promise<FocusSuiteAnalytics> {
+        const params = new URLSearchParams({ start, end });
+        return fetchWithCredentials(`${API_BASE}/api/focus-suite/analytics?${params.toString()}`);
+    },
+
+    async getTimeByQuadrant(start: string, end: string): Promise<TimeByQuadrant[]> {
+        const params = new URLSearchParams({ start, end });
+        return fetchWithCredentials(`${API_BASE}/api/focus-suite/analytics/quadrant-time?${params.toString()}`);
+    },
+
+    async getTimeByLifeArea(start: string, end: string): Promise<TimeByLifeArea[]> {
+        const params = new URLSearchParams({ start, end });
+        return fetchWithCredentials(`${API_BASE}/api/focus-suite/analytics/life-area-time?${params.toString()}`);
+    },
+
+    async getWeeklyDecisions(weekStart: string): Promise<WeeklyDecisionSummary> {
+        const params = new URLSearchParams({ weekStart });
+        return fetchWithCredentials(`${API_BASE}/api/focus-suite/analytics/weekly-decisions?${params.toString()}`);
+    },
+
+    async getSessionStats(start: string, end: string): Promise<FocusSessionStats> {
+        const params = new URLSearchParams({ start, end });
+        return fetchWithCredentials(`${API_BASE}/api/focus-suite/analytics/session-stats?${params.toString()}`);
+    },
+
+    // Matrix Integration
+    async createFocusBlockFromTask(taskId: string, input: CreateFocusBlockInput): Promise<MatrixTaskWithRelations> {
+        return fetchWithCredentials(`${API_BASE}/api/focus-suite/matrix/${taskId}/focus-block`, {
+            method: 'POST',
+            body: JSON.stringify(input),
+        });
+    },
+
+    async attachDecisionToTask(taskId: string, decisionId: string): Promise<MatrixTaskWithRelations> {
+        return fetchWithCredentials(`${API_BASE}/api/focus-suite/matrix/${taskId}/decisions/${decisionId}`, {
+            method: 'POST',
+        });
+    },
+
+    async getSessionsForTask(taskId: string): Promise<FocusSession[]> {
+        return fetchWithCredentials(`${API_BASE}/api/focus-suite/matrix/${taskId}/sessions`);
+    },
+
+    async getDecisionsForTask(taskId: string): Promise<unknown[]> {
+        return fetchWithCredentials(`${API_BASE}/api/focus-suite/matrix/${taskId}/decisions`);
+    },
+
+    async unscheduleFocusBlock(taskId: string): Promise<MatrixTaskWithRelations> {
+        return fetchWithCredentials(`${API_BASE}/api/focus-suite/matrix/${taskId}/unschedule`, {
+            method: 'PATCH',
+        });
+    },
+};
+

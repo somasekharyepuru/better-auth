@@ -206,9 +206,16 @@ model TopPriority {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Time blocks linked to this priority
+  timeBlocks TimeBlock[]
+
+  // Focus Suite v2: Linked decisions
+  decisions DecisionEntry[]
+
   @@index([dayId])
   @@map("top_priority")
 }
+
 
 model DiscussionItem {
   id        String   @id @default(cuid())
@@ -238,11 +245,69 @@ model TimeBlock {
   calendarSourceId String?
   externalEventId  String?
 
+  // Priority linking - connect time blocks to priorities/goals
+  priorityId String?
+  priority   TopPriority? @relation(fields: [priorityId], references: [id], onDelete: SetNull)
+  
+  // Category for different block types (focus, meeting, break, deep-work, personal)
+  category String @default("focus")
+  
+  // Recurrence support
+  recurrenceRule    String?   // RRULE format (e.g., "FREQ=DAILY;BYDAY=MO,TU,WE,TH,FR")
+  recurrenceEndDate DateTime?
+  parentBlockId     String?   // For recurring instances
+  parentBlock       TimeBlock?  @relation("RecurringBlocks", fields: [parentBlockId], references: [id], onDelete: SetNull)
+  childBlocks       TimeBlock[] @relation("RecurringBlocks")
+  
+  // Cross-calendar blocking
+  blockExternalCalendars Boolean @default(true) // Whether to push "busy" to external calendars
+  
+  // Focus sessions tracking
+  focusSessions FocusSession[]
+
+  // Focus Suite v2: Matrix tasks scheduled for this block
+  eisenhowerTasks EisenhowerTask[]
+
   @@index([dayId])
   @@index([isFromCalendar])
   @@index([externalEventId])
+  @@index([priorityId])
+  @@index([category])
+  @@index([parentBlockId])
   @@map("time_block")
 }
+
+// Focus Session - tracks pomodoro/focus sessions linked to time blocks
+model FocusSession {
+  id          String     @id @default(cuid())
+  timeBlockId String
+  timeBlock   TimeBlock  @relation(fields: [timeBlockId], references: [id], onDelete: Cascade)
+  
+  startedAt   DateTime
+  endedAt     DateTime?
+  duration    Int?       // Duration in seconds
+  
+  // Session status
+  completed   Boolean    @default(false)
+  interrupted Boolean    @default(false)
+  
+  // Session type (from pomodoro settings)
+  sessionType String     @default("focus") // focus, shortBreak, longBreak
+  
+  // Metrics
+  targetDuration Int?    // Expected duration in seconds
+  
+  createdAt   DateTime   @default(now())
+  
+  // Focus Suite v2: Linked decisions
+  decisions   DecisionFocusSession[]
+  
+  @@index([timeBlockId])
+  @@index([startedAt])
+  @@map("focus_session")
+}
+
+
 
 model QuickNote {
   id        String   @id @default(cuid())
@@ -328,11 +393,21 @@ model EisenhowerTask {
   note       String?   @db.Text
   quadrant   Int       // 1=Urgent+Important, 2=Not Urgent+Important, 3=Urgent+Not Important, 4=Neither
 
+  // Focus Suite v2: Scheduled focus blocks and promotion
+  scheduledTimeBlockId String?
+  scheduledTimeBlock   TimeBlock? @relation(fields: [scheduledTimeBlockId], references: [id], onDelete: SetNull)
+  promotedDate         DateTime?  // Date when promoted to daily priority
+  promotedPriorityId   String?    // Reference to created priority
+
+  // Focus Suite v2: Related decisions
+  decisions DecisionEntry[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([lifeAreaId])
+  @@index([scheduledTimeBlockId])
   @@map("eisenhower_task")
 }
 
@@ -351,12 +426,38 @@ model DecisionEntry {
   decision   String    @db.Text
   outcome    String?   @db.Text
 
+  // Focus Suite v2: Linkage to related tasks and sessions
+  eisenhowerTaskId String?
+  eisenhowerTask   EisenhowerTask? @relation(fields: [eisenhowerTaskId], references: [id], onDelete: SetNull)
+  priorityId       String?
+  priority         TopPriority? @relation(fields: [priorityId], references: [id], onDelete: SetNull)
+
+  // Focus Suite v2: Link to focus sessions that produced this decision
+  focusSessions DecisionFocusSession[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([lifeAreaId])
+  @@index([eisenhowerTaskId])
+  @@index([priorityId])
   @@map("decision_entry")
+}
+
+// Focus Suite v2: Join table for Decision <-> FocusSession many-to-many
+model DecisionFocusSession {
+  id             String        @id @default(cuid())
+  decisionId     String
+  decision       DecisionEntry @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+  focusSessionId String
+  focusSession   FocusSession  @relation(fields: [focusSessionId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+
+  @@unique([decisionId, focusSessionId])
+  @@index([decisionId])
+  @@index([focusSessionId])
+  @@map("decision_focus_session")
 }
 
 // ==========================================

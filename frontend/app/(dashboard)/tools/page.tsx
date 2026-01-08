@@ -75,7 +75,7 @@ export default function ToolsPage() {
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8">
                     <button
-                        onClick={() => router.push("/dashboard")}
+                        onClick={() => router.push("/")}
                         className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                     >
                         <ChevronLeft className="w-5 h-5" />

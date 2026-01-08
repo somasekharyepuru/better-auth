@@ -90,7 +90,7 @@ frontend/
 | `/signup` | Registration |
 | `/verify-email` | Email OTP verification |
 | `/verify-2fa` | Two-factor verification |
-| `/dashboard` | Main productivity hub |
+| `/` | Main productivity hub (dashboard) |
 | `/profile` | User profile |
 | `/profile/two-factor` | 2FA setup |
 | `/settings` | App settings |

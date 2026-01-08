@@ -16,6 +16,7 @@ import { CalendarTokenService } from './services/calendar-token.service';
 import { CalendarConnectionService } from './services/calendar-connection.service';
 import { CalendarSyncService } from './services/calendar-sync.service';
 import { CalendarEventsService } from './services/events.service';
+import { ExternalBlockingService } from './services/external-blocking.service';
 import { ScheduledJobsService } from './services/scheduled-jobs.service';
 
 import { CalendarWebhookService } from './webhook/webhook.service';
@@ -60,6 +61,7 @@ import { PrismaModule } from '../prisma/prisma.module';
     CalendarConnectionService,
     CalendarSyncService,
     CalendarEventsService,
+    ExternalBlockingService,
     ScheduledJobsService,
 
     CalendarWebhookService,
@@ -80,6 +82,8 @@ import { PrismaModule } from '../prisma/prisma.module';
     CalendarConnectionService,
     CalendarSyncService,
     CalendarEventsService,
+    ExternalBlockingService,
   ],
 })
 export class CalendarModule { }
+

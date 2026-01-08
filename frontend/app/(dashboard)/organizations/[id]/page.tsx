@@ -62,7 +62,7 @@ export default function OrganizationDetailPage() {
         organizationId,
       });
       alert("Organization set as active!");
-      router.push("/dashboard");
+      router.push("/");
     } catch (err) {
       setError("Failed to set active organization");
     }

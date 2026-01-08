@@ -261,6 +261,10 @@ function ProfilePageContent() {
   const handleSignOut = async () => {
     try {
       await authClient.signOut();
+      // Clear cached auth to prevent flash
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth_user');
+      }
       router.push("/");
     } catch (error) {
       console.error("Sign out error:", error);

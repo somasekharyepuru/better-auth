@@ -32,7 +32,7 @@ function Verify2FAContent() {
   const searchParams = useSearchParams();
   const { addToast } = useToast();
 
-  const callbackURL = searchParams.get("callbackURL") || "/dashboard";
+  const callbackURL = searchParams.get("callbackURL") || "/";
 
   const {
     register,

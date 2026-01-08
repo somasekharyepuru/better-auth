@@ -41,7 +41,7 @@ export default function SignUpPage() {
       try {
         const session = await authClient.getSession();
         if (session?.data?.user) {
-          router.replace("/dashboard");
+          router.replace("/");
           return;
         }
       } catch (error) {

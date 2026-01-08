@@ -19,6 +19,7 @@ import { EisenhowerModule } from './eisenhower/eisenhower.module';
 import { DecisionLogModule } from './decision-log/decision-log.module';
 import { LifeAreasModule } from './life-areas/life-areas.module';
 import { CalendarModule } from './calendar/calendar.module';
+import { FocusSuiteModule } from './focus-suite/focus-suite.module';
 import { AuthMiddleware } from './auth/auth.middleware';
 
 @Module({
@@ -56,6 +57,7 @@ import { AuthMiddleware } from './auth/auth.middleware';
     EisenhowerModule,
     DecisionLogModule,
     CalendarModule,
+    FocusSuiteModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

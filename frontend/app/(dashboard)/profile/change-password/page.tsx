@@ -72,6 +72,11 @@ export default function ChangePasswordPage() {
 
       // Sign out the user for security after password change
       await authClient.signOut();
+      
+      // Clear cached auth to prevent flash
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth_user');
+      }
 
       // Small delay to show the toast message before redirect
       setTimeout(() => {

@@ -105,7 +105,7 @@ export default function InvitationsPage() {
         <div style={{ padding: "2rem", maxWidth: "800px", margin: "0 auto" }}>
             <h1>My Invitations</h1>
             <div style={{ marginBottom: "1rem" }}>
-                <Link href="/dashboard">Back to Dashboard</Link>
+                <Link href="/">Back to Dashboard</Link>
             </div>
 
             {error && (

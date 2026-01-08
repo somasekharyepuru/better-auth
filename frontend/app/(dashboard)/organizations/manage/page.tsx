@@ -164,7 +164,7 @@ export default function ManageOrganizationsPage() {
     return (
       <div style={{ padding: "2rem" }}>
         <p style={{ color: "red" }}>{error}</p>
-        <Link href="/dashboard">Back to Dashboard</Link>
+        <Link href="/">Back to Dashboard</Link>
       </div>
     );
   }
@@ -177,7 +177,7 @@ export default function ManageOrganizationsPage() {
     <div style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
       <h1>Manage Organization</h1>
       <div style={{ marginBottom: "1rem" }}>
-        <Link href="/dashboard">Back to Dashboard</Link>
+        <Link href="/">Back to Dashboard</Link>
       </div>
 
       {error && (

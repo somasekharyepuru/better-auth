@@ -182,22 +182,39 @@ export default function CalendarPage() {
                     setViewMode("month");
                     break;
                 case "n":
-                case "N":
                     e.preventDefault();
                     openCreateModal();
+                    break;
+                case "N":
+                    // Shift+N for quick focus block
+                    e.preventDefault();
+                    openCreateModal(currentDate, 9); // Default to 9am focus block
                     break;
                 case "r":
                 case "R":
                     e.preventDefault();
                     handleRefresh();
                     break;
+                case "s":
+                case "S":
+                    // Toggle sidebar
+                    e.preventDefault();
+                    setSidebarOpen(!sidebarOpen);
+                    break;
                 case "/":
                 case "?":
                     e.preventDefault();
                     setShowShortcuts(!showShortcuts);
                     break;
+                case "Escape":
+                    e.preventDefault();
+                    if (showShortcuts) {
+                        setShowShortcuts(false);
+                    }
+                    break;
             }
         };
+
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
@@ -695,6 +712,10 @@ export default function CalendarPage() {
                                     <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">N</kbd>
                                 </div>
                                 <div className="flex items-center justify-between">
+                                    <span className="text-gray-600 dark:text-gray-400">Quick Focus Block</span>
+                                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">⇧N</kbd>
+                                </div>
+                                <div className="flex items-center justify-between">
                                     <span className="text-gray-600 dark:text-gray-400">Day View</span>
                                     <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">D</kbd>
                                 </div>
@@ -710,7 +731,20 @@ export default function CalendarPage() {
                                     <span className="text-gray-600 dark:text-gray-400">Refresh</span>
                                     <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">R</kbd>
                                 </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-gray-600 dark:text-gray-400">Toggle Sidebar</span>
+                                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">S</kbd>
+                                </div>
                             </div>
+                        </div>
+
+                        <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                            <a
+                                href="/calendar/help"
+                                className="text-sm text-purple-600 dark:text-purple-400 hover:underline"
+                            >
+                                View full guide →
+                            </a>
                         </div>
                     </div>
                 </div>
