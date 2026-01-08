@@ -64,7 +64,7 @@ export default function AcceptInvitationPage() {
       } else {
         setMessage("Invitation accepted! Redirecting...");
         setTimeout(() => {
-          router.push("/dashboard");
+          router.push("/");
         }, 2000);
       }
     } catch (err) {
@@ -138,7 +138,7 @@ export default function AcceptInvitationPage() {
       <div style={{ padding: "2rem", maxWidth: "500px", margin: "0 auto" }}>
         <h1>Invitation Error</h1>
         <p style={{ color: "red" }}>{error}</p>
-        <Link href="/dashboard">Back to Dashboard</Link>
+        <Link href="/">Back to Dashboard</Link>
       </div>
     );
   }
@@ -147,7 +147,7 @@ export default function AcceptInvitationPage() {
     return (
       <div style={{ padding: "2rem", maxWidth: "500px", margin: "0 auto" }}>
         <p>Invitation not found</p>
-        <Link href="/dashboard">Back to Dashboard</Link>
+        <Link href="/">Back to Dashboard</Link>
       </div>
     );
   }
@@ -222,7 +222,7 @@ export default function AcceptInvitationPage() {
       )}
 
       <div style={{ marginTop: "1rem" }}>
-        <Link href="/dashboard">Back to Dashboard</Link>
+        <Link href="/">Back to Dashboard</Link>
       </div>
     </div>
   );

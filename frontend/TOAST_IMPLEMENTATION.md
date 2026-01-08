@@ -23,7 +23,7 @@ Created a new toast notification system with:
 
 ### 3. Pages Updated with Toast Messages
 
-#### Dashboard (`app/dashboard/page.tsx`)
+#### Dashboard (`app/page.tsx` - root route)
 
 - ✅ Fixed TypeScript errors (User and Session interfaces)
 - ✅ Success toast on sign out

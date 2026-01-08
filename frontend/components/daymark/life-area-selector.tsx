@@ -80,9 +80,9 @@ export function LifeAreaSelector({ className = "", showSettings = false }: LifeA
     }
 
     return (
-        <div className={`flex items-center gap-2 ${className}`}>
+        <div className={`flex flex-wrap items-center gap-2 ${className}`}>
             {/* Pill Tabs Container */}
-            <div className="inline-flex items-center gap-1 p-1 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full">
+            <div className="inline-flex items-center gap-1 p-1 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full overflow-x-auto max-w-full">
                 {lifeAreas.map((area) => {
                     const isSelected = area.id === selectedLifeArea?.id;
                     return (
@@ -90,7 +90,7 @@ export function LifeAreaSelector({ className = "", showSettings = false }: LifeA
                             key={area.id}
                             onClick={() => selectLifeArea(area.id)}
                             className={`
-                                relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium
+                                relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap
                                 transition-all duration-200 ease-out
                                 ${isSelected
                                     ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
@@ -116,7 +116,7 @@ export function LifeAreaSelector({ className = "", showSettings = false }: LifeA
                     <Tooltip content="Add Life Area">
                         <button
                             onClick={() => setIsCreating(true)}
-                            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50 rounded-full transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50 rounded-full transition-colors flex-shrink-0"
                         >
                             <Plus className="w-4 h-4" />
                         </button>
@@ -124,11 +124,11 @@ export function LifeAreaSelector({ className = "", showSettings = false }: LifeA
                 )}
             </div>
 
-            {/* Create New Area Form (appears inline) */}
+            {/* Create New Area Form (appears below on mobile) */}
             {isCreating && (
                 <div
                     ref={createFormRef}
-                    className="flex items-center gap-2 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg animate-in fade-in slide-in-from-left-2 duration-200"
+                    className="flex flex-wrap items-center gap-2 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg animate-in fade-in slide-in-from-left-2 duration-200 w-full sm:w-auto"
                 >
                     <input
                         ref={inputRef}
@@ -143,7 +143,7 @@ export function LifeAreaSelector({ className = "", showSettings = false }: LifeA
                             }
                         }}
                         placeholder="Name..."
-                        className="w-24 px-2 py-1 text-sm border-0 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-0"
+                        className="flex-1 min-w-[80px] max-w-[120px] px-2 py-1 text-sm border-0 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-0"
                     />
 
                     {/* Color Dots */}

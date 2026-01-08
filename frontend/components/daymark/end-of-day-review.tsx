@@ -11,6 +11,7 @@ interface EndOfDayReviewProps {
     onUpdate: () => void;
     isOpen: boolean;
     onClose: () => void;
+    lifeAreaId?: string;
 }
 
 export function EndOfDayReview({
@@ -20,6 +21,7 @@ export function EndOfDayReview({
     onUpdate,
     isOpen,
     onClose,
+    lifeAreaId,
 }: EndOfDayReviewProps) {
     const [wentWell, setWentWell] = useState(review?.wentWell || "");
     const [didntGoWell, setDidntGoWell] = useState(review?.didntGoWell || "");
@@ -42,6 +44,7 @@ export function EndOfDayReview({
         try {
             await dailyReviewApi.upsert(date, { wentWell, didntGoWell });
             onUpdate();
+            onClose();
         } catch (error) {
             console.error("Failed to save review:", error);
         } finally {
@@ -56,7 +59,7 @@ export function EndOfDayReview({
 
         setIsCarrying(true);
         try {
-            const result = await dailyReviewApi.carryForward(date, tomorrowStr);
+            const result = await dailyReviewApi.carryForward(date, tomorrowStr, lifeAreaId);
             setCarryResult(result);
             onUpdate();
         } catch (error) {

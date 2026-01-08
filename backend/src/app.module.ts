@@ -1,6 +1,7 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule } from './config/config.module';
 import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
@@ -17,6 +18,8 @@ import { SettingsModule } from './settings/settings.module';
 import { EisenhowerModule } from './eisenhower/eisenhower.module';
 import { DecisionLogModule } from './decision-log/decision-log.module';
 import { LifeAreasModule } from './life-areas/life-areas.module';
+import { CalendarModule } from './calendar/calendar.module';
+import { FocusSuiteModule } from './focus-suite/focus-suite.module';
 import { AuthMiddleware } from './auth/auth.middleware';
 
 @Module({
@@ -26,6 +29,17 @@ import { AuthMiddleware } from './auth/auth.middleware';
       ttl: 60000,
       limit: 60,
     }]),
+    // BullMQ for job queues (Redis)
+    BullModule.forRoot({
+      connection: {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379', 10),
+      },
+      defaultJobOptions: {
+        removeOnComplete: 100,
+        removeOnFail: 500,
+      },
+    }),
     ConfigModule,
     AuthModule,
     MailModule,
@@ -42,6 +56,8 @@ import { AuthMiddleware } from './auth/auth.middleware';
     SettingsModule,
     EisenhowerModule,
     DecisionLogModule,
+    CalendarModule,
+    FocusSuiteModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

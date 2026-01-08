@@ -37,7 +37,7 @@ export default function LoginPage() {
       try {
         const session = await authClient.getSession();
         if (session?.data?.user) {
-          router.replace("/dashboard");
+          router.replace("/");
           return;
         }
       } catch (error) {
@@ -82,7 +82,7 @@ export default function LoginPage() {
         "twoFactorRedirect" in result.data &&
         result.data.twoFactorRedirect
       ) {
-        router.push("/verify-2fa?callbackURL=/dashboard");
+        router.push("/verify-2fa?callbackURL=/");
         return;
       }
 
@@ -92,7 +92,7 @@ export default function LoginPage() {
         title: "Welcome back!",
         duration: 3000,
       });
-      router.push("/dashboard");
+      router.push("/");
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
       console.error("Sign in error:", err);

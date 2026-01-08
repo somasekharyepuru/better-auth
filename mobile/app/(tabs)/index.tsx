@@ -472,7 +472,8 @@ export default function HomeScreen() {
           <EndOfDayReview
             date={currentDate}
             review={dayData?.dailyReview || null}
-            incompletePriorities={dayData?.priorities.filter(p => !p.completed) || []}
+            incompletePriorities={dayData?.priorities.filter(p => !p.completed && !p.carriedToDate) || []}
+
             onUpdate={loadDayData}
             isOpen={showReview}
             onClose={() => setShowReview(false)}

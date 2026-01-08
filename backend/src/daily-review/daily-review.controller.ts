@@ -27,10 +27,10 @@ export class DailyReviewController {
     @Post('days/:date/review/carry-forward')
     async carryForward(
         @Param('date') date: string,
-        @Body() body: { toDate: string },
+        @Body() body: { toDate: string; lifeAreaId?: string },
         @Req() req: Request,
     ) {
         const userId = this.getUserIdFromRequest(req);
-        return this.dailyReviewService.carryForwardPriorities(userId, date, body.toDate);
+        return this.dailyReviewService.carryForwardPriorities(userId, date, body.toDate, body.lifeAreaId);
     }
 }

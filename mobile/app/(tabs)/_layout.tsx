@@ -69,6 +69,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="calendar"
+        options={{
+          title: 'Calendar',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon
+              name={focused ? 'calendar' : 'calendar-outline'}
+              color={color}
+            />
+          ),
+          headerShown: false, // Calendar has custom header
+        }}
+      />
+      <Tabs.Screen
         name="tools"
         options={{
           title: 'Tools',

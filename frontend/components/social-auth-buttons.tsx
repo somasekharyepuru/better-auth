@@ -15,7 +15,7 @@ export function SocialAuthButtons({ mode = "signup" }: SocialAuthButtonsProps) {
     try {
       await authClient.signIn.social({
         provider: "google",
-        callbackURL: `${window.location.origin}/dashboard`,
+        callbackURL: `${window.location.origin}/`,
       });
     } catch (error) {
       console.error("Google sign-in error:", error);

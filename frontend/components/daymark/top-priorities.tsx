@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Check, Plus, X, Trash2, CheckCircle, Circle, GripVertical } from "lucide-react";
+import { Check, Plus, X, Trash2, CheckCircle, Circle, GripVertical, Play } from "lucide-react";
 import { ContextMenu } from "@/components/ui/context-menu";
 import { LifeArea, TopPriority, prioritiesApi } from "@/lib/daymark-api";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useToast } from "@/components/ui/toast";
+import { useFocusOptional } from "@/lib/focus-context";
 import {
     DndContext,
     closestCenter,
@@ -39,6 +41,10 @@ interface SortablePriorityItemProps {
     onToggle: (id: string) => void;
     onEdit: (id: string) => void;
     onDelete: (id: string) => void;
+    onStartFocus?: (priority: TopPriority) => void;
+    isActiveFocus?: boolean;
+    hasAnyActiveFocus?: boolean;
+    activeFocusTitle?: string | null;
     editingId: string | null;
     editTitle: string;
     setEditTitle: (title: string) => void;
@@ -51,6 +57,10 @@ function SortablePriorityItem({
     onToggle,
     onEdit,
     onDelete,
+    onStartFocus,
+    isActiveFocus,
+    hasAnyActiveFocus,
+    activeFocusTitle,
     editingId,
     editTitle,
     setEditTitle,
@@ -126,10 +136,40 @@ function SortablePriorityItem({
                 </Tooltip>
             )}
 
-            {/* Delete button */}
+            {/* Focus button - always visible for incomplete priorities */}
+            {!priority.completed && !isActiveFocus && onStartFocus && (
+                hasAnyActiveFocus ? (
+                    <Tooltip content={`Focusing on: ${activeFocusTitle || 'another priority'}`}>
+                        <span className="p-2 text-gray-300 dark:text-gray-600 cursor-not-allowed rounded-lg">
+                            <Play className="w-4 h-4" />
+                        </span>
+                    </Tooltip>
+                ) : (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onStartFocus(priority);
+                        }}
+                        className="p-2 text-purple-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-all"
+                        title="Start Focus Session (25 min)"
+                    >
+                        <Play className="w-4 h-4" />
+                    </button>
+                )
+            )}
+
+            {/* Active focus indicator */}
+            {isActiveFocus && (
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
+                    <span className="text-xs font-medium text-purple-600 dark:text-purple-400">Focusing</span>
+                </div>
+            )}
+
+            {/* Delete button - visible on hover */}
             <button
                 onClick={() => onDelete(priority.id)}
-                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-all"
+                className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100"
             >
                 <Trash2 className="w-4 h-4" />
             </button>
@@ -145,6 +185,21 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
     const [editTitle, setEditTitle] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    // Focus session context (optional - may not be available if not wrapped in FocusProvider)
+    const focus = useFocusOptional();
+    const { addToast } = useToast();
+
+    // Wrapper to handle focus start with error handling
+    const handleStartFocus = useCallback(async (priority: TopPriority) => {
+        if (!focus) return;
+        try {
+            await focus.startFocusForPriority(priority);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Failed to start focus session";
+            addToast({ type: "error", title: message });
+        }
+    }, [focus, addToast]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -359,15 +414,9 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
         <div className="card-premium">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg text-subheading">Top {maxItems} Priorities</h2>
-                {canAddMore && !isAdding && (
-                    <button
-                        onClick={() => setIsAdding(true)}
-                        className="flex items-center gap-1.5 text-sm text-muted hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Add
-                    </button>
-                )}
+                <span className="text-sm text-muted">
+                    {completedCount}/{localPriorities.length} completed
+                </span>
             </div>
 
             <DndContext
@@ -393,6 +442,10 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
                                     onToggle={handleToggle}
                                     onEdit={startEditing}
                                     onDelete={handleDelete}
+                                    onStartFocus={!readOnly && focus ? handleStartFocus : undefined}
+                                    isActiveFocus={focus?.activePriorityId === priority.id}
+                                    hasAnyActiveFocus={focus?.isRunning || focus?.isPaused}
+                                    activeFocusTitle={focus?.activePriorityTitle}
                                     editingId={editingId}
                                     editTitle={editTitle}
                                     setEditTitle={setEditTitle}
@@ -405,17 +458,16 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
                 </SortableContext>
             </DndContext>
 
-            {/* Empty slots */}
-            {Array.from({ length: Math.max(0, maxItems - localPriorities.length) }).map((_, i) => (
-                <div
-                    key={`empty-${i}`}
-                    className="flex items-center gap-3 p-3 mt-2 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-800"
+            {/* Add Priority button when there's room */}
+            {canAddMore && !isAdding && (
+                <button
+                    onClick={() => setIsAdding(true)}
+                    className="flex items-center gap-2 p-3 mt-2 w-full rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all"
                 >
-                    <div className="w-4 h-4" /> {/* Spacer for grip handle alignment */}
-                    <div className="w-6 h-6 rounded-full border-2 border-gray-200 dark:border-gray-800" />
-                    <span className="text-gray-300 dark:text-gray-600">Priority {localPriorities.length + i + 1}</span>
-                </div>
-            ))}
+                    <Plus className="w-4 h-4" />
+                    <span className="text-sm">Add priority</span>
+                </button>
+            )}
 
             {/* Add input */}
             {isAdding && (

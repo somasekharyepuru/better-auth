@@ -43,7 +43,7 @@ export default function OrganizationsPage() {
     <div style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
       <h1>Organizations</h1>
       <div style={{ marginBottom: '1rem' }}>
-        <Link href="/dashboard">Back to Dashboard</Link>
+        <Link href="/">Back to Dashboard</Link>
       </div>
 
       {error && <div style={{ color: 'red', marginBottom: '1rem' }}>{error}</div>}

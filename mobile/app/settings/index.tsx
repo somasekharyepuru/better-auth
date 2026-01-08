@@ -200,6 +200,33 @@ export default function SettingsScreen() {
                     </View>
                 </View>
 
+                {/* Calendar Settings */}
+                <View style={styles.section}>
+                    <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+                        INTEGRATIONS
+                    </Text>
+                    <View style={[styles.sectionCard, { backgroundColor: colors.cardSolid }, shadows.sm]}>
+                        <TouchableOpacity
+                            style={styles.themeItem}
+                            onPress={() => {
+                                Haptics.selectionAsync();
+                                router.push('/settings/calendars' as any);
+                            }}
+                        >
+                            <View style={[styles.itemIcon, { backgroundColor: '#007AFF15' }]}>
+                                <Ionicons name="calendar-outline" size={20} color="#007AFF" />
+                            </View>
+                            <View style={styles.itemContent}>
+                                <Text style={[styles.itemLabel, { color: colors.text }]}>Calendar Settings</Text>
+                                <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
+                                    Connect and manage calendars
+                                </Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
                 {/* Theme Section */}
                 <View style={styles.section}>
                     <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
@@ -405,6 +432,33 @@ export default function SettingsScreen() {
                             <Text style={[styles.itemLabel, { color: colors.text, flex: 1 }]}>
                                 Terms of Service
                             </Text>
+                            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* Support Section */}
+                <View style={styles.section}>
+                    <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+                        SUPPORT
+                    </Text>
+                    <View style={[styles.sectionCard, { backgroundColor: colors.cardSolid }, shadows.sm]}>
+                        <TouchableOpacity
+                            style={styles.themeItem}
+                            onPress={() => {
+                                Haptics.selectionAsync();
+                                router.push('/help' as any);
+                            }}
+                        >
+                            <View style={[styles.itemIcon, { backgroundColor: '#8B5CF615' }]}>
+                                <Ionicons name="help-circle-outline" size={20} color="#8B5CF6" />
+                            </View>
+                            <View style={styles.itemContent}>
+                                <Text style={[styles.itemLabel, { color: colors.text }]}>Help & Guide</Text>
+                                <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
+                                    Learn how to use Daymark
+                                </Text>
+                            </View>
                             <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
                         </TouchableOpacity>
                     </View>

@@ -417,3 +417,291 @@ a {
   cursor: pointer;
 }
 
+/* ================================================
+   DESIGN TOKENS - Typography, Spacing, Colors
+   ================================================ */
+
+/* Typography Scale */
+.text-display-lg {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.text-display-md {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.heading-section {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.text-priority {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.text-priority.active {
+  font-weight: 600;
+}
+
+.text-metadata {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.text-helper {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Mobile Typography */
+@media (max-width: 768px) {
+  .text-display-lg {
+    font-size: 28px;
+  }
+  
+  .text-display-md {
+    font-size: 20px;
+  }
+  
+  .heading-section {
+    font-size: 18px;
+  }
+  
+  .text-priority {
+    font-size: 15px;
+  }
+}
+
+/* ================================================
+   Life Area Colors (Pastel/Subtle)
+   ================================================ */
+
+.life-area-badge {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.life-area-work {
+  color: #3B82F6;
+  background: #EFF6FF;
+  border: 1px solid #DBEAFE;
+}
+
+.dark .life-area-work {
+  color: #60A5FA;
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.life-area-personal {
+  color: #8B5CF6;
+  background: #F5F3FF;
+  border: 1px solid #EDE9FE;
+}
+
+.dark .life-area-personal {
+  color: #A78BFA;
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.life-area-health {
+  color: #10B981;
+  background: #ECFDF5;
+  border: 1px solid #D1FAE5;
+}
+
+.dark .life-area-health {
+  color: #34D399;
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.life-area-learning {
+  color: #F59E0B;
+  background: #FFFBEB;
+  border: 1px solid #FEF3C7;
+}
+
+.dark .life-area-learning {
+  color: #FBBF24;
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.life-area-family {
+  color: #EC4899;
+  background: #FDF2F8;
+  border: 1px solid #FCE7F3;
+}
+
+.dark .life-area-family {
+  color: #F472B6;
+  background: rgba(236, 72, 153, 0.15);
+  border-color: rgba(236, 72, 153, 0.3);
+}
+
+/* ================================================
+   Priority Card Enhancements
+   ================================================ */
+
+.priority-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  min-height: 64px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.priority-card:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.dark .priority-card:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.priority-card.active {
+  background: #EFF6FF;
+  border-left: 4px solid #3B82F6;
+}
+
+.dark .priority-card.active {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.priority-card.completed {
+  opacity: 0.6;
+}
+
+.priority-card.completed .priority-text {
+  text-decoration: line-through;
+  color: hsl(var(--muted-foreground));
+}
+
+.priority-metadata {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.priority-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* Mobile: Actions always visible */
+@media (max-width: 768px) {
+  .priority-card {
+    padding: 12px;
+    min-height: 56px;
+  }
+}
+
+/* ================================================
+   End of Day Button States
+   ================================================ */
+
+.btn-end-day-subtle {
+  color: hsl(var(--muted-foreground));
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  transition: all 0.2s ease;
+}
+
+.btn-end-day-subtle:hover {
+  color: hsl(var(--foreground));
+  background: hsl(var(--muted));
+}
+
+.btn-end-day-prominent {
+  color: white;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.btn-end-day-prominent:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.btn-end-day-celebrate {
+  color: white;
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  animation: celebrate-pulse 2s ease-in-out infinite;
+}
+
+@keyframes celebrate-pulse {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.5);
+  }
+}
+
+/* ================================================
+   Mobile Dashboard Layout
+   ================================================ */
+
+/* Mobile card padding adjustment */
+@media (max-width: 640px) {
+  .card-premium {
+    padding: 16px;
+  }
+}
+
+/* Touch Targets */
+@media (max-width: 768px) {
+  .btn-touch,
+  .icon-button-touch {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .checkbox-touch {
+    width: 28px;
+    height: 28px;
+  }
+}
+
