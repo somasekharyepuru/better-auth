@@ -21,7 +21,9 @@ export interface TopPriority {
     dayId: string;
     createdAt: string;
     updatedAt: string;
+    carriedToDate: string | null; // Track if this priority was carried forward
 }
+
 
 export interface DiscussionItem {
     id: string;
@@ -492,11 +494,12 @@ export const dailyReviewApi = {
 
     async carryForward(
         fromDate: string,
-        toDate: string
+        toDate: string,
+        lifeAreaId?: string
     ): Promise<{ carried: number; skipped: number; priorities: TopPriority[] }> {
         return fetchWithCredentials(`${API_BASE}/api/days/${fromDate}/review/carry-forward`, {
             method: 'POST',
-            body: JSON.stringify({ toDate }),
+            body: JSON.stringify({ toDate, lifeAreaId }),
         });
     },
 };

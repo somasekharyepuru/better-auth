@@ -212,10 +212,10 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId, rea
                                 </Tooltip>
                             )}
 
-                            {/* Delete button */}
+                            {/* Delete button - always visible */}
                             <button
                                 onClick={() => handleDelete(item.id)}
-                                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-all h-6 w-6 flex items-center justify-center"
+                                className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all h-8 w-8 flex items-center justify-center flex-shrink-0"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>
@@ -223,18 +223,22 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId, rea
                     </ContextMenu>
                 ))}
 
-                {/* Empty slots */}
-                {maxItems > 0 && Array.from({ length: Math.max(0, maxItems - localItems.length) }).map((_, i) => (
-                    <div
-                        key={`empty-${i}`}
-                        className="flex items-start gap-3 p-3 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-800"
+                {/* Add button when there's room and empty state hint */}
+                {localItems.length === 0 && !isAdding && (
+                    <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">
+                        Add topics, follow-ups, or ideas
+                    </p>
+                )}
+
+                {canAddMore && !isAdding && localItems.length > 0 && (
+                    <button
+                        onClick={() => setIsAdding(true)}
+                        className="flex items-center gap-2 p-3 w-full rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all"
                     >
-                        <span className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800/50 text-gray-300 dark:text-gray-600 text-sm font-medium flex items-center justify-center">
-                            {localItems.length + i + 1}
-                        </span>
-                        <span className="text-gray-300 dark:text-gray-600">Discussion point</span>
-                    </div>
-                ))}
+                        <Plus className="w-4 h-4" />
+                        <span className="text-sm">Add item</span>
+                    </button>
+                )}
 
                 {/* Add input */}
                 {isAdding && (

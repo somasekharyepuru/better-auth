@@ -136,11 +136,11 @@ function SortablePriorityItem({
                 </Tooltip>
             )}
 
-            {/* Focus button - only show for incomplete priorities */}
+            {/* Focus button - always visible for incomplete priorities */}
             {!priority.completed && !isActiveFocus && onStartFocus && (
                 hasAnyActiveFocus ? (
                     <Tooltip content={`Focusing on: ${activeFocusTitle || 'another priority'}`}>
-                        <span className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 cursor-not-allowed rounded-lg">
+                        <span className="p-2 text-gray-300 dark:text-gray-600 cursor-not-allowed rounded-lg">
                             <Play className="w-4 h-4" />
                         </span>
                     </Tooltip>
@@ -150,7 +150,7 @@ function SortablePriorityItem({
                             e.stopPropagation();
                             onStartFocus(priority);
                         }}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 text-purple-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-all"
+                        className="p-2 text-purple-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-all"
                         title="Start Focus Session (25 min)"
                     >
                         <Play className="w-4 h-4" />
@@ -166,10 +166,10 @@ function SortablePriorityItem({
                 </div>
             )}
 
-            {/* Delete button */}
+            {/* Delete button - always visible */}
             <button
                 onClick={() => onDelete(priority.id)}
-                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-all"
+                className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
             >
                 <Trash2 className="w-4 h-4" />
             </button>
@@ -414,15 +414,9 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
         <div className="card-premium">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg text-subheading">Top {maxItems} Priorities</h2>
-                {canAddMore && !isAdding && (
-                    <button
-                        onClick={() => setIsAdding(true)}
-                        className="flex items-center gap-1.5 text-sm text-muted hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Add
-                    </button>
-                )}
+                <span className="text-sm text-muted">
+                    {completedCount}/{localPriorities.length} completed
+                </span>
             </div>
 
             <DndContext
@@ -464,17 +458,16 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
                 </SortableContext>
             </DndContext>
 
-            {/* Empty slots */}
-            {Array.from({ length: Math.max(0, maxItems - localPriorities.length) }).map((_, i) => (
-                <div
-                    key={`empty-${i}`}
-                    className="flex items-center gap-3 p-3 mt-2 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-800"
+            {/* Add Priority button when there's room */}
+            {canAddMore && !isAdding && (
+                <button
+                    onClick={() => setIsAdding(true)}
+                    className="flex items-center gap-2 p-3 mt-2 w-full rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all"
                 >
-                    <div className="w-4 h-4" /> {/* Spacer for grip handle alignment */}
-                    <div className="w-6 h-6 rounded-full border-2 border-gray-200 dark:border-gray-800" />
-                    <span className="text-gray-300 dark:text-gray-600">Priority {localPriorities.length + i + 1}</span>
-                </div>
-            ))}
+                    <Plus className="w-4 h-4" />
+                    <span className="text-sm">Add priority</span>
+                </button>
+            )}
 
             {/* Add input */}
             {isAdding && (

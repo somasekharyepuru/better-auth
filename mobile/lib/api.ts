@@ -26,7 +26,9 @@ export interface TopPriority {
     dayId: string;
     createdAt: string;
     updatedAt: string;
+    carriedToDate: string | null; // Track if this priority was carried forward
 }
+
 
 export interface DiscussionItem {
     id: string;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { QuickNote, quickNotesApi } from "@/lib/daymark-api";
-import { FileText, Check, Loader2 } from "lucide-react";
+import { FileText, Check, Loader2, Maximize2, Minimize2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,7 @@ export function QuickNotes({ date, note, onUpdate, className, lifeAreaId }: Quic
     const [content, setContent] = useState(note?.content || "");
     const [isSaving, setIsSaving] = useState(false);
     const [showSaved, setShowSaved] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const previousDateRef = useRef<string>(date);
@@ -86,7 +87,11 @@ export function QuickNotes({ date, note, onUpdate, className, lifeAreaId }: Quic
     }, []);
 
     return (
-        <div className={cn("card-premium h-full flex flex-col", className)}>
+        <div className={cn(
+            "card-premium flex flex-col transition-all duration-300",
+            isExpanded ? "h-[500px]" : "h-full",
+            className
+        )}>
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                     <FileText className="w-5 h-5 text-muted" />
@@ -105,6 +110,17 @@ export function QuickNotes({ date, note, onUpdate, className, lifeAreaId }: Quic
                             Saved
                         </span>
                     )}
+                    <button
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all"
+                        title={isExpanded ? "Collapse" : "Expand"}
+                    >
+                        {isExpanded ? (
+                            <Minimize2 className="w-4 h-4" />
+                        ) : (
+                            <Maximize2 className="w-4 h-4" />
+                        )}
+                    </button>
                 </div>
             </div>
 
@@ -112,7 +128,10 @@ export function QuickNotes({ date, note, onUpdate, className, lifeAreaId }: Quic
                 value={content}
                 onChange={handleChange}
                 placeholder="Jot down your thoughts, meeting notes, or ideas..."
-                className="flex-1 w-full bg-gray-50/50 dark:bg-gray-800/50 rounded-xl p-4 text-gray-900 dark:text-gray-100 resize-none placeholder:text-gray-500 dark:placeholder:text-gray-400 outline-none border border-transparent focus:border-gray-200 dark:focus:border-gray-700 focus:bg-white/80 dark:focus:bg-gray-800/80 transition-all min-h-[200px]"
+                className={cn(
+                    "flex-1 w-full bg-gray-50/50 dark:bg-gray-800/50 rounded-xl p-4 text-gray-900 dark:text-gray-100 resize-none placeholder:text-gray-500 dark:placeholder:text-gray-400 outline-none border border-transparent focus:border-gray-200 dark:focus:border-gray-700 focus:bg-white/80 dark:focus:bg-gray-800/80 transition-all",
+                    isExpanded ? "min-h-[400px]" : "min-h-[200px]"
+                )}
             />
         </div>
     );

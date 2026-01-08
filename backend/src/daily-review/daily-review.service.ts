@@ -1,14 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { DaysService } from '../days/days.service';
-import { SettingsService } from '../settings/settings.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class DailyReviewService {
     constructor(
         private prisma: PrismaService,
         private daysService: DaysService,
-        private settingsService: SettingsService,
     ) { }
 
     /**
@@ -33,31 +31,33 @@ export class DailyReviewService {
 
     /**
      * Carry forward incomplete priorities to next day
+     * - Filters out priorities already carried forward (carriedToDate is set)
+     * - No limit restriction - all incomplete priorities can be carried
+     * - Marks source priorities with carriedToDate after carrying
      */
-    async carryForwardPriorities(userId: string, fromDateStr: string, toDateStr: string) {
-        // Get user settings for maxTopPriorities
-        const settings = await this.settingsService.getSettings(userId);
-        const maxPriorities = settings.maxTopPriorities;
+    async carryForwardPriorities(userId: string, fromDateStr: string, toDateStr: string, lifeAreaId?: string) {
+        const fromDay = await this.daysService.getOrCreateDay(userId, fromDateStr, lifeAreaId || null);
+        const toDay = await this.daysService.getOrCreateDay(userId, toDateStr, lifeAreaId || null);
 
-        const fromDay = await this.daysService.getOrCreateDay(userId, fromDateStr);
-        const toDay = await this.daysService.getOrCreateDay(userId, toDateStr);
-
-        // Get incomplete priorities from source day
+        // Get incomplete priorities from source day that haven't been carried yet
         const incompletePriorities = await this.prisma.topPriority.findMany({
             where: {
                 dayId: fromDay.id,
                 completed: false,
+                carriedToDate: null, // Only get priorities not already carried
             },
         });
 
-        // Check how many priorities exist in target day
-        const existingCount = await this.prisma.topPriority.count({
+        // Get the highest order in target day to continue from
+        const existingPriorities = await this.prisma.topPriority.findMany({
             where: { dayId: toDay.id },
+            orderBy: { order: 'desc' },
+            take: 1,
         });
+        const highestOrder = existingPriorities.length > 0 ? existingPriorities[0].order : 0;
 
-        // Use user's maxTopPriorities setting instead of hardcoded 3
-        const availableSlots = Math.max(0, maxPriorities - existingCount);
-        const toCarry = incompletePriorities.slice(0, availableSlots);
+        // Carry ALL incomplete priorities - no limit restriction for carryovers
+        const toCarry = incompletePriorities;
 
         // Create new priorities in target day
         const carried = await Promise.all(
@@ -65,18 +65,29 @@ export class DailyReviewService {
                 this.prisma.topPriority.create({
                     data: {
                         title: p.title,
-                        order: existingCount + index + 1,
+                        order: highestOrder + index + 1,
                         dayId: toDay.id,
                     },
                 }),
             ),
         );
 
+        // Mark the source priorities as carried (so they don't appear in carryover UI again)
+        const toDate = new Date(toDateStr);
+        await Promise.all(
+            toCarry.map((p) =>
+                this.prisma.topPriority.update({
+                    where: { id: p.id },
+                    data: { carriedToDate: toDate },
+                }),
+            ),
+        );
+
         return {
             carried: carried.length,
-            skipped: incompletePriorities.length - carried.length,
+            skipped: 0, // No longer skipping any
             priorities: carried,
-            maxPriorities, // Include in response for transparency
         };
     }
+
 }

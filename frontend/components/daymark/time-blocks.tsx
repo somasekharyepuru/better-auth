@@ -42,17 +42,44 @@ function calculateEndTime(startTime: string, durationMinutes: number): string {
     return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
 }
 
+// Get nearest 15-min interval rounded up from current time
+function getSmartDefaultTime(): string {
+    const now = new Date();
+    let hours = now.getHours();
+    let minutes = now.getMinutes();
+
+    // Round up to nearest 15 minutes
+    const remainder = minutes % 15;
+    if (remainder > 0) {
+        minutes = minutes + (15 - remainder);
+    }
+
+    // Handle hour rollover
+    if (minutes >= 60) {
+        minutes = 0;
+        hours = (hours + 1) % 24;
+    }
+
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
 export function TimeBlocks({ date, blocks, onUpdate, defaultDuration = 60, defaultType = "Deep Work", lifeAreaId, readOnly = false }: TimeBlocksProps) {
     const [localBlocks, setLocalBlocks] = useState<TimeBlock[]>(blocks);
     const [isAdding, setIsAdding] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
-    const defaultStartTime = "09:00";
-    const [formData, setFormData] = useState({
-        title: "",
-        startTime: defaultStartTime,
-        endTime: calculateEndTime(defaultStartTime, defaultDuration),
-        type: defaultType,
-    });
+
+    // Initialize with smart default time
+    const getDefaultFormData = () => {
+        const startTime = getSmartDefaultTime();
+        return {
+            title: "",
+            startTime,
+            endTime: calculateEndTime(startTime, defaultDuration),
+            type: defaultType,
+        };
+    };
+
+    const [formData, setFormData] = useState(getDefaultFormData);
     const [isLoading, setIsLoading] = useState(false);
 
     // Sync local state with props
@@ -61,13 +88,9 @@ export function TimeBlocks({ date, blocks, onUpdate, defaultDuration = 60, defau
     }, [blocks]);
 
     const resetForm = () => {
-        setFormData({
-            title: "",
-            startTime: defaultStartTime,
-            endTime: calculateEndTime(defaultStartTime, defaultDuration),
-            type: defaultType,
-        });
+        setFormData(getDefaultFormData());
     };
+
 
     const handleAdd = async () => {
         if (!formData.title.trim() || isLoading) return;
@@ -243,6 +266,7 @@ export function TimeBlocks({ date, blocks, onUpdate, defaultDuration = 60, defau
                                 resetForm();
                             }}
                             isLoading={isLoading}
+                            defaultDuration={defaultDuration}
                         />
                     ) : (
                         <div
@@ -267,17 +291,17 @@ export function TimeBlocks({ date, blocks, onUpdate, defaultDuration = 60, defau
                                 <span className="flex-1 text-body truncate min-w-0">{block.title}</span>
                             </Tooltip>
 
-                            {/* Actions */}
-                            <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-all">
+                            {/* Actions - always visible */}
+                            <div className="flex gap-1 flex-shrink-0">
                                 <button
                                     onClick={() => startEditing(block)}
-                                    className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
                                 >
                                     <Edit2 className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={() => handleDelete(block.id)}
-                                    className="p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                                    className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </button>
@@ -305,6 +329,7 @@ export function TimeBlocks({ date, blocks, onUpdate, defaultDuration = 60, defau
                             resetForm();
                         }}
                         isLoading={isLoading}
+                        defaultDuration={defaultDuration}
                     />
                 )}
             </div>
@@ -323,6 +348,7 @@ interface TimeBlockFormProps {
     onSubmit: () => void;
     onCancel: () => void;
     isLoading: boolean;
+    defaultDuration: number;
 }
 
 function TimeBlockForm({
@@ -331,7 +357,25 @@ function TimeBlockForm({
     onSubmit,
     onCancel,
     isLoading,
+    defaultDuration,
 }: TimeBlockFormProps) {
+    // Track if end time was manually changed by user
+    const [endTimeManuallySet, setEndTimeManuallySet] = useState(false);
+
+    // Handle start time change - auto-update end time if not manually set
+    const handleStartTimeChange = (time: string) => {
+        const newEndTime = endTimeManuallySet
+            ? formData.endTime
+            : calculateEndTime(time, defaultDuration);
+        setFormData({ ...formData, startTime: time, endTime: newEndTime });
+    };
+
+    // Handle end time change - mark as manually set
+    const handleEndTimeChange = (time: string) => {
+        setEndTimeManuallySet(true);
+        setFormData({ ...formData, endTime: time });
+    };
+
     return (
         <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 space-y-3">
             <input
@@ -346,12 +390,12 @@ function TimeBlockForm({
                 <div className="flex items-center gap-2">
                     <TimePickerInline
                         value={formData.startTime}
-                        onChange={(time) => setFormData({ ...formData, startTime: time })}
+                        onChange={handleStartTimeChange}
                     />
                     <span className="text-gray-400 dark:text-gray-500">to</span>
                     <TimePickerInline
                         value={formData.endTime}
-                        onChange={(time) => setFormData({ ...formData, endTime: time })}
+                        onChange={handleEndTimeChange}
                     />
                 </div>
                 <select

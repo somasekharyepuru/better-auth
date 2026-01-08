@@ -117,8 +117,9 @@ export function DashboardContent({ user }: DashboardContentProps) {
     const completedCount = dayData?.priorities.filter((p) => p.completed).length || 0;
     const totalCount = dayData?.priorities.length || 0;
 
-    // Get incomplete priorities for review
-    const incompletePriorities = dayData?.priorities.filter((p) => !p.completed) || [];
+    // Get incomplete priorities for review (exclude already carried ones)
+    const incompletePriorities = dayData?.priorities.filter((p) => !p.completed && !p.carriedToDate) || [];
+
 
     // Get time-based greeting
     const getGreeting = () => {
@@ -146,8 +147,8 @@ export function DashboardContent({ user }: DashboardContentProps) {
             <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 <div className="space-y-4">
                     {/* Premium Date Header */}
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                        <div className="flex items-center gap-2 sm:gap-6">
                             {/* Date Navigation */}
                             <div className="flex items-center gap-1">
                                 <button
@@ -165,16 +166,16 @@ export function DashboardContent({ user }: DashboardContentProps) {
                             </div>
 
                             {/* Premium Date Display */}
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-4xl font-bold text-gray-900 dark:text-white tracking-tight leading-none">
+                                    <span className="text-2xl sm:text-4xl font-bold text-gray-900 dark:text-white tracking-tight leading-none">
                                         {dayNumber}
                                     </span>
                                     <div className="flex flex-col justify-center">
-                                        <span className="text-base font-semibold text-gray-900 dark:text-white leading-tight">
+                                        <span className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white leading-tight">
                                             {dayOfWeek}
                                         </span>
-                                        <span className="text-sm text-gray-500 dark:text-gray-400 leading-tight">
+                                        <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">
                                             {monthYear}
                                         </span>
                                     </div>
@@ -202,9 +203,9 @@ export function DashboardContent({ user }: DashboardContentProps) {
                             </div>
                         </div>
 
-                        {/* Greeting (right side) */}
+                        {/* Greeting (right side on desktop, below on mobile) */}
                         {isToday && user && (
-                            <p className="text-lg text-gray-500 dark:text-gray-400">
+                            <p className="text-sm sm:text-lg text-gray-500 dark:text-gray-400 ml-0 sm:ml-auto">
                                 {getGreeting()}, <span className="text-gray-700 dark:text-gray-300 font-medium">{user.name.split(" ")[0]}</span>
                             </p>
                         )}
@@ -217,15 +218,48 @@ export function DashboardContent({ user }: DashboardContentProps) {
 
                         {/* Actions */}
                         <div className="flex items-center gap-2">
-                            {/* End of day review button */}
+                            {/* End of day review button - contextual appearance */}
                             {showReviewButton && (
-                                <button
-                                    onClick={() => setShowReview(true)}
-                                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                                >
-                                    <Moon className="w-4 h-4" />
-                                    <span className="hidden sm:inline">End of Day</span>
-                                </button>
+                                (() => {
+                                    const currentHour = new Date().getHours();
+                                    const allComplete = totalCount > 0 && completedCount === totalCount;
+
+                                    if (allComplete) {
+                                        return (
+                                            <button
+                                                onClick={() => setShowReview(true)}
+                                                className="btn-end-day-celebrate flex items-center gap-2"
+                                            >
+                                                <span>🎉</span>
+                                                <span className="hidden sm:inline">All Done! Review Day</span>
+                                                <span className="sm:hidden">Review</span>
+                                            </button>
+                                        );
+                                    }
+
+                                    if (currentHour >= 17) {
+                                        return (
+                                            <button
+                                                onClick={() => setShowReview(true)}
+                                                className="btn-end-day-prominent flex items-center gap-2"
+                                            >
+                                                <Moon className="w-4 h-4" />
+                                                <span className="hidden sm:inline">End of Day Review</span>
+                                                <span className="sm:hidden">Review</span>
+                                            </button>
+                                        );
+                                    }
+
+                                    return (
+                                        <button
+                                            onClick={() => setShowReview(true)}
+                                            className="btn-end-day-subtle flex items-center gap-2"
+                                        >
+                                            <Moon className="w-4 h-4" />
+                                            <span className="hidden sm:inline">End Day Early</span>
+                                        </button>
+                                    );
+                                })()
                             )}
                         </div>
                     </div>
@@ -239,8 +273,8 @@ export function DashboardContent({ user }: DashboardContentProps) {
                         </div>
                     )}
 
-                    {/* Day Progress */}
-                    {showProgress && (
+                    {/* Day Progress - only show when at least one priority is completed */}
+                    {showProgress && completedCount > 0 && (
                         <div className="card-subtle">
                             <DayProgress completed={completedCount} total={totalCount} />
                         </div>
@@ -317,6 +351,7 @@ export function DashboardContent({ user }: DashboardContentProps) {
                 onUpdate={loadDayData}
                 isOpen={showReview}
                 onClose={() => setShowReview(false)}
+                lifeAreaId={selectedLifeArea?.id}
             />
         </div>
     );
