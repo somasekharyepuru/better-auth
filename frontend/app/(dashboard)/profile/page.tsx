@@ -104,8 +104,6 @@ function ProfilePageContent() {
   const { settings, isLoading: isSettingsLoading, updateSettings } = useSettings();
 
   // Settings local state
-  const [maxPriorities, setMaxPriorities] = useState(3);
-  const [maxDiscussion, setMaxDiscussion] = useState(3);
   const [enabledSections, setEnabledSections] = useState<string[]>([]);
   const [defaultDuration, setDefaultDuration] = useState(60);
   const [defaultType, setDefaultType] = useState("Deep Work");
@@ -174,8 +172,6 @@ function ProfilePageContent() {
   // Sync local state with settings
   useEffect(() => {
     if (settings) {
-      setMaxPriorities(settings.maxTopPriorities);
-      setMaxDiscussion(settings.maxDiscussionItems);
       setEnabledSections(settings.enabledSections);
       setDefaultDuration(settings.defaultTimeBlockDuration);
       setDefaultType(settings.defaultTimeBlockType);
@@ -278,8 +274,6 @@ function ProfilePageContent() {
     setSaveMessage("");
     try {
       await updateSettings({
-        maxTopPriorities: maxPriorities,
-        maxDiscussionItems: maxDiscussion,
         enabledSections,
         defaultTimeBlockDuration: defaultDuration,
         defaultTimeBlockType: defaultType,
@@ -593,7 +587,7 @@ function ProfilePageContent() {
               </div>
             ) : (
               <>
-                {/* Calendar Integration */}
+                {/* Calendar Integration - Temporarily hidden
                 <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
                   <button
                     onClick={() => router.push("/settings/calendars")}
@@ -611,6 +605,7 @@ function ProfilePageContent() {
                     <ChevronRight className="w-5 h-5 text-gray-400" />
                   </button>
                 </section>
+                */}
 
                 {/* Theme Preferences */}
                 <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
@@ -645,62 +640,6 @@ function ProfilePageContent() {
                   <div className="flex items-center gap-2 mb-6">
                     <ListChecks className="w-5 h-5 text-gray-400" />
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Dashboard Preferences</h2>
-                  </div>
-
-                  <div className="space-y-5">
-                    {/* Max Priorities */}
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">Top Priorities</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Maximum items per day (1-5)</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setMaxPriorities((p) => Math.max(1, p - 1))}
-                          className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        >
-                          -
-                        </button>
-                        <span className="w-8 text-center font-medium text-gray-900 dark:text-gray-100">{maxPriorities}</span>
-                        <button
-                          onClick={() => setMaxPriorities((p) => Math.min(5, p + 1))}
-                          className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Max Discussion */}
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">To Discuss Items</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Maximum items per day (0-5)</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setMaxDiscussion((p) => Math.max(0, p - 1))}
-                          className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        >
-                          -
-                        </button>
-                        <span className="w-8 text-center font-medium text-gray-900 dark:text-gray-100">{maxDiscussion}</span>
-                        <button
-                          onClick={() => setMaxDiscussion((p) => Math.min(5, p + 1))}
-                          className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                {/* Section Visibility */}
-                <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
-                  <div className="flex items-center gap-2 mb-5">
-                    <Eye className="w-5 h-5 text-gray-400" />
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Section Visibility</h2>
                   </div>
 
                   <div className="space-y-3">

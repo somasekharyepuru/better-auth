@@ -294,7 +294,6 @@ export function DashboardContent({ user }: DashboardContentProps) {
                                         date={currentDate}
                                         priorities={dayData?.priorities || []}
                                         onUpdate={updatePriorities}
-                                        maxItems={settings.maxTopPriorities}
                                         lifeAreaId={selectedLifeArea?.id}
                                         readOnly={isPastDay}
                                         lifeAreas={lifeAreas}
@@ -306,7 +305,6 @@ export function DashboardContent({ user }: DashboardContentProps) {
                                         date={currentDate}
                                         items={dayData?.discussionItems || []}
                                         onUpdate={updateDiscussionItems}
-                                        maxItems={settings.maxDiscussionItems}
                                         lifeAreaId={selectedLifeArea?.id}
                                         readOnly={isPastDay}
                                         lifeAreas={lifeAreas}

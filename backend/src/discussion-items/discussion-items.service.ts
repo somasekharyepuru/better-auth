@@ -1,33 +1,24 @@
-import { Injectable, BadRequestException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { DaysService } from '../days/days.service';
-import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
 export class DiscussionItemsService {
     constructor(
         private prisma: PrismaService,
         private daysService: DaysService,
-        private settingsService: SettingsService,
     ) { }
 
     /**
-     * Create a discussion item (max based on user's maxDiscussionItems setting)
+     * Create a discussion item (unlimited)
      */
     async createItem(userId: string, dateStr: string, content: string, lifeAreaId?: string) {
-        // Get user's max discussion items setting
-        const settings = await this.settingsService.getSettings(userId);
-        const maxItems = settings.maxDiscussionItems;
-
         const day = await this.daysService.getOrCreateDay(userId, dateStr, lifeAreaId);
 
+        // Get current count for ordering
         const count = await this.prisma.discussionItem.count({
             where: { dayId: day.id },
         });
-
-        if (count >= maxItems) {
-            throw new BadRequestException(`Maximum ${maxItems} discussion items per day`);
-        }
 
         return this.prisma.discussionItem.create({
             data: {
@@ -96,12 +87,6 @@ export class DiscussionItemsService {
         const count = await this.prisma.discussionItem.count({
             where: { dayId: targetDay.id },
         });
-
-        // Get user's max discussion items setting
-        const settings = await this.settingsService.getSettings(userId);
-        if (count >= settings.maxDiscussionItems) {
-            throw new BadRequestException(`Maximum ${settings.maxDiscussionItems} discussion items per day in the target life area`);
-        }
 
         // Update the item's dayId
         return this.prisma.discussionItem.update({

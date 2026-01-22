@@ -1,34 +1,24 @@
-import { Injectable, BadRequestException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { DaysService } from '../days/days.service';
-import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
 export class PrioritiesService {
     constructor(
         private prisma: PrismaService,
         private daysService: DaysService,
-        private settingsService: SettingsService,
     ) { }
 
     /**
-     * Create a priority (max based on user's maxTopPriorities setting)
+     * Create a priority (unlimited)
      */
     async createPriority(userId: string, dateStr: string, title: string, lifeAreaId?: string) {
-        // Get user's max priorities setting
-        const settings = await this.settingsService.getSettings(userId);
-        const maxPriorities = settings.maxTopPriorities;
-
         const day = await this.daysService.getOrCreateDay(userId, dateStr, lifeAreaId);
 
-        // Check if already at max
+        // Get current count for ordering
         const count = await this.prisma.topPriority.count({
             where: { dayId: day.id },
         });
-
-        if (count >= maxPriorities) {
-            throw new BadRequestException(`Maximum ${maxPriorities} priorities per day`);
-        }
 
         return this.prisma.topPriority.create({
             data: {
@@ -145,12 +135,6 @@ export class PrioritiesService {
         const count = await this.prisma.topPriority.count({
             where: { dayId: targetDay.id },
         });
-
-        // Get user's max priorities setting
-        const settings = await this.settingsService.getSettings(userId);
-        if (count >= settings.maxTopPriorities) {
-            throw new BadRequestException(`Maximum ${settings.maxTopPriorities} priorities per day in the target life area`);
-        }
 
         // Update the priority's dayId
         return this.prisma.topPriority.update({

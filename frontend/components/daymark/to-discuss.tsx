@@ -17,7 +17,7 @@ interface ToDiscussProps {
     onMove?: () => void;
 }
 
-export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId, readOnly = false, lifeAreas = [], onMove }: ToDiscussProps) {
+export function ToDiscuss({ date, items, onUpdate, lifeAreaId, readOnly = false, lifeAreas = [], onMove }: ToDiscussProps) {
     const [localItems, setLocalItems] = useState<DiscussionItem[]>(items);
     const [isAdding, setIsAdding] = useState(false);
     const [newContent, setNewContent] = useState("");
@@ -109,7 +109,7 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId, rea
         }
     };
 
-    const canAddMore = maxItems > 0 && localItems.length < maxItems;
+
 
     // Read-only summary view for past days
     if (readOnly) {
@@ -156,7 +156,7 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId, rea
                     <MessageCircle className="w-5 h-5 text-muted" />
                     <h2 className="text-lg text-subheading">To Discuss</h2>
                 </div>
-                {canAddMore && !isAdding && (
+                {!isAdding && (
                     <button
                         onClick={() => setIsAdding(true)}
                         className="flex items-center gap-1.5 text-sm text-muted hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
@@ -230,7 +230,7 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId, rea
                     </p>
                 )}
 
-                {canAddMore && !isAdding && localItems.length > 0 && (
+                {!isAdding && localItems.length > 0 && (
                     <button
                         onClick={() => setIsAdding(true)}
                         className="flex items-center gap-2 p-3 w-full rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all"
@@ -282,12 +282,6 @@ export function ToDiscuss({ date, items, onUpdate, maxItems = 3, lifeAreaId, rea
                     </div>
                 )}
 
-                {/* Max reached notice */}
-                {maxItems > 0 && !canAddMore && (
-                    <p className="text-xs text-gray-400 text-center pt-2">
-                        Maximum {maxItems} discussion items
-                    </p>
-                )}
             </div>
         </div>
     );
