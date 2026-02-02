@@ -1,6 +1,6 @@
-import { Module } from '@nestjs/common';
-import { OrganizationService } from './organization.service';
-import { OrganizationController } from './organization.controller';
+import { Module } from "@nestjs/common";
+import { OrganizationService } from "./organization.service";
+import { OrganizationController } from "./organization.controller";
 
 @Module({
   controllers: [OrganizationController],
@@ -8,4 +8,3 @@ import { OrganizationController } from './organization.controller';
   exports: [OrganizationService],
 })
 export class OrganizationModule {}
-

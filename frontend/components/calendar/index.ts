@@ -9,3 +9,5 @@ export {
     SessionProgressBadge
 } from "./active-session-indicator";
 export * from "./droppable-priority-zone";
+export { HeaderCalendarWidget } from "./header-calendar-widget";
+export { UpcomingEventsDashboardCard } from "./upcoming-events-card";

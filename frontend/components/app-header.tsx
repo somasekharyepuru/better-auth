@@ -7,6 +7,7 @@ import { authClient } from "@/lib/auth-client";
 import { ArrowLeft, Wrench, Calendar, Menu, X, User } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { useSettings } from "@/lib/settings-context";
+import { HeaderCalendarWidget } from "@/components/calendar/header-calendar-widget";
 
 interface User {
   id: string;
@@ -75,19 +76,11 @@ export function AppHeader() {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden sm:flex items-center gap-4">
-            {/* {showNavLinks && (
-              <button
-                onClick={() => router.push("/calendar")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-colors ${isCalendarPage
-                  ? "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30"
-                  : "text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800"
-                  }`}
-              >
-                <Calendar className="w-4 h-4" />
-                Calendar
-              </button>
-            )} */}
+          <div className="hidden sm:flex items-center gap-3">
+            {/* Calendar Widget - Premium Feature */}
+            {showNavLinks && (
+              <HeaderCalendarWidget variant="full" />
+            )}
             {showNavLinks && showToolsLink && (
               <button
                 onClick={() => router.push("/tools")}
@@ -119,6 +112,12 @@ export function AppHeader() {
 
           {/* Mobile Menu Button */}
           <div className="sm:hidden flex items-center gap-2">
+          {/* Mobile Menu Button */}
+          <div className="sm:hidden flex items-center gap-2">
+            {/* Mobile Calendar Widget (compact) */}
+            {showNavLinks && (
+              <HeaderCalendarWidget variant="compact" />
+            )}
             {showNavLinks && (
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -147,7 +146,7 @@ export function AppHeader() {
                   }`}
               >
                 <Calendar className="w-5 h-5" />
-                Calendar
+                Full Calendar View
               </button>
               {showToolsLink && (
                 <button

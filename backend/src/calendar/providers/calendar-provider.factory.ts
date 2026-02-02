@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { CalendarProvider } from '@prisma/client';
-import { ICalendarProvider } from './calendar-provider.interface';
-import { GoogleCalendarProvider } from './google-calendar.provider';
-import { MicrosoftCalendarProvider } from './microsoft-calendar.provider';
-import { AppleCalDAVProvider } from './apple-caldav.provider';
+import { Injectable } from "@nestjs/common";
+import { CalendarProvider } from "@prisma/client";
+import { ICalendarProvider } from "./calendar-provider.interface";
+import { GoogleCalendarProvider } from "./google-calendar.provider";
+import { MicrosoftCalendarProvider } from "./microsoft-calendar.provider";
+import { AppleCalDAVProvider } from "./apple-caldav.provider";
 
 @Injectable()
 export class CalendarProviderFactory {

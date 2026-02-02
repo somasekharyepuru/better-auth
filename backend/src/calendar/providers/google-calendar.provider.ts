@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { google, calendar_v3 } from 'googleapis';
-import { CalendarProvider } from '@prisma/client';
-import { ICalendarProvider } from './calendar-provider.interface';
+import { Injectable, Logger } from "@nestjs/common";
+import { google, calendar_v3 } from "googleapis";
+import { CalendarProvider } from "@prisma/client";
+import { ICalendarProvider } from "./calendar-provider.interface";
 import {
   OAuthTokens,
   ExternalCalendar,
@@ -12,7 +12,7 @@ import {
   UpdateEventInput,
   WebhookChannel,
   GetEventsOptions,
-} from '../types/calendar.types';
+} from "../types/calendar.types";
 
 @Injectable()
 export class GoogleCalendarProvider implements ICalendarProvider {
@@ -21,8 +21,8 @@ export class GoogleCalendarProvider implements ICalendarProvider {
   readonly supportsWebhooks = true;
 
   private readonly SCOPES = [
-    'https://www.googleapis.com/auth/calendar',
-    'https://www.googleapis.com/auth/calendar.events',
+    "https://www.googleapis.com/auth/calendar",
+    "https://www.googleapis.com/auth/calendar.events",
   ];
 
   getAuthorizationUrl(state: string, redirectUri: string): string {
@@ -33,15 +33,18 @@ export class GoogleCalendarProvider implements ICalendarProvider {
     );
 
     return oauth2Client.generateAuthUrl({
-      access_type: 'offline',
+      access_type: "offline",
       scope: this.SCOPES,
       state,
-      prompt: 'consent',
+      prompt: "consent",
       include_granted_scopes: true,
     });
   }
 
-  async exchangeCodeForTokens(code: string, redirectUri: string): Promise<OAuthTokens> {
+  async exchangeCodeForTokens(
+    code: string,
+    redirectUri: string,
+  ): Promise<OAuthTokens> {
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CALENDAR_CLIENT_ID,
       process.env.GOOGLE_CALENDAR_CLIENT_SECRET,
@@ -54,8 +57,8 @@ export class GoogleCalendarProvider implements ICalendarProvider {
       accessToken: tokens.access_token!,
       refreshToken: tokens.refresh_token ?? undefined,
       expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : undefined,
-      scopes: tokens.scope?.split(' ') || this.SCOPES,
-      tokenType: tokens.token_type || 'Bearer',
+      scopes: tokens.scope?.split(" ") || this.SCOPES,
+      tokenType: tokens.token_type || "Bearer",
     };
   }
 
@@ -71,9 +74,11 @@ export class GoogleCalendarProvider implements ICalendarProvider {
     return {
       accessToken: credentials.access_token!,
       refreshToken: credentials.refresh_token || refreshToken,
-      expiresAt: credentials.expiry_date ? new Date(credentials.expiry_date) : undefined,
-      scopes: credentials.scope?.split(' ') || this.SCOPES,
-      tokenType: credentials.token_type || 'Bearer',
+      expiresAt: credentials.expiry_date
+        ? new Date(credentials.expiry_date)
+        : undefined,
+      scopes: credentials.scope?.split(" ") || this.SCOPES,
+      tokenType: credentials.token_type || "Bearer",
     };
   }
 
@@ -88,7 +93,7 @@ export class GoogleCalendarProvider implements ICalendarProvider {
 
     return (response.data.items || []).map((cal) => ({
       id: cal.id!,
-      name: cal.summary || 'Unnamed Calendar',
+      name: cal.summary || "Unnamed Calendar",
       description: cal.description ?? undefined,
       color: cal.backgroundColor ?? undefined,
       timeZone: cal.timeZone ?? undefined,
@@ -97,13 +102,16 @@ export class GoogleCalendarProvider implements ICalendarProvider {
     }));
   }
 
-  async getCalendar(accessToken: string, calendarId: string): Promise<ExternalCalendar> {
+  async getCalendar(
+    accessToken: string,
+    calendarId: string,
+  ): Promise<ExternalCalendar> {
     const calendar = this.getCalendarClient(accessToken);
     const response = await calendar.calendarList.get({ calendarId });
 
     return {
       id: response.data.id!,
-      name: response.data.summary || 'Unnamed Calendar',
+      name: response.data.summary || "Unnamed Calendar",
       description: response.data.description ?? undefined,
       color: response.data.backgroundColor ?? undefined,
       timeZone: response.data.timeZone ?? undefined,
@@ -124,7 +132,7 @@ export class GoogleCalendarProvider implements ICalendarProvider {
       calendarId,
       maxResults: options?.maxResults || 250,
       singleEvents: true,
-      orderBy: 'startTime',
+      orderBy: "startTime",
       showDeleted: true, // Required to receive deleted/cancelled events
     };
 
@@ -151,7 +159,9 @@ export class GoogleCalendarProvider implements ICalendarProvider {
     } catch (error: unknown) {
       const err = error as { code?: number };
       if (err.code === 410) {
-        this.logger.warn(`Sync token expired for calendar ${calendarId}, performing full sync`);
+        this.logger.warn(
+          `Sync token expired for calendar ${calendarId}, performing full sync`,
+        );
         return this.getEvents(accessToken, calendarId, timeRange, {
           ...options,
           syncToken: undefined,
@@ -161,13 +171,21 @@ export class GoogleCalendarProvider implements ICalendarProvider {
     }
   }
 
-  async getEvent(accessToken: string, calendarId: string, eventId: string): Promise<ExternalEvent> {
+  async getEvent(
+    accessToken: string,
+    calendarId: string,
+    eventId: string,
+  ): Promise<ExternalEvent> {
     const calendar = this.getCalendarClient(accessToken);
     const response = await calendar.events.get({ calendarId, eventId });
     return this.mapEvent(response.data);
   }
 
-  async createEvent(accessToken: string, calendarId: string, event: CreateEventInput): Promise<ExternalEvent> {
+  async createEvent(
+    accessToken: string,
+    calendarId: string,
+    event: CreateEventInput,
+  ): Promise<ExternalEvent> {
     const calendar = this.getCalendarClient(accessToken);
 
     const response = await calendar.events.insert({
@@ -177,10 +195,13 @@ export class GoogleCalendarProvider implements ICalendarProvider {
         description: event.description,
         location: event.location,
         start: event.isAllDay
-          ? { date: event.startTime.toISOString().split('T')[0] }
-          : { dateTime: event.startTime.toISOString(), timeZone: event.timeZone },
+          ? { date: event.startTime.toISOString().split("T")[0] }
+          : {
+              dateTime: event.startTime.toISOString(),
+              timeZone: event.timeZone,
+            },
         end: event.isAllDay
-          ? { date: event.endTime.toISOString().split('T')[0] }
+          ? { date: event.endTime.toISOString().split("T")[0] }
           : { dateTime: event.endTime.toISOString(), timeZone: event.timeZone },
       },
     });
@@ -188,21 +209,26 @@ export class GoogleCalendarProvider implements ICalendarProvider {
     return this.mapEvent(response.data);
   }
 
-  async updateEvent(accessToken: string, calendarId: string, event: UpdateEventInput): Promise<ExternalEvent> {
+  async updateEvent(
+    accessToken: string,
+    calendarId: string,
+    event: UpdateEventInput,
+  ): Promise<ExternalEvent> {
     const calendar = this.getCalendarClient(accessToken);
 
     const requestBody: calendar_v3.Schema$Event = {};
     if (event.title !== undefined) requestBody.summary = event.title;
-    if (event.description !== undefined) requestBody.description = event.description;
+    if (event.description !== undefined)
+      requestBody.description = event.description;
     if (event.location !== undefined) requestBody.location = event.location;
     if (event.startTime !== undefined) {
       requestBody.start = event.isAllDay
-        ? { date: event.startTime.toISOString().split('T')[0] }
+        ? { date: event.startTime.toISOString().split("T")[0] }
         : { dateTime: event.startTime.toISOString(), timeZone: event.timeZone };
     }
     if (event.endTime !== undefined) {
       requestBody.end = event.isAllDay
-        ? { date: event.endTime.toISOString().split('T')[0] }
+        ? { date: event.endTime.toISOString().split("T")[0] }
         : { dateTime: event.endTime.toISOString(), timeZone: event.timeZone };
     }
 
@@ -215,7 +241,11 @@ export class GoogleCalendarProvider implements ICalendarProvider {
     return this.mapEvent(response.data);
   }
 
-  async deleteEvent(accessToken: string, calendarId: string, eventId: string): Promise<void> {
+  async deleteEvent(
+    accessToken: string,
+    calendarId: string,
+    eventId: string,
+  ): Promise<void> {
     const calendar = this.getCalendarClient(accessToken);
     await calendar.events.delete({ calendarId, eventId });
   }
@@ -233,7 +263,7 @@ export class GoogleCalendarProvider implements ICalendarProvider {
       calendarId,
       requestBody: {
         id: channelId,
-        type: 'web_hook',
+        type: "web_hook",
         address: callbackUrl,
         token: channelToken,
         expiration: String(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -248,7 +278,11 @@ export class GoogleCalendarProvider implements ICalendarProvider {
     };
   }
 
-  async stopWebhook(accessToken: string, channelId: string, resourceId?: string): Promise<void> {
+  async stopWebhook(
+    accessToken: string,
+    channelId: string,
+    resourceId?: string,
+  ): Promise<void> {
     const calendar = this.getCalendarClient(accessToken);
     await calendar.channels.stop({
       requestBody: { id: channelId, resourceId },
@@ -258,7 +292,7 @@ export class GoogleCalendarProvider implements ICalendarProvider {
   private getCalendarClient(accessToken: string): calendar_v3.Calendar {
     const auth = new google.auth.OAuth2();
     auth.setCredentials({ access_token: accessToken });
-    return google.calendar({ version: 'v3', auth });
+    return google.calendar({ version: "v3", auth });
   }
 
   private mapEvent(event: calendar_v3.Schema$Event): ExternalEvent {
@@ -269,15 +303,20 @@ export class GoogleCalendarProvider implements ICalendarProvider {
       id: event.id!,
       recurringEventId: event.recurringEventId ?? undefined,
       etag: event.etag ?? undefined,
-      title: event.summary || 'Untitled Event',
+      title: event.summary || "Untitled Event",
       description: event.description ?? undefined,
       location: event.location ?? undefined,
       startTime: new Date(startTime!),
       endTime: new Date(endTime!),
       isAllDay: !event.start?.dateTime,
       timeZone: event.start?.timeZone ?? undefined,
-      status: (event.status as 'confirmed' | 'tentative' | 'cancelled') || 'confirmed',
-      visibility: (event.visibility || 'public') as 'public' | 'private' | 'confidential',
+      status:
+        (event.status as "confirmed" | "tentative" | "cancelled") ||
+        "confirmed",
+      visibility: (event.visibility || "public") as
+        | "public"
+        | "private"
+        | "confidential",
       attendees: event.attendees?.map((a) => ({
         email: a.email!,
         name: a.displayName ?? undefined,
@@ -290,14 +329,14 @@ export class GoogleCalendarProvider implements ICalendarProvider {
     };
   }
 
-  private mapAccessRole(role?: string | null): 'owner' | 'writer' | 'reader' {
+  private mapAccessRole(role?: string | null): "owner" | "writer" | "reader" {
     switch (role) {
-      case 'owner':
-        return 'owner';
-      case 'writer':
-        return 'writer';
+      case "owner":
+        return "owner";
+      case "writer":
+        return "writer";
       default:
-        return 'reader';
+        return "reader";
     }
   }
 }

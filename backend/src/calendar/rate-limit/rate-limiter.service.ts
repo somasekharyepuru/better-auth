@@ -1,21 +1,21 @@
-import { Injectable, Logger } from '@nestjs/common';
-import Redis from 'ioredis';
-import { CalendarProvider } from '@prisma/client';
-import { RateLimitConfig } from '../types/calendar.types';
+import { Injectable, Logger } from "@nestjs/common";
+import Redis from "ioredis";
+import { CalendarProvider } from "@prisma/client";
+import { RateLimitConfig } from "../types/calendar.types";
 
 const RATE_CONFIGS: Record<CalendarProvider, RateLimitConfig> = {
   GOOGLE: {
-    provider: 'GOOGLE',
+    provider: "GOOGLE",
     limits: { perSecond: 10, perMinute: 500 },
     userLimits: { perSecond: 5, perMinute: 250 },
   },
   MICROSOFT: {
-    provider: 'MICROSOFT',
+    provider: "MICROSOFT",
     limits: { perSecond: 15, perMinute: 800 },
     userLimits: { perSecond: 10, perMinute: 500 },
   },
   APPLE: {
-    provider: 'APPLE',
+    provider: "APPLE",
     limits: { perSecond: 2, perMinute: 60 },
     userLimits: { perSecond: 1, perMinute: 30 },
   },
@@ -27,7 +27,7 @@ export class CalendarRateLimiterService {
   private readonly redis: Redis;
 
   constructor() {
-    this.redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+    this.redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
   }
 
   async checkLimit(
@@ -56,7 +56,10 @@ export class CalendarRateLimiterService {
     return { allowed: true };
   }
 
-  async recordRequest(provider: CalendarProvider, userId: string): Promise<void> {
+  async recordRequest(
+    provider: CalendarProvider,
+    userId: string,
+  ): Promise<void> {
     const now = Date.now();
     const userKey = `ratelimit:${provider}:user:${userId}`;
     const appKey = `ratelimit:${provider}:app`;
@@ -91,7 +94,9 @@ export class CalendarRateLimiterService {
     await this.redis.incr(hitKey);
     await this.redis.expire(hitKey, 300);
 
-    this.logger.warn(`Rate limit hit for ${provider}, retry after ${retryAfterMs}ms`);
+    this.logger.warn(
+      `Rate limit hit for ${provider}, retry after ${retryAfterMs}ms`,
+    );
 
     return retryAfterMs;
   }
@@ -111,7 +116,7 @@ export class CalendarRateLimiterService {
 
     return {
       appRequestsLastMinute: appRequests,
-      rateLimitHits: parseInt(hits || '0', 10),
+      rateLimitHits: parseInt(hits || "0", 10),
     };
   }
 }

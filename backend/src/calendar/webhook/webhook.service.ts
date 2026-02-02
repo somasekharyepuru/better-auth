@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
-import { PrismaService } from '../../prisma/prisma.service';
-import { CALENDAR_QUEUES } from '../queue/calendar-queue.constants';
+import { Injectable, Logger } from "@nestjs/common";
+import { InjectQueue } from "@nestjs/bullmq";
+import { Queue } from "bullmq";
+import { PrismaService } from "../../prisma/prisma.service";
+import { CALENDAR_QUEUES } from "../queue/calendar-queue.constants";
 
 @Injectable()
 export class CalendarWebhookService {
@@ -10,11 +10,16 @@ export class CalendarWebhookService {
 
   constructor(
     private readonly prisma: PrismaService,
-    @InjectQueue(CALENDAR_QUEUES.GOOGLE_SYNC) private readonly googleQueue: Queue,
-    @InjectQueue(CALENDAR_QUEUES.MICROSOFT_SYNC) private readonly microsoftQueue: Queue,
+    @InjectQueue(CALENDAR_QUEUES.GOOGLE_SYNC)
+    private readonly googleQueue: Queue,
+    @InjectQueue(CALENDAR_QUEUES.MICROSOFT_SYNC)
+    private readonly microsoftQueue: Queue,
   ) {}
 
-  async verifyGoogleWebhook(connectionId: string, channelToken?: string): Promise<boolean> {
+  async verifyGoogleWebhook(
+    connectionId: string,
+    channelToken?: string,
+  ): Promise<boolean> {
     if (!channelToken) return false;
 
     const connection = await this.prisma.calendarConnection.findUnique({
@@ -25,7 +30,10 @@ export class CalendarWebhookService {
     return connection?.webhookSecret === channelToken;
   }
 
-  async verifyMicrosoftWebhook(connectionId: string, clientState?: string): Promise<boolean> {
+  async verifyMicrosoftWebhook(
+    connectionId: string,
+    clientState?: string,
+  ): Promise<boolean> {
     if (!clientState) return false;
 
     const connection = await this.prisma.calendarConnection.findUnique({
@@ -36,7 +44,10 @@ export class CalendarWebhookService {
     return connection?.webhookSecret === clientState;
   }
 
-  async verifyGoogleWebhookForSource(sourceId: string, channelId: string): Promise<boolean> {
+  async verifyGoogleWebhookForSource(
+    sourceId: string,
+    channelId: string,
+  ): Promise<boolean> {
     const source = await this.prisma.calendarSource.findFirst({
       where: { id: sourceId, webhookChannelId: channelId },
     });
@@ -44,7 +55,10 @@ export class CalendarWebhookService {
     return !!source;
   }
 
-  async verifyMicrosoftWebhookForSource(sourceId: string, clientState?: string): Promise<boolean> {
+  async verifyMicrosoftWebhookForSource(
+    sourceId: string,
+    clientState?: string,
+  ): Promise<boolean> {
     if (!clientState) return false;
 
     const source = await this.prisma.calendarSource.findUnique({
@@ -59,8 +73,8 @@ export class CalendarWebhookService {
     await this.prisma.calendarConnection.update({
       where: { id: connectionId },
       data: {
-        status: 'TOKEN_EXPIRED',
-        errorMessage: 'Token requires reauthorization',
+        status: "TOKEN_EXPIRED",
+        errorMessage: "Token requires reauthorization",
         lastErrorAt: new Date(),
       },
     });
@@ -89,19 +103,25 @@ export class CalendarWebhookService {
 
     if (!connection) return;
 
-    const queue = connection.provider === 'GOOGLE' ? this.googleQueue : this.microsoftQueue;
+    const queue =
+      connection.provider === "GOOGLE" ? this.googleQueue : this.microsoftQueue;
 
-    await queue.add('full-sync', {
+    await queue.add("full-sync", {
       connectionId,
       userId: connection.userId,
       provider: connection.provider,
-      triggeredBy: 'webhook-missed',
+      triggeredBy: "webhook-missed",
     });
 
-    this.logger.log(`Triggered full sync for ${connectionId} due to missed notifications`);
+    this.logger.log(
+      `Triggered full sync for ${connectionId} due to missed notifications`,
+    );
   }
 
-  async triggerIncrementalSync(connectionId: string, sourceId?: string): Promise<void> {
+  async triggerIncrementalSync(
+    connectionId: string,
+    sourceId?: string,
+  ): Promise<void> {
     const connection = await this.prisma.calendarConnection.findUnique({
       where: { id: connectionId },
       include: { sources: { where: { syncEnabled: true } } },
@@ -109,23 +129,26 @@ export class CalendarWebhookService {
 
     if (!connection) return;
 
-    const queue = connection.provider === 'GOOGLE' ? this.googleQueue : this.microsoftQueue;
+    const queue =
+      connection.provider === "GOOGLE" ? this.googleQueue : this.microsoftQueue;
     const sources = sourceId
       ? connection.sources.filter((s) => s.id === sourceId)
       : connection.sources;
 
     for (const source of sources) {
-      await queue.add('incremental-sync', {
+      await queue.add("incremental-sync", {
         connectionId,
         userId: connection.userId,
         provider: connection.provider,
         sourceId: source.id,
         syncToken: source.calendarSyncToken,
-        triggeredBy: 'webhook',
+        triggeredBy: "webhook",
       });
     }
 
-    this.logger.log(`Triggered incremental sync for ${connectionId} (${sources.length} sources)`);
+    this.logger.log(
+      `Triggered incremental sync for ${connectionId} (${sources.length} sources)`,
+    );
   }
 
   async markSourceTokenExpired(sourceId: string): Promise<void> {
@@ -139,13 +162,15 @@ export class CalendarWebhookService {
     await this.prisma.calendarConnection.update({
       where: { id: source.connectionId },
       data: {
-        status: 'TOKEN_EXPIRED',
-        errorMessage: 'Token requires reauthorization',
+        status: "TOKEN_EXPIRED",
+        errorMessage: "Token requires reauthorization",
         lastErrorAt: new Date(),
       },
     });
 
-    this.logger.warn(`Marked connection for source ${sourceId} as TOKEN_EXPIRED`);
+    this.logger.warn(
+      `Marked connection for source ${sourceId} as TOKEN_EXPIRED`,
+    );
   }
 
   async markSourceWebhookExpired(sourceId: string): Promise<void> {
@@ -169,16 +194,21 @@ export class CalendarWebhookService {
 
     if (!source) return;
 
-    const queue = source.connection.provider === 'GOOGLE' ? this.googleQueue : this.microsoftQueue;
+    const queue =
+      source.connection.provider === "GOOGLE"
+        ? this.googleQueue
+        : this.microsoftQueue;
 
-    await queue.add('full-sync', {
+    await queue.add("full-sync", {
       connectionId: source.connectionId,
       userId: source.connection.userId,
       provider: source.connection.provider,
       sourceId: source.id,
-      triggeredBy: 'webhook-missed',
+      triggeredBy: "webhook-missed",
     });
 
-    this.logger.log(`Triggered full sync for source ${sourceId} due to missed notifications`);
+    this.logger.log(
+      `Triggered full sync for source ${sourceId} due to missed notifications`,
+    );
   }
 }

@@ -1,9 +1,9 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
-import { OrganizationService } from './organization.service';
+import { Controller, Get, Post, Body } from "@nestjs/common";
+import { OrganizationService } from "./organization.service";
 
-@Controller('organization')
+@Controller("organization")
 export class OrganizationController {
-  constructor(private readonly organizationService: OrganizationService) { }
+  constructor(private readonly organizationService: OrganizationService) {}
 
   /**
    * Get or create default organization
@@ -11,7 +11,7 @@ export class OrganizationController {
    * Note: Better Auth organization endpoints are available at /api/auth/organization/*
    * This is just a helper endpoint
    */
-  @Get('default')
+  @Get("default")
   async getDefaultOrganization() {
     return this.organizationService.getOrCreateDefaultOrganization();
   }
@@ -21,13 +21,14 @@ export class OrganizationController {
    * This can be called after user signup
    * Note: Users are automatically added via database hooks, but this can be used for manual addition
    */
-  @Post('add-to-default')
-  async addToDefaultOrganization(@Body() body: { userId: string; role?: string }) {
+  @Post("add-to-default")
+  async addToDefaultOrganization(
+    @Body() body: { userId: string; role?: string },
+  ) {
     const member = await this.organizationService.addUserToDefaultOrganization(
       body.userId,
-      body.role || 'member'
+      body.role || "member",
     );
     return { success: true, member };
   }
 }
-
