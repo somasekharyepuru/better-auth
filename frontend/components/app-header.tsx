@@ -16,6 +16,7 @@ import {
 import { Logo } from "@/components/ui/logo";
 import { useSettings } from "@/lib/settings-context";
 import { HeaderCalendarWidget } from "@/components/calendar/header-calendar-widget";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 
 interface User {
   id: string;
@@ -121,6 +122,8 @@ export function AppHeader() {
                 Tools
               </button>
             )}
+            {/* Theme Switcher - before profile */}
+            {showNavLinks && <ThemeSwitcher />}
             {showNavLinks && user && (
               <div
                 ref={profileDropdownRef}
@@ -212,6 +215,10 @@ export function AppHeader() {
                   Tools
                 </button>
               )}
+              {/* Mobile Theme Switcher */}
+              <div className="px-1 py-2 border-t border-gray-100 dark:border-gray-800 mt-1">
+                <ThemeSwitcher variant="dropdown" />
+              </div>
               {user && (
                 <>
                   <button
