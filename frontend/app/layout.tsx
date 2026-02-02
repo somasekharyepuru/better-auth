@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/toast";
 import { ThemeProvider } from "@/components/theme-provider";
+import { GoogleAnalytics } from "@/components/google-analytics";
 import { APP_CONFIG } from "@/config/app.constants";
 
 export const metadata: Metadata = {
@@ -16,6 +17,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <GoogleAnalytics />
+      </head>
       <body suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
