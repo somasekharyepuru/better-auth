@@ -66,7 +66,7 @@ export default function ForgotPasswordPage() {
       <div className="space-y-6">
         <Link
           href="/login"
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 transition-colors"
+          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to sign in
@@ -74,7 +74,7 @@ export default function ForgotPasswordPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {error && (
-            <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl">
+            <div className="p-4 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl">
               {error}
             </div>
           )}

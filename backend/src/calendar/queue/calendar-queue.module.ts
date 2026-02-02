@@ -1,14 +1,14 @@
-import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bullmq';
-import { CALENDAR_QUEUES } from './calendar-queue.constants';
+import { Module } from "@nestjs/common";
+import { BullModule } from "@nestjs/bullmq";
+import { CALENDAR_QUEUES } from "./calendar-queue.constants";
 import {
   GoogleSyncProcessor,
   MicrosoftSyncProcessor,
   AppleSyncProcessor,
   OutboundSyncProcessor,
-} from './sync.processor';
-import { WebhookProcessor } from './webhook.processor';
-import { TokenRefreshProcessor } from './token-refresh.processor';
+} from "./sync.processor";
+import { WebhookProcessor } from "./webhook.processor";
+import { TokenRefreshProcessor } from "./token-refresh.processor";
 
 @Module({
   imports: [
@@ -17,7 +17,7 @@ import { TokenRefreshProcessor } from './token-refresh.processor';
         name: CALENDAR_QUEUES.GOOGLE_SYNC,
         defaultJobOptions: {
           attempts: 3,
-          backoff: { type: 'exponential', delay: 2000 },
+          backoff: { type: "exponential", delay: 2000 },
           removeOnComplete: { count: 100 },
           removeOnFail: { count: 500 },
         },
@@ -26,7 +26,7 @@ import { TokenRefreshProcessor } from './token-refresh.processor';
         name: CALENDAR_QUEUES.MICROSOFT_SYNC,
         defaultJobOptions: {
           attempts: 3,
-          backoff: { type: 'exponential', delay: 2000 },
+          backoff: { type: "exponential", delay: 2000 },
           removeOnComplete: { count: 100 },
           removeOnFail: { count: 500 },
         },
@@ -35,7 +35,7 @@ import { TokenRefreshProcessor } from './token-refresh.processor';
         name: CALENDAR_QUEUES.APPLE_SYNC,
         defaultJobOptions: {
           attempts: 3,
-          backoff: { type: 'exponential', delay: 5000 },
+          backoff: { type: "exponential", delay: 5000 },
           removeOnComplete: { count: 100 },
           removeOnFail: { count: 500 },
         },
@@ -44,7 +44,7 @@ import { TokenRefreshProcessor } from './token-refresh.processor';
         name: CALENDAR_QUEUES.WEBHOOK_PROCESS,
         defaultJobOptions: {
           attempts: 5,
-          backoff: { type: 'exponential', delay: 1000 },
+          backoff: { type: "exponential", delay: 1000 },
           priority: 1,
           removeOnComplete: { count: 1000 },
         },
@@ -53,7 +53,7 @@ import { TokenRefreshProcessor } from './token-refresh.processor';
         name: CALENDAR_QUEUES.TOKEN_REFRESH,
         defaultJobOptions: {
           attempts: 3,
-          backoff: { type: 'fixed', delay: 5000 },
+          backoff: { type: "fixed", delay: 5000 },
           removeOnComplete: { count: 50 },
         },
       },
@@ -61,7 +61,7 @@ import { TokenRefreshProcessor } from './token-refresh.processor';
         name: CALENDAR_QUEUES.OUTBOUND_SYNC,
         defaultJobOptions: {
           attempts: 3,
-          backoff: { type: 'exponential', delay: 2000 },
+          backoff: { type: "exponential", delay: 2000 },
           removeOnComplete: { count: 100 },
         },
       },

@@ -1,12 +1,12 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
-import { PrismaService } from '../../prisma/prisma.service';
-import { CalendarProviderFactory } from '../providers/calendar-provider.factory';
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
+import { PrismaService } from "../../prisma/prisma.service";
+import { CalendarProviderFactory } from "../providers/calendar-provider.factory";
 
 @Injectable()
 export class CalendarTokenService implements OnModuleInit {
   private readonly logger = new Logger(CalendarTokenService.name);
-  private readonly algorithm = 'aes-256-gcm';
+  private readonly algorithm = "aes-256-gcm";
   private key!: Buffer;
 
   constructor(
@@ -17,8 +17,14 @@ export class CalendarTokenService implements OnModuleInit {
   onModuleInit() {
     const secret = process.env.CALENDAR_TOKEN_SECRET;
     if (!secret || secret.length < 32) {
-      this.logger.warn('CALENDAR_TOKEN_SECRET should be at least 32 characters for production');
-      this.key = Buffer.from((secret || 'default-dev-secret-key-change-it').padEnd(32, '0').slice(0, 32));
+      this.logger.warn(
+        "CALENDAR_TOKEN_SECRET should be at least 32 characters for production",
+      );
+      this.key = Buffer.from(
+        (secret || "default-dev-secret-key-change-it")
+          .padEnd(32, "0")
+          .slice(0, 32),
+      );
     } else {
       this.key = Buffer.from(secret.slice(0, 32));
     }
@@ -34,7 +40,9 @@ export class CalendarTokenService implements OnModuleInit {
     const iv = randomBytes(16);
 
     const accessEncrypted = this.encrypt(accessToken, iv);
-    const refreshEncrypted = refreshToken ? this.encrypt(refreshToken, iv) : null;
+    const refreshEncrypted = refreshToken
+      ? this.encrypt(refreshToken, iv)
+      : null;
 
     await this.prisma.calendarToken.upsert({
       where: { connectionId },
@@ -42,14 +50,14 @@ export class CalendarTokenService implements OnModuleInit {
         connectionId,
         accessTokenEncrypted: accessEncrypted,
         refreshTokenEncrypted: refreshEncrypted,
-        tokenIv: iv.toString('hex'),
+        tokenIv: iv.toString("hex"),
         expiresAt,
         scopes: scopes || [],
       },
       update: {
         accessTokenEncrypted: accessEncrypted,
         refreshTokenEncrypted: refreshEncrypted,
-        tokenIv: iv.toString('hex'),
+        tokenIv: iv.toString("hex"),
         expiresAt,
         scopes: scopes || [],
         updatedAt: new Date(),
@@ -64,13 +72,16 @@ export class CalendarTokenService implements OnModuleInit {
     });
 
     if (!token) {
-      throw new Error('Token not found');
+      throw new Error("Token not found");
     }
 
-    const iv = Buffer.from(token.tokenIv, 'hex');
+    const iv = Buffer.from(token.tokenIv, "hex");
     const accessToken = this.decrypt(token.accessTokenEncrypted, iv);
 
-    if (token.expiresAt && token.expiresAt < new Date(Date.now() + 15 * 60 * 1000)) {
+    if (
+      token.expiresAt &&
+      token.expiresAt < new Date(Date.now() + 15 * 60 * 1000)
+    ) {
       return this.refreshToken(connectionId, token, iv);
     }
 
@@ -86,17 +97,22 @@ export class CalendarTokenService implements OnModuleInit {
       return null;
     }
 
-    const iv = Buffer.from(token.tokenIv, 'hex');
+    const iv = Buffer.from(token.tokenIv, "hex");
     return this.decrypt(token.refreshTokenEncrypted, iv);
   }
 
   async deleteToken(connectionId: string): Promise<void> {
-    await this.prisma.calendarToken.delete({
-      where: { connectionId },
-    }).catch(() => {});
+    await this.prisma.calendarToken
+      .delete({
+        where: { connectionId },
+      })
+      .catch(() => {});
   }
 
-  async isTokenExpiringSoon(connectionId: string, bufferMinutes = 15): Promise<boolean> {
+  async isTokenExpiringSoon(
+    connectionId: string,
+    bufferMinutes = 15,
+  ): Promise<boolean> {
     const token = await this.prisma.calendarToken.findUnique({
       where: { connectionId },
       select: { expiresAt: true },
@@ -109,15 +125,20 @@ export class CalendarTokenService implements OnModuleInit {
 
   private async refreshToken(
     connectionId: string,
-    token: { refreshTokenEncrypted: string | null; connection: { provider: string } },
+    token: {
+      refreshTokenEncrypted: string | null;
+      connection: { provider: string };
+    },
     iv: Buffer,
   ): Promise<string> {
     if (!token.refreshTokenEncrypted) {
-      throw new Error('No refresh token available');
+      throw new Error("No refresh token available");
     }
 
     const refreshToken = this.decrypt(token.refreshTokenEncrypted, iv);
-    const provider = this.providerFactory.getProvider(token.connection.provider as 'GOOGLE' | 'MICROSOFT' | 'APPLE');
+    const provider = this.providerFactory.getProvider(
+      token.connection.provider as "GOOGLE" | "MICROSOFT" | "APPLE",
+    );
 
     this.logger.log(`Refreshing token for connection ${connectionId}`);
 
@@ -136,18 +157,18 @@ export class CalendarTokenService implements OnModuleInit {
 
   private encrypt(text: string, iv: Buffer): string {
     const cipher = createCipheriv(this.algorithm, this.key, iv);
-    let encrypted = cipher.update(text, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-    const authTag = cipher.getAuthTag().toString('hex');
+    let encrypted = cipher.update(text, "utf8", "hex");
+    encrypted += cipher.final("hex");
+    const authTag = cipher.getAuthTag().toString("hex");
     return `${encrypted}:${authTag}`;
   }
 
   private decrypt(encrypted: string, iv: Buffer): string {
-    const [data, authTag] = encrypted.split(':');
+    const [data, authTag] = encrypted.split(":");
     const decipher = createDecipheriv(this.algorithm, this.key, iv);
-    decipher.setAuthTag(Buffer.from(authTag, 'hex'));
-    let decrypted = decipher.update(data, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
+    decipher.setAuthTag(Buffer.from(authTag, "hex"));
+    let decrypted = decipher.update(data, "hex", "utf8");
+    decrypted += decipher.final("utf8");
     return decrypted;
   }
 }

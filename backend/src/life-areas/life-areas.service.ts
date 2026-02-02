@@ -1,256 +1,337 @@
-import { Injectable, BadRequestException, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
 
 export interface CreateLifeAreaDto {
-    name: string;
-    color?: string;
+  name: string;
+  color?: string;
 }
 
 export interface UpdateLifeAreaDto {
-    name?: string;
-    color?: string;
-    order?: number;
+  name?: string;
+  color?: string;
+  order?: number;
 }
 
 export interface LifeAreaResponse {
-    id: string;
-    userId: string;
-    name: string;
-    color: string | null;
-    order: number;
-    isArchived: boolean;
-    createdAt: Date;
-    updatedAt: Date;
+  id: string;
+  userId: string;
+  name: string;
+  color: string | null;
+  order: number;
+  isArchived: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-const DEFAULT_LIFE_AREA_NAME = 'Personal';
-const DEFAULT_LIFE_AREA_COLOR = '#4F46E5'; // Indigo - default color for Personal life area
+const DEFAULT_LIFE_AREA_NAME = "Personal";
+const DEFAULT_LIFE_AREA_COLOR = "#4F46E5"; // Indigo - default color for Personal life area
 const MAX_LIFE_AREAS = 5;
 
 @Injectable()
 export class LifeAreasService {
-    constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) { }
 
-    /**
-     * Get all active life areas for a user
-     */
-    async getLifeAreas(userId: string): Promise<LifeAreaResponse[]> {
-        // Ensure default life area exists
-        await this.ensureDefaultLifeArea(userId);
+  /**
+   * Get all active life areas for a user
+   */
+  async getLifeAreas(userId: string): Promise<LifeAreaResponse[]> {
+    // Ensure default life area exists
+    await this.ensureDefaultLifeArea(userId);
 
-        return this.prisma.lifeArea.findMany({
-            where: {
-                userId,
-                isArchived: false,
-            },
-            orderBy: { order: 'asc' },
-        });
+    return this.prisma.lifeArea.findMany({
+      where: {
+        userId,
+        isArchived: false,
+      },
+      orderBy: { order: "asc" },
+    });
+  }
+
+  /**
+   * Get a single life area by ID
+   */
+  async getLifeArea(id: string, userId: string): Promise<LifeAreaResponse> {
+    const lifeArea = await this.prisma.lifeArea.findUnique({
+      where: { id },
+    });
+
+    if (!lifeArea) {
+      throw new NotFoundException("Life Area not found");
     }
 
-    /**
-     * Get a single life area by ID
-     */
-    async getLifeArea(id: string, userId: string): Promise<LifeAreaResponse> {
-        const lifeArea = await this.prisma.lifeArea.findUnique({
-            where: { id },
-        });
-
-        if (!lifeArea) {
-            throw new NotFoundException('Life Area not found');
-        }
-
-        if (lifeArea.userId !== userId) {
-            throw new UnauthorizedException('Access denied');
-        }
-
-        return lifeArea;
+    if (lifeArea.userId !== userId) {
+      throw new UnauthorizedException("Access denied");
     }
 
-    /**
-     * Create a new life area
-     */
-    async createLifeArea(userId: string, data: CreateLifeAreaDto): Promise<LifeAreaResponse> {
-        // Check max limit
-        const count = await this.prisma.lifeArea.count({
-            where: {
-                userId,
-                isArchived: false,
-            },
-        });
+    return lifeArea;
+  }
 
-        if (count >= MAX_LIFE_AREAS) {
-            throw new BadRequestException(`Maximum ${MAX_LIFE_AREAS} life areas allowed`);
-        }
+  /**
+   * Create a new life area
+   */
+  async createLifeArea(
+    userId: string,
+    data: CreateLifeAreaDto,
+  ): Promise<LifeAreaResponse> {
+    // Check max limit
+    const count = await this.prisma.lifeArea.count({
+      where: {
+        userId,
+        isArchived: false,
+      },
+    });
 
-        // Get next order
-        const maxOrder = await this.prisma.lifeArea.findFirst({
-            where: { userId },
-            orderBy: { order: 'desc' },
-            select: { order: true },
-        });
-
-        const nextOrder = (maxOrder?.order ?? 0) + 1;
-
-        return this.prisma.lifeArea.create({
-            data: {
-                userId,
-                name: data.name,
-                color: data.color || null,
-                order: nextOrder,
-            },
-        });
+    if (count >= MAX_LIFE_AREAS) {
+      throw new BadRequestException(
+        `Maximum ${MAX_LIFE_AREAS} life areas allowed`,
+      );
     }
 
-    /**
-     * Update a life area
-     */
-    async updateLifeArea(id: string, userId: string, data: UpdateLifeAreaDto): Promise<LifeAreaResponse> {
-        await this.verifyOwnership(id, userId);
+    // Get next order
+    const maxOrder = await this.prisma.lifeArea.findFirst({
+      where: { userId },
+      orderBy: { order: "desc" },
+      select: { order: true },
+    });
 
-        return this.prisma.lifeArea.update({
-            where: { id },
-            data: {
-                ...(data.name !== undefined && { name: data.name }),
-                ...(data.color !== undefined && { color: data.color }),
-                ...(data.order !== undefined && { order: data.order }),
-            },
-        });
+    const nextOrder = (maxOrder?.order ?? 0) + 1;
+
+    return this.prisma.lifeArea.create({
+      data: {
+        userId,
+        name: data.name,
+        color: data.color || null,
+        order: nextOrder,
+      },
+    });
+  }
+
+  /**
+   * Update a life area
+   */
+  async updateLifeArea(
+    id: string,
+    userId: string,
+    data: UpdateLifeAreaDto,
+  ): Promise<LifeAreaResponse> {
+    await this.verifyOwnership(id, userId);
+
+    return this.prisma.lifeArea.update({
+      where: { id },
+      data: {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.color !== undefined && { color: data.color }),
+        ...(data.order !== undefined && { order: data.order }),
+      },
+    });
+  }
+
+  /**
+   * Archive a life area (soft delete)
+   */
+  async archiveLifeArea(id: string, userId: string): Promise<LifeAreaResponse> {
+    await this.verifyOwnership(id, userId);
+
+    // Check if this is the last active life area
+    const activeCount = await this.prisma.lifeArea.count({
+      where: {
+        userId,
+        isArchived: false,
+      },
+    });
+
+    if (activeCount <= 1) {
+      throw new BadRequestException(
+        "Cannot archive the last remaining life area",
+      );
     }
 
-    /**
-     * Archive a life area (soft delete)
-     */
-    async archiveLifeArea(id: string, userId: string): Promise<LifeAreaResponse> {
-        await this.verifyOwnership(id, userId);
+    return this.prisma.lifeArea.update({
+      where: { id },
+      data: { isArchived: true },
+    });
+  }
 
-        // Check if this is the last active life area
-        const activeCount = await this.prisma.lifeArea.count({
-            where: {
-                userId,
-                isArchived: false,
-            },
-        });
+  /**
+   * Restore an archived life area
+   */
+  async restoreLifeArea(id: string, userId: string): Promise<LifeAreaResponse> {
+    await this.verifyOwnership(id, userId);
 
-        if (activeCount <= 1) {
-            throw new BadRequestException('Cannot archive the last remaining life area');
-        }
+    // Check max limit before restoring
+    const activeCount = await this.prisma.lifeArea.count({
+      where: {
+        userId,
+        isArchived: false,
+      },
+    });
 
-        return this.prisma.lifeArea.update({
-            where: { id },
-            data: { isArchived: true },
-        });
+    if (activeCount >= MAX_LIFE_AREAS) {
+      throw new BadRequestException(
+        `Cannot restore: maximum ${MAX_LIFE_AREAS} active life areas allowed`,
+      );
     }
 
-    /**
-     * Restore an archived life area
-     */
-    async restoreLifeArea(id: string, userId: string): Promise<LifeAreaResponse> {
-        await this.verifyOwnership(id, userId);
+    return this.prisma.lifeArea.update({
+      where: { id },
+      data: { isArchived: false },
+    });
+  }
 
-        // Check max limit before restoring
-        const activeCount = await this.prisma.lifeArea.count({
-            where: {
-                userId,
-                isArchived: false,
-            },
-        });
+  /**
+   * Reorder life areas
+   */
+  async reorderLifeAreas(
+    userId: string,
+    orderedIds: string[],
+  ): Promise<LifeAreaResponse[]> {
+    // Verify all IDs belong to user
+    const lifeAreas = await this.prisma.lifeArea.findMany({
+      where: {
+        id: { in: orderedIds },
+        userId,
+      },
+    });
 
-        if (activeCount >= MAX_LIFE_AREAS) {
-            throw new BadRequestException(`Cannot restore: maximum ${MAX_LIFE_AREAS} active life areas allowed`);
-        }
-
-        return this.prisma.lifeArea.update({
-            where: { id },
-            data: { isArchived: false },
-        });
+    if (lifeAreas.length !== orderedIds.length) {
+      throw new BadRequestException("Invalid life area IDs");
     }
 
-    /**
-     * Reorder life areas
-     */
-    async reorderLifeAreas(userId: string, orderedIds: string[]): Promise<LifeAreaResponse[]> {
-        // Verify all IDs belong to user
-        const lifeAreas = await this.prisma.lifeArea.findMany({
-            where: {
-                id: { in: orderedIds },
-                userId,
-            },
-        });
+    // Update order for each
+    await Promise.all(
+      orderedIds.map((id, index) =>
+        this.prisma.lifeArea.update({
+          where: { id },
+          data: { order: index + 1 },
+        }),
+      ),
+    );
 
-        if (lifeAreas.length !== orderedIds.length) {
-            throw new BadRequestException('Invalid life area IDs');
-        }
+    return this.getLifeAreas(userId);
+  }
 
-        // Update order for each
-        await Promise.all(
-            orderedIds.map((id, index) =>
-                this.prisma.lifeArea.update({
-                    where: { id },
-                    data: { order: index + 1 },
-                })
-            )
-        );
+  /**
+   * Ensure a default life area exists for user
+   */
+  async ensureDefaultLifeArea(userId: string): Promise<LifeAreaResponse> {
+    const existing = await this.prisma.lifeArea.findFirst({
+      where: { userId },
+    });
 
-        return this.getLifeAreas(userId);
+    if (existing) {
+      return existing;
     }
 
-    /**
-     * Ensure a default life area exists for user
-     */
-    async ensureDefaultLifeArea(userId: string): Promise<LifeAreaResponse> {
-        const existing = await this.prisma.lifeArea.findFirst({
-            where: { userId },
-        });
+    return this.prisma.lifeArea.create({
+      data: {
+        userId,
+        name: DEFAULT_LIFE_AREA_NAME,
+        color: DEFAULT_LIFE_AREA_COLOR,
+        order: 1,
+      },
+    });
+  }
 
-        if (existing) {
-            return existing;
-        }
+  /**
+   * Get default life area for user
+   */
+  async getDefaultLifeArea(userId: string): Promise<LifeAreaResponse> {
+    const lifeArea = await this.prisma.lifeArea.findFirst({
+      where: {
+        userId,
+        isArchived: false,
+      },
+      orderBy: { order: "asc" },
+    });
 
-        return this.prisma.lifeArea.create({
-            data: {
-                userId,
-                name: DEFAULT_LIFE_AREA_NAME,
-                color: DEFAULT_LIFE_AREA_COLOR,
-                order: 1,
-            },
-        });
+    if (!lifeArea) {
+      return this.ensureDefaultLifeArea(userId);
     }
 
-    /**
-     * Get default life area for user
-     */
-    async getDefaultLifeArea(userId: string): Promise<LifeAreaResponse> {
-        const lifeArea = await this.prisma.lifeArea.findFirst({
-            where: {
-                userId,
-                isArchived: false,
-            },
-            orderBy: { order: 'asc' },
-        });
+    return lifeArea;
+  }
 
-        if (!lifeArea) {
-            return this.ensureDefaultLifeArea(userId);
-        }
+  /**
+   * Get pending items count for a life area (for today)
+   * Used to show warning before archiving
+   */
+  async getPendingItemsCount(
+    id: string,
+    userId: string,
+  ): Promise<{
+    incompletePriorities: number;
+    upcomingTimeBlocks: number;
+    discussionItems: number;
+    eisenhowerTasks: number;
+  }> {
+    await this.verifyOwnership(id, userId);
 
-        return lifeArea;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Get day for this life area today
+    const day = await this.prisma.day.findFirst({
+      where: {
+        userId,
+        lifeAreaId: id,
+        date: {
+          gte: today,
+          lt: tomorrow,
+        },
+      },
+      include: {
+        priorities: {
+          where: { completed: false },
+        },
+        discussionItems: true,
+        timeBlocks: {
+          where: {
+            endTime: { gte: new Date() }, // Only future/ongoing time blocks
+          },
+        },
+      },
+    });
+
+    // Count Eisenhower tasks for this life area
+    const eisenhowerTasksCount = await this.prisma.eisenhowerTask.count({
+      where: {
+        userId,
+        lifeAreaId: id,
+      },
+    });
+
+    return {
+      incompletePriorities: day?.priorities.length ?? 0,
+      upcomingTimeBlocks: day?.timeBlocks.length ?? 0,
+      discussionItems: day?.discussionItems.length ?? 0,
+      eisenhowerTasks: eisenhowerTasksCount,
+    };
+  }
+
+  /**
+   * Verify life area belongs to user
+   */
+  private async verifyOwnership(id: string, userId: string) {
+    const lifeArea = await this.prisma.lifeArea.findUnique({
+      where: { id },
+    });
+
+    if (!lifeArea) {
+      throw new NotFoundException("Life Area not found");
     }
 
-    /**
-     * Verify life area belongs to user
-     */
-    private async verifyOwnership(id: string, userId: string) {
-        const lifeArea = await this.prisma.lifeArea.findUnique({
-            where: { id },
-        });
-
-        if (!lifeArea) {
-            throw new NotFoundException('Life Area not found');
-        }
-
-        if (lifeArea.userId !== userId) {
-            throw new UnauthorizedException('Access denied');
-        }
-
-        return lifeArea;
+    if (lifeArea.userId !== userId) {
+      throw new UnauthorizedException("Access denied");
     }
+
+    return lifeArea;
+  }
 }

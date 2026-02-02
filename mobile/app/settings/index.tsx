@@ -104,16 +104,7 @@ export default function SettingsScreen() {
         }
     };
 
-    const handleLimitChange = async (key: 'maxTopPriorities' | 'maxDiscussionItems', value: number) => {
-        setIsSaving(true);
-        try {
-            await updateSettings({ [key]: value });
-        } catch (error) {
-            Alert.alert('Error', 'Failed to update limit');
-        } finally {
-            setIsSaving(false);
-        }
-    };
+
 
     // Mobile-specific settings (stored locally for now)
     const [hapticEnabled, setHapticEnabled] = useState(true);
@@ -267,105 +258,7 @@ export default function SettingsScreen() {
                     </View>
                 </View>
 
-                {/* Limits Section - Editable */}
-                <View style={styles.section}>
-                    <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-                        LIMITS
-                    </Text>
-                    <View style={[styles.sectionCard, { backgroundColor: colors.cardSolid }, shadows.sm]}>
-                        <View style={styles.limitItem}>
-                            <View style={styles.limitContent}>
-                                <Text style={[styles.itemLabel, { color: colors.text }]}>Max Top Priorities</Text>
-                                <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
-                                    Per day (1-5)
-                                </Text>
-                            </View>
-                            <View style={styles.stepperContainer}>
-                                <TouchableOpacity
-                                    style={[styles.stepperButton, { backgroundColor: colors.backgroundSecondary }]}
-                                    onPress={async () => {
-                                        if (settings.maxTopPriorities > 1) {
-                                            Haptics.selectionAsync();
-                                            await handleLimitChange('maxTopPriorities', settings.maxTopPriorities - 1);
-                                        }
-                                    }}
-                                    disabled={settings.maxTopPriorities <= 1}
-                                >
-                                    <Ionicons
-                                        name="remove"
-                                        size={18}
-                                        color={settings.maxTopPriorities <= 1 ? colors.textTertiary : colors.text}
-                                    />
-                                </TouchableOpacity>
-                                <Text style={[styles.stepperValue, { color: colors.text }]}>
-                                    {settings.maxTopPriorities}
-                                </Text>
-                                <TouchableOpacity
-                                    style={[styles.stepperButton, { backgroundColor: colors.backgroundSecondary }]}
-                                    onPress={async () => {
-                                        if (settings.maxTopPriorities < 5) {
-                                            Haptics.selectionAsync();
-                                            await handleLimitChange('maxTopPriorities', settings.maxTopPriorities + 1);
-                                        }
-                                    }}
-                                    disabled={settings.maxTopPriorities >= 5}
-                                >
-                                    <Ionicons
-                                        name="add"
-                                        size={18}
-                                        color={settings.maxTopPriorities >= 5 ? colors.textTertiary : colors.text}
-                                    />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                        <View style={[styles.separator, { backgroundColor: colors.border }]} />
-                        <View style={styles.limitItem}>
-                            <View style={styles.limitContent}>
-                                <Text style={[styles.itemLabel, { color: colors.text }]}>Max Discussion Items</Text>
-                                <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
-                                    Per day (0-5)
-                                </Text>
-                            </View>
-                            <View style={styles.stepperContainer}>
-                                <TouchableOpacity
-                                    style={[styles.stepperButton, { backgroundColor: colors.backgroundSecondary }]}
-                                    onPress={async () => {
-                                        if (settings.maxDiscussionItems > 0) {
-                                            Haptics.selectionAsync();
-                                            await handleLimitChange('maxDiscussionItems', settings.maxDiscussionItems - 1);
-                                        }
-                                    }}
-                                    disabled={settings.maxDiscussionItems <= 0}
-                                >
-                                    <Ionicons
-                                        name="remove"
-                                        size={18}
-                                        color={settings.maxDiscussionItems <= 0 ? colors.textTertiary : colors.text}
-                                    />
-                                </TouchableOpacity>
-                                <Text style={[styles.stepperValue, { color: colors.text }]}>
-                                    {settings.maxDiscussionItems}
-                                </Text>
-                                <TouchableOpacity
-                                    style={[styles.stepperButton, { backgroundColor: colors.backgroundSecondary }]}
-                                    onPress={async () => {
-                                        if (settings.maxDiscussionItems < 5) {
-                                            Haptics.selectionAsync();
-                                            await handleLimitChange('maxDiscussionItems', settings.maxDiscussionItems + 1);
-                                        }
-                                    }}
-                                    disabled={settings.maxDiscussionItems >= 5}
-                                >
-                                    <Ionicons
-                                        name="add"
-                                        size={18}
-                                        color={settings.maxDiscussionItems >= 5 ? colors.textTertiary : colors.text}
-                                    />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-                </View>
+
 
                 {/* Mobile Settings Section */}
                 <View style={styles.section}>

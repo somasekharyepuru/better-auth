@@ -97,7 +97,7 @@ export default function SignUpPage() {
   // Show loading state while checking auth
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <Spinner size="lg" />
       </div>
     );
@@ -113,16 +113,16 @@ export default function SignUpPage() {
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-gray-200" />
+            <span className="w-full border-t border-gray-200 dark:border-gray-700" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-4 text-gray-400">or</span>
+            <span className="bg-white dark:bg-gray-900 px-4 text-gray-400 dark:text-gray-500">or</span>
           </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {error && (
-            <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl">
+            <div className="p-4 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl">
               {error}
             </div>
           )}
@@ -162,7 +162,7 @@ export default function SignUpPage() {
               />
               <button
                 type="button"
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
@@ -184,22 +184,22 @@ export default function SignUpPage() {
           </Button>
         </form>
 
-        <p className="text-center text-sm text-gray-500">
+        <p className="text-center text-sm text-gray-500 dark:text-gray-400">
           By signing up, you agree to our{" "}
-          <Link href="/terms" className="text-gray-900 hover:underline">
+          <Link href="/terms" className="text-gray-900 dark:text-white hover:underline">
             Terms
           </Link>{" "}
           and{" "}
-          <Link href="/privacy" className="text-gray-900 hover:underline">
+          <Link href="/privacy" className="text-gray-900 dark:text-white hover:underline">
             Privacy Policy
           </Link>
         </p>
 
         <div className="text-center">
-          <span className="text-gray-500">Already have an account? </span>
+          <span className="text-gray-500 dark:text-gray-400">Already have an account? </span>
           <Link
             href="/login"
-            className="text-gray-900 font-medium hover:underline"
+            className="text-gray-900 dark:text-white font-medium hover:underline"
           >
             Sign in
           </Link>

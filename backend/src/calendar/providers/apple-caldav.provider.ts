@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { DAVClient, DAVCalendar, DAVObject } from 'tsdav';
-import { CalendarProvider } from '@prisma/client';
-import { ICalendarProvider } from './calendar-provider.interface';
+import { Injectable, Logger } from "@nestjs/common";
+import { DAVClient, DAVCalendar, DAVObject } from "tsdav";
+import { CalendarProvider } from "@prisma/client";
+import { ICalendarProvider } from "./calendar-provider.interface";
 import {
   OAuthTokens,
   ExternalCalendar,
@@ -11,7 +11,7 @@ import {
   CreateEventInput,
   UpdateEventInput,
   GetEventsOptions,
-} from '../types/calendar.types';
+} from "../types/calendar.types";
 
 @Injectable()
 export class AppleCalDAVProvider implements ICalendarProvider {
@@ -20,51 +20,60 @@ export class AppleCalDAVProvider implements ICalendarProvider {
   readonly supportsWebhooks = false;
 
   getAuthorizationUrl(): string {
-    throw new Error('Apple CalDAV uses app-specific passwords, not OAuth');
+    throw new Error("Apple CalDAV uses app-specific passwords, not OAuth");
   }
 
   async exchangeCodeForTokens(): Promise<OAuthTokens> {
-    throw new Error('Apple CalDAV uses app-specific passwords, not OAuth');
+    throw new Error("Apple CalDAV uses app-specific passwords, not OAuth");
   }
 
   async refreshAccessToken(refreshToken: string): Promise<OAuthTokens> {
     return {
       accessToken: refreshToken,
       refreshToken,
-      scopes: ['calendar'],
-      tokenType: 'Basic',
+      scopes: ["calendar"],
+      tokenType: "Basic",
     };
   }
 
   async revokeAccess(): Promise<void> {
-    this.logger.warn('Apple app-specific passwords must be revoked at appleid.apple.com');
+    this.logger.warn(
+      "Apple app-specific passwords must be revoked at appleid.apple.com",
+    );
   }
 
-  async listCalendars(accessToken: string, params?: Record<string, string>): Promise<ExternalCalendar[]> {
+  async listCalendars(
+    accessToken: string,
+    params?: Record<string, string>,
+  ): Promise<ExternalCalendar[]> {
     const appleId = params?.appleId;
-    if (!appleId) throw new Error('Apple ID is required');
+    if (!appleId) throw new Error("Apple ID is required");
 
     const client = await this.getDAVClient(appleId, accessToken);
     const calendars = await client.fetchCalendars();
 
     return calendars.map((cal: DAVCalendar) => ({
       id: cal.url,
-      name: String(cal.displayName || 'Unnamed Calendar'),
+      name: String(cal.displayName || "Unnamed Calendar"),
       description: cal.description ?? undefined,
       color: cal.calendarColor ?? undefined,
       timeZone: cal.timezone ?? undefined,
       isPrimary: false,
-      accessRole: 'owner' as const,
+      accessRole: "owner" as const,
     }));
   }
 
-  async getCalendar(accessToken: string, calendarId: string, params?: Record<string, string>): Promise<ExternalCalendar> {
+  async getCalendar(
+    accessToken: string,
+    calendarId: string,
+    params?: Record<string, string>,
+  ): Promise<ExternalCalendar> {
     const appleId = params?.appleId;
-    if (!appleId) throw new Error('Apple ID is required');
+    if (!appleId) throw new Error("Apple ID is required");
 
     const calendars = await this.listCalendars(accessToken, params);
     const calendar = calendars.find((c) => c.id === calendarId);
-    if (!calendar) throw new Error('Calendar not found');
+    if (!calendar) throw new Error("Calendar not found");
     return calendar;
   }
 
@@ -75,7 +84,7 @@ export class AppleCalDAVProvider implements ICalendarProvider {
     options?: GetEventsOptions,
   ): Promise<EventsResult> {
     const appleId = options?.appleId;
-    if (!appleId) throw new Error('Apple ID is required');
+    if (!appleId) throw new Error("Apple ID is required");
 
     const client = await this.getDAVClient(appleId, accessToken);
 
@@ -96,8 +105,13 @@ export class AppleCalDAVProvider implements ICalendarProvider {
     };
   }
 
-  async getEvent(accessToken: string, calendarId: string, eventId: string, appleId?: string): Promise<ExternalEvent> {
-    if (!appleId) throw new Error('Apple ID is required');
+  async getEvent(
+    accessToken: string,
+    calendarId: string,
+    eventId: string,
+    appleId?: string,
+  ): Promise<ExternalEvent> {
+    if (!appleId) throw new Error("Apple ID is required");
 
     const client = await this.getDAVClient(appleId, accessToken);
 
@@ -106,7 +120,7 @@ export class AppleCalDAVProvider implements ICalendarProvider {
       objectUrls: [eventId],
     });
 
-    if (objects.length === 0) throw new Error('Event not found');
+    if (objects.length === 0) throw new Error("Event not found");
     return this.parseICalEvent(objects[0]);
   }
 
@@ -116,7 +130,7 @@ export class AppleCalDAVProvider implements ICalendarProvider {
     event: CreateEventInput,
     appleId?: string,
   ): Promise<ExternalEvent> {
-    if (!appleId) throw new Error('Apple ID is required');
+    if (!appleId) throw new Error("Apple ID is required");
 
     const client = await this.getDAVClient(appleId, accessToken);
 
@@ -137,8 +151,8 @@ export class AppleCalDAVProvider implements ICalendarProvider {
       startTime: event.startTime,
       endTime: event.endTime,
       isAllDay: event.isAllDay || false,
-      status: 'confirmed',
-      visibility: 'public',
+      status: "confirmed",
+      visibility: "public",
       updatedAt: new Date(),
       createdAt: new Date(),
     };
@@ -150,10 +164,15 @@ export class AppleCalDAVProvider implements ICalendarProvider {
     event: UpdateEventInput,
     appleId?: string,
   ): Promise<ExternalEvent> {
-    if (!appleId) throw new Error('Apple ID is required');
+    if (!appleId) throw new Error("Apple ID is required");
 
     const client = await this.getDAVClient(appleId, accessToken);
-    const existing = await this.getEvent(accessToken, calendarId, event.id, appleId);
+    const existing = await this.getEvent(
+      accessToken,
+      calendarId,
+      event.id,
+      appleId,
+    );
 
     const updated = {
       title: event.title ?? existing.title,
@@ -164,7 +183,7 @@ export class AppleCalDAVProvider implements ICalendarProvider {
       location: event.location ?? existing.location,
     };
 
-    const uid = event.id.split('/').pop()?.replace('.ics', '') || event.id;
+    const uid = event.id.split("/").pop()?.replace(".ics", "") || event.id;
     const icalData = this.buildICalEvent(uid, updated);
 
     await client.updateCalendarObject({
@@ -182,8 +201,13 @@ export class AppleCalDAVProvider implements ICalendarProvider {
     };
   }
 
-  async deleteEvent(accessToken: string, _calendarId: string, eventId: string, appleId?: string): Promise<void> {
-    if (!appleId) throw new Error('Apple ID is required');
+  async deleteEvent(
+    accessToken: string,
+    _calendarId: string,
+    eventId: string,
+    appleId?: string,
+  ): Promise<void> {
+    if (!appleId) throw new Error("Apple ID is required");
 
     const client = await this.getDAVClient(appleId, accessToken);
 
@@ -192,15 +216,18 @@ export class AppleCalDAVProvider implements ICalendarProvider {
     });
   }
 
-  private async getDAVClient(appleId: string, appSpecificPassword: string): Promise<DAVClient> {
+  private async getDAVClient(
+    appleId: string,
+    appSpecificPassword: string,
+  ): Promise<DAVClient> {
     const client = new DAVClient({
-      serverUrl: 'https://caldav.icloud.com',
+      serverUrl: "https://caldav.icloud.com",
       credentials: {
         username: appleId,
         password: appSpecificPassword,
       },
-      authMethod: 'Basic',
-      defaultAccountType: 'caldav',
+      authMethod: "Basic",
+      defaultAccountType: "caldav",
     });
 
     await client.login();
@@ -208,7 +235,7 @@ export class AppleCalDAVProvider implements ICalendarProvider {
   }
 
   private parseICalEvent(obj: DAVObject): ExternalEvent {
-    const data = obj.data || '';
+    const data = obj.data || "";
 
     const getField = (field: string): string | undefined => {
       const match = data.match(new RegExp(`${field}[^:]*:(.+)`));
@@ -218,33 +245,44 @@ export class AppleCalDAVProvider implements ICalendarProvider {
     const parseDate = (value?: string): Date => {
       if (!value) return new Date();
       if (value.length === 8) {
-        return new Date(value.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'));
+        return new Date(value.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3"));
       }
-      return new Date(value.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/, '$1-$2-$3T$4:$5:$6'));
+      return new Date(
+        value.replace(
+          /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/,
+          "$1-$2-$3T$4:$5:$6",
+        ),
+      );
     };
 
     return {
       id: obj.url,
       etag: obj.etag,
-      title: getField('SUMMARY') || 'Untitled Event',
-      description: getField('DESCRIPTION'),
-      location: getField('LOCATION'),
-      startTime: parseDate(getField('DTSTART')),
-      endTime: parseDate(getField('DTEND')),
-      isAllDay: !getField('DTSTART')?.includes('T'),
-      status: 'confirmed',
-      visibility: 'public',
-      updatedAt: parseDate(getField('LAST-MODIFIED')) || new Date(),
-      createdAt: parseDate(getField('CREATED')) || new Date(),
+      title: getField("SUMMARY") || "Untitled Event",
+      description: getField("DESCRIPTION"),
+      location: getField("LOCATION"),
+      startTime: parseDate(getField("DTSTART")),
+      endTime: parseDate(getField("DTEND")),
+      isAllDay: !getField("DTSTART")?.includes("T"),
+      status: "confirmed",
+      visibility: "public",
+      updatedAt: parseDate(getField("LAST-MODIFIED")) || new Date(),
+      createdAt: parseDate(getField("CREATED")) || new Date(),
     };
   }
 
-  private buildICalEvent(uid: string, event: CreateEventInput | Record<string, unknown>): string {
+  private buildICalEvent(
+    uid: string,
+    event: CreateEventInput | Record<string, unknown>,
+  ): string {
     const formatDate = (date: Date, isAllDay: boolean): string => {
       if (isAllDay) {
-        return date.toISOString().split('T')[0].replace(/-/g, '');
+        return date.toISOString().split("T")[0].replace(/-/g, "");
       }
-      return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+      return date
+        .toISOString()
+        .replace(/[-:]/g, "")
+        .replace(/\.\d{3}/, "");
     };
 
     const startTime = event.startTime as Date;
@@ -255,22 +293,22 @@ export class AppleCalDAVProvider implements ICalendarProvider {
     const location = event.location as string | undefined;
 
     const lines = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//Daymark//Calendar//EN',
-      'BEGIN:VEVENT',
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Daymark//Calendar//EN",
+      "BEGIN:VEVENT",
       `UID:${uid}`,
       `DTSTAMP:${formatDate(new Date(), false)}`,
-      `DTSTART${isAllDay ? ';VALUE=DATE' : ''}:${formatDate(startTime, isAllDay)}`,
-      `DTEND${isAllDay ? ';VALUE=DATE' : ''}:${formatDate(endTime, isAllDay)}`,
+      `DTSTART${isAllDay ? ";VALUE=DATE" : ""}:${formatDate(startTime, isAllDay)}`,
+      `DTEND${isAllDay ? ";VALUE=DATE" : ""}:${formatDate(endTime, isAllDay)}`,
       `SUMMARY:${title}`,
     ];
 
     if (description) lines.push(`DESCRIPTION:${description}`);
     if (location) lines.push(`LOCATION:${location}`);
 
-    lines.push('END:VEVENT', 'END:VCALENDAR');
+    lines.push("END:VEVENT", "END:VCALENDAR");
 
-    return lines.join('\r\n');
+    return lines.join("\r\n");
   }
 }

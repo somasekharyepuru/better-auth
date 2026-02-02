@@ -1,14 +1,19 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
-import { CalendarProvider, EventSyncStatus, ConnectionStatus, SyncDirection } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service';
-import { CalendarProviderFactory } from '../providers/calendar-provider.factory';
-import { CalendarTokenService } from './calendar-token.service';
-import { CalendarRateLimiterService } from '../rate-limit/rate-limiter.service';
-import { CircuitBreakerService } from '../rate-limit/circuit-breaker.service';
-import { CALENDAR_QUEUES } from '../queue/calendar-queue.constants';
-import { ExternalEvent, TimeRange } from '../types/calendar.types';
+import { Injectable, Logger } from "@nestjs/common";
+import { InjectQueue } from "@nestjs/bullmq";
+import { Queue } from "bullmq";
+import {
+  CalendarProvider,
+  EventSyncStatus,
+  ConnectionStatus,
+  SyncDirection,
+} from "@prisma/client";
+import { PrismaService } from "../../prisma/prisma.service";
+import { CalendarProviderFactory } from "../providers/calendar-provider.factory";
+import { CalendarTokenService } from "./calendar-token.service";
+import { CalendarRateLimiterService } from "../rate-limit/rate-limiter.service";
+import { CircuitBreakerService } from "../rate-limit/circuit-breaker.service";
+import { CALENDAR_QUEUES } from "../queue/calendar-queue.constants";
+import { ExternalEvent, TimeRange } from "../types/calendar.types";
 
 @Injectable()
 export class CalendarSyncService {
@@ -20,8 +25,10 @@ export class CalendarSyncService {
     private readonly tokenService: CalendarTokenService,
     private readonly rateLimiter: CalendarRateLimiterService,
     private readonly circuitBreaker: CircuitBreakerService,
-    @InjectQueue(CALENDAR_QUEUES.GOOGLE_SYNC) private readonly googleQueue: Queue,
-    @InjectQueue(CALENDAR_QUEUES.MICROSOFT_SYNC) private readonly microsoftQueue: Queue,
+    @InjectQueue(CALENDAR_QUEUES.GOOGLE_SYNC)
+    private readonly googleQueue: Queue,
+    @InjectQueue(CALENDAR_QUEUES.MICROSOFT_SYNC)
+    private readonly microsoftQueue: Queue,
     @InjectQueue(CALENDAR_QUEUES.APPLE_SYNC) private readonly appleQueue: Queue,
   ) {}
 
@@ -32,17 +39,17 @@ export class CalendarSyncService {
     });
 
     if (!connection) {
-      throw new Error('Connection not found');
+      throw new Error("Connection not found");
     }
 
     const queue = this.getQueue(connection.provider);
 
     await this.prisma.calendarConnection.update({
       where: { id: connectionId },
-      data: { status: 'INITIAL_SYNC' },
+      data: { status: "INITIAL_SYNC" },
     });
 
-    await queue.add('initial-sync', {
+    await queue.add("initial-sync", {
       connectionId,
       userId: connection.userId,
       provider: connection.provider,
@@ -64,7 +71,7 @@ export class CalendarSyncService {
     });
 
     if (!source) {
-      throw new Error('Source not found');
+      throw new Error("Source not found");
     }
 
     const { connection } = source;
@@ -92,17 +99,33 @@ export class CalendarSyncService {
 
       const now = new Date();
       const timeRange: TimeRange = {
-        start: new Date(now.getTime() - (settings?.syncRangeMonthsPast || 1) * 30 * 24 * 60 * 60 * 1000),
-        end: new Date(now.getTime() + (settings?.syncRangeMonthsFuture || 6) * 30 * 24 * 60 * 60 * 1000),
+        start: new Date(
+          now.getTime() -
+            (settings?.syncRangeMonthsPast || 1) * 30 * 24 * 60 * 60 * 1000,
+        ),
+        end: new Date(
+          now.getTime() +
+            (settings?.syncRangeMonthsFuture || 6) * 30 * 24 * 60 * 60 * 1000,
+        ),
       };
 
-      await this.rateLimiter.recordRequest(connection.provider, connection.userId);
+      await this.rateLimiter.recordRequest(
+        connection.provider,
+        connection.userId,
+      );
 
-      const result = await provider.getEvents(accessToken, source.externalCalendarId, timeRange, {
-        syncToken: pageToken ? undefined : (syncToken || source.calendarSyncToken || undefined),
-        pageToken: pageToken,
-        maxResults: 250,
-      });
+      const result = await provider.getEvents(
+        accessToken,
+        source.externalCalendarId,
+        timeRange,
+        {
+          syncToken: pageToken
+            ? undefined
+            : syncToken || source.calendarSyncToken || undefined,
+          pageToken: pageToken,
+          maxResults: 250,
+        },
+      );
 
       let eventsProcessed = 0;
 
@@ -112,7 +135,7 @@ export class CalendarSyncService {
       }
 
       if (result.hasMore && result.nextPageToken) {
-        await this.getQueue(connection.provider).add('continue-sync', {
+        await this.getQueue(connection.provider).add("continue-sync", {
           connectionId,
           sourceId,
           pageToken: result.nextPageToken,
@@ -124,22 +147,27 @@ export class CalendarSyncService {
           data: {
             calendarSyncToken: result.nextSyncToken,
             lastSyncAt: new Date(),
-            eventCount: await this.prisma.eventMapping.count({ where: { calendarSourceId: sourceId } }),
+            eventCount: await this.prisma.eventMapping.count({
+              where: { calendarSourceId: sourceId },
+            }),
           },
         });
       }
 
       await this.circuitBreaker.recordSuccess(connection.provider);
 
-      await this.createAuditLog(connectionId, 'sync', 'success', {
+      await this.createAuditLog(connectionId, "sync", "success", {
         eventsProcessed,
         sourceId,
       });
 
       return { eventsProcessed, newSyncToken: result.nextSyncToken };
     } catch (error) {
-      await this.circuitBreaker.recordFailure(connection.provider, String(error));
-      await this.createAuditLog(connectionId, 'sync', 'error', {
+      await this.circuitBreaker.recordFailure(
+        connection.provider,
+        String(error),
+      );
+      await this.createAuditLog(connectionId, "sync", "error", {
         sourceId,
         error: String(error),
       });
@@ -167,21 +195,25 @@ export class CalendarSyncService {
       return;
     }
 
-    if (event.status === 'cancelled') {
+    if (event.status === "cancelled") {
       this.logger.log(`Event cancelled/deleted: ${event.id} (${event.title})`);
       if (existingMapping) {
         // Delete all blocking events created from this event
         await this.deleteBlockingEvents(existingMapping.id);
 
         if (existingMapping.timeBlockId) {
-          await this.prisma.timeBlock.delete({
-            where: { id: existingMapping.timeBlockId },
-          }).catch(() => {});
+          await this.prisma.timeBlock
+            .delete({
+              where: { id: existingMapping.timeBlockId },
+            })
+            .catch(() => {});
         }
         await this.prisma.eventMapping.delete({
           where: { id: existingMapping.id },
         });
-        this.logger.log(`Deleted event mapping and blocking events for: ${event.title}`);
+        this.logger.log(
+          `Deleted event mapping and blocking events for: ${event.title}`,
+        );
       }
       return;
     }
@@ -192,9 +224,9 @@ export class CalendarSyncService {
     });
 
     let title = event.title;
-    if (source?.privacyMode === 'BUSY_ONLY') {
-      title = 'Busy';
-    } else if (source?.privacyMode === 'TITLE_ONLY') {
+    if (source?.privacyMode === "BUSY_ONLY") {
+      title = "Busy";
+    } else if (source?.privacyMode === "TITLE_ONLY") {
       title = event.title;
     }
 
@@ -222,7 +254,7 @@ export class CalendarSyncService {
           lastKnownEnd: event.endTime,
           syncStatus: EventSyncStatus.SYNCED,
           lastSyncAt: new Date(),
-          lastSyncDirection: 'inbound',
+          lastSyncDirection: "inbound",
         },
       });
       mappingId = existingMapping.id;
@@ -235,7 +267,7 @@ export class CalendarSyncService {
           title,
           startTime: event.startTime,
           endTime: event.endTime,
-          type: source?.defaultEventType || 'Meeting',
+          type: source?.defaultEventType || "Meeting",
           dayId: day.id,
           isFromCalendar: true,
           calendarSourceId,
@@ -255,7 +287,7 @@ export class CalendarSyncService {
           lastKnownStart: event.startTime,
           lastKnownEnd: event.endTime,
           lastSyncAt: new Date(),
-          lastSyncDirection: 'inbound',
+          lastSyncDirection: "inbound",
         },
       });
       mappingId = newMapping.id;
@@ -279,14 +311,18 @@ export class CalendarSyncService {
     sourceMappingId: string,
     event: ExternalEvent,
   ): Promise<void> {
-    this.logger.log(`Looking for other calendars: userId=${userId}, excludeSourceId=${sourceCalendarSourceId}`);
+    this.logger.log(
+      `Looking for other calendars: userId=${userId}, excludeSourceId=${sourceCalendarSourceId}`,
+    );
 
     // Get all other writable calendar sources for this user
     const otherSources = await this.prisma.calendarSource.findMany({
       where: {
         id: { not: sourceCalendarSourceId },
         syncEnabled: true,
-        syncDirection: { in: [SyncDirection.BIDIRECTIONAL, SyncDirection.WRITE_ONLY] },
+        syncDirection: {
+          in: [SyncDirection.BIDIRECTIONAL, SyncDirection.WRITE_ONLY],
+        },
         connection: {
           userId,
           status: ConnectionStatus.ACTIVE,
@@ -296,14 +332,21 @@ export class CalendarSyncService {
       include: { connection: true },
     });
 
-    this.logger.log(`Found ${otherSources.length} other calendars: ${otherSources.map(s => s.name).join(', ')}`);
-    this.logger.log(`Creating blocking events on ${otherSources.length} other calendars for event: ${event.title}`);
+    this.logger.log(
+      `Found ${otherSources.length} other calendars: ${otherSources.map((s) => s.name).join(", ")}`,
+    );
+    this.logger.log(
+      `Creating blocking events on ${otherSources.length} other calendars for event: ${event.title}`,
+    );
 
     for (const targetSource of otherSources) {
       try {
         await this.createBlockingEvent(targetSource, sourceMappingId, event);
       } catch (error) {
-        this.logger.error(`Failed to create blocking event on ${targetSource.name}:`, error);
+        this.logger.error(
+          `Failed to create blocking event on ${targetSource.name}:`,
+          error,
+        );
       }
     }
   }
@@ -312,22 +355,35 @@ export class CalendarSyncService {
    * Create a single blocking event on a target calendar
    */
   private async createBlockingEvent(
-    targetSource: { id: string; externalCalendarId: string; connectionId: string; connection: { provider: CalendarProvider } },
+    targetSource: {
+      id: string;
+      externalCalendarId: string;
+      connectionId: string;
+      connection: { provider: CalendarProvider };
+    },
     sourceMappingId: string,
     event: ExternalEvent,
   ): Promise<void> {
-    const accessToken = await this.tokenService.getValidToken(targetSource.connectionId);
-    const provider = this.providerFactory.getProvider(targetSource.connection.provider);
+    const accessToken = await this.tokenService.getValidToken(
+      targetSource.connectionId,
+    );
+    const provider = this.providerFactory.getProvider(
+      targetSource.connection.provider,
+    );
 
     // Create "Busy" event on the external calendar
     const blockingTitle = `Busy (${event.title})`;
 
-    const createdEvent = await provider.createEvent(accessToken, targetSource.externalCalendarId, {
-      title: blockingTitle,
-      description: `Blocked time from another calendar`,
-      startTime: event.startTime,
-      endTime: event.endTime,
-    });
+    const createdEvent = await provider.createEvent(
+      accessToken,
+      targetSource.externalCalendarId,
+      {
+        title: blockingTitle,
+        description: `Blocked time from another calendar`,
+        startTime: event.startTime,
+        endTime: event.endTime,
+      },
+    );
 
     // Track this as a blocking event
     await this.prisma.eventMapping.create({
@@ -341,19 +397,24 @@ export class CalendarSyncService {
         lastKnownStart: event.startTime,
         lastKnownEnd: event.endTime,
         lastSyncAt: new Date(),
-        lastSyncDirection: 'outbound',
+        lastSyncDirection: "outbound",
         isBlockingEvent: true,
         blockedByMappingId: sourceMappingId,
       },
     });
 
-    this.logger.log(`Created blocking event "${blockingTitle}" on calendar ${targetSource.externalCalendarId}`);
+    this.logger.log(
+      `Created blocking event "${blockingTitle}" on calendar ${targetSource.externalCalendarId}`,
+    );
   }
 
   /**
    * Update all blocking events when the source event changes
    */
-  private async updateBlockingEvents(sourceMappingId: string, event: ExternalEvent): Promise<void> {
+  private async updateBlockingEvents(
+    sourceMappingId: string,
+    event: ExternalEvent,
+  ): Promise<void> {
     const blockingMappings = await this.prisma.eventMapping.findMany({
       where: { blockedByMappingId: sourceMappingId },
       include: {
@@ -367,17 +428,25 @@ export class CalendarSyncService {
 
     for (const blocking of blockingMappings) {
       try {
-        const accessToken = await this.tokenService.getValidToken(blocking.calendarSource.connectionId);
-        const provider = this.providerFactory.getProvider(blocking.calendarSource.connection.provider);
+        const accessToken = await this.tokenService.getValidToken(
+          blocking.calendarSource.connectionId,
+        );
+        const provider = this.providerFactory.getProvider(
+          blocking.calendarSource.connection.provider,
+        );
 
         const blockingTitle = `Busy (${event.title})`;
 
-        await provider.updateEvent(accessToken, blocking.calendarSource.externalCalendarId, {
-          id: blocking.externalEventId,
-          title: blockingTitle,
-          startTime: event.startTime,
-          endTime: event.endTime,
-        });
+        await provider.updateEvent(
+          accessToken,
+          blocking.calendarSource.externalCalendarId,
+          {
+            id: blocking.externalEventId,
+            title: blockingTitle,
+            startTime: event.startTime,
+            endTime: event.endTime,
+          },
+        );
 
         await this.prisma.eventMapping.update({
           where: { id: blocking.id },
@@ -389,9 +458,14 @@ export class CalendarSyncService {
           },
         });
 
-        this.logger.log(`Updated blocking event on ${blocking.calendarSource.name}`);
+        this.logger.log(
+          `Updated blocking event on ${blocking.calendarSource.name}`,
+        );
       } catch (error) {
-        this.logger.error(`Failed to update blocking event ${blocking.id}:`, error);
+        this.logger.error(
+          `Failed to update blocking event ${blocking.id}:`,
+          error,
+        );
       }
     }
   }
@@ -413,15 +487,28 @@ export class CalendarSyncService {
 
     for (const blocking of blockingMappings) {
       try {
-        const accessToken = await this.tokenService.getValidToken(blocking.calendarSource.connectionId);
-        const provider = this.providerFactory.getProvider(blocking.calendarSource.connection.provider);
+        const accessToken = await this.tokenService.getValidToken(
+          blocking.calendarSource.connectionId,
+        );
+        const provider = this.providerFactory.getProvider(
+          blocking.calendarSource.connection.provider,
+        );
 
-        await provider.deleteEvent(accessToken, blocking.calendarSource.externalCalendarId, blocking.externalEventId);
+        await provider.deleteEvent(
+          accessToken,
+          blocking.calendarSource.externalCalendarId,
+          blocking.externalEventId,
+        );
         await this.prisma.eventMapping.delete({ where: { id: blocking.id } });
 
-        this.logger.log(`Deleted blocking event on ${blocking.calendarSource.name}`);
+        this.logger.log(
+          `Deleted blocking event on ${blocking.calendarSource.name}`,
+        );
       } catch (error) {
-        this.logger.error(`Failed to delete blocking event ${blocking.id}:`, error);
+        this.logger.error(
+          `Failed to delete blocking event ${blocking.id}:`,
+          error,
+        );
       }
     }
   }
@@ -455,14 +542,14 @@ export class CalendarSyncService {
     connectionId: string,
     sourceId: string,
     timeBlockId: string,
-    action: 'create' | 'update' | 'delete',
+    action: "create" | "update" | "delete",
   ): Promise<void> {
     const source = await this.prisma.calendarSource.findUnique({
       where: { id: sourceId },
       include: { connection: true },
     });
 
-    if (!source || source.syncDirection === 'READ_ONLY') {
+    if (!source || source.syncDirection === "READ_ONLY") {
       return;
     }
 
@@ -472,23 +559,33 @@ export class CalendarSyncService {
       throw new Error(`Circuit breaker open for ${connection.provider}`);
     }
 
-    const { allowed } = await this.rateLimiter.checkLimit(connection.provider, connection.userId);
+    const { allowed } = await this.rateLimiter.checkLimit(
+      connection.provider,
+      connection.userId,
+    );
     if (!allowed) {
-      throw new Error('Rate limited');
+      throw new Error("Rate limited");
     }
 
     const accessToken = await this.tokenService.getValidToken(connectionId);
     const provider = this.providerFactory.getProvider(connection.provider);
 
-    await this.rateLimiter.recordRequest(connection.provider, connection.userId);
+    await this.rateLimiter.recordRequest(
+      connection.provider,
+      connection.userId,
+    );
 
-    if (action === 'delete') {
+    if (action === "delete") {
       const mapping = await this.prisma.eventMapping.findFirst({
         where: { timeBlockId },
       });
 
       if (mapping?.externalEventId) {
-        await provider.deleteEvent(accessToken, source.externalCalendarId, mapping.externalEventId);
+        await provider.deleteEvent(
+          accessToken,
+          source.externalCalendarId,
+          mapping.externalEventId,
+        );
         await this.prisma.eventMapping.delete({ where: { id: mapping.id } });
       }
       return;
@@ -502,12 +599,16 @@ export class CalendarSyncService {
       return;
     }
 
-    if (action === 'create') {
-      const createdEvent = await provider.createEvent(accessToken, source.externalCalendarId, {
-        title: timeBlock.title,
-        startTime: timeBlock.startTime,
-        endTime: timeBlock.endTime,
-      });
+    if (action === "create") {
+      const createdEvent = await provider.createEvent(
+        accessToken,
+        source.externalCalendarId,
+        {
+          title: timeBlock.title,
+          startTime: timeBlock.startTime,
+          endTime: timeBlock.endTime,
+        },
+      );
 
       await this.prisma.eventMapping.create({
         data: {
@@ -521,7 +622,7 @@ export class CalendarSyncService {
           lastKnownStart: timeBlock.startTime,
           lastKnownEnd: timeBlock.endTime,
           lastSyncAt: new Date(),
-          lastSyncDirection: 'outbound',
+          lastSyncDirection: "outbound",
         },
       });
 
@@ -532,18 +633,22 @@ export class CalendarSyncService {
           externalEventId: createdEvent.id,
         },
       });
-    } else if (action === 'update') {
+    } else if (action === "update") {
       const mapping = await this.prisma.eventMapping.findFirst({
         where: { timeBlockId },
       });
 
       if (mapping?.externalEventId) {
-        const updatedEvent = await provider.updateEvent(accessToken, source.externalCalendarId, {
-          id: mapping.externalEventId,
-          title: timeBlock.title,
-          startTime: timeBlock.startTime,
-          endTime: timeBlock.endTime,
-        });
+        const updatedEvent = await provider.updateEvent(
+          accessToken,
+          source.externalCalendarId,
+          {
+            id: mapping.externalEventId,
+            title: timeBlock.title,
+            startTime: timeBlock.startTime,
+            endTime: timeBlock.endTime,
+          },
+        );
 
         await this.prisma.eventMapping.update({
           where: { id: mapping.id },
@@ -555,7 +660,7 @@ export class CalendarSyncService {
             lastKnownEnd: timeBlock.endTime,
             syncStatus: EventSyncStatus.SYNCED,
             lastSyncAt: new Date(),
-            lastSyncDirection: 'outbound',
+            lastSyncDirection: "outbound",
           },
         });
       }
@@ -566,11 +671,11 @@ export class CalendarSyncService {
 
   private getQueue(provider: CalendarProvider): Queue {
     switch (provider) {
-      case 'GOOGLE':
+      case "GOOGLE":
         return this.googleQueue;
-      case 'MICROSOFT':
+      case "MICROSOFT":
         return this.microsoftQueue;
-      case 'APPLE':
+      case "APPLE":
         return this.appleQueue;
     }
   }

@@ -4,6 +4,7 @@ const API_BASE = process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:3002';
 export interface UserSettings {
     id: string;
     userId: string;
+    theme: string;
     maxTopPriorities: number;
     maxDiscussionItems: number;
     enabledSections: string[];
@@ -25,6 +26,7 @@ export interface UserSettings {
 }
 
 export interface UpdateSettingsDto {
+    theme?: string;
     maxTopPriorities?: number;
     maxDiscussionItems?: number;
     enabledSections?: string[];
@@ -49,6 +51,7 @@ export interface UpdateSettingsDto {
 export const DEFAULT_SETTINGS: UserSettings = {
     id: '',
     userId: '',
+    theme: 'system',
     maxTopPriorities: 3,
     maxDiscussionItems: 3,
     enabledSections: ['priorities', 'discussion', 'schedule', 'notes', 'progress', 'review'],
@@ -96,6 +99,67 @@ export const settingsApi = {
         return fetchWithCredentials(`${API_BASE}/api/settings`, {
             method: 'PUT',
             body: JSON.stringify(data),
+        });
+    },
+};
+
+// Time Block Types API
+export interface TimeBlockType {
+    id: string;
+    name: string;
+    color: string;
+    icon: string | null;
+    isDefault: boolean;
+    isActive: boolean;
+    order: number;
+}
+
+export interface CreateTimeBlockTypeDto {
+    name: string;
+    color?: string;
+    icon?: string;
+}
+
+export interface UpdateTimeBlockTypeDto {
+    name?: string;
+    color?: string;
+    icon?: string;
+    isActive?: boolean;
+    order?: number;
+}
+
+export const timeBlockTypesApi = {
+    async getAll(activeOnly: boolean = false): Promise<TimeBlockType[]> {
+        const url = activeOnly
+            ? `${API_BASE}/api/time-block-types?activeOnly=true`
+            : `${API_BASE}/api/time-block-types`;
+        return fetchWithCredentials(url);
+    },
+
+    async create(data: CreateTimeBlockTypeDto): Promise<TimeBlockType> {
+        return fetchWithCredentials(`${API_BASE}/api/time-block-types`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
+
+    async update(id: string, data: UpdateTimeBlockTypeDto): Promise<TimeBlockType> {
+        return fetchWithCredentials(`${API_BASE}/api/time-block-types/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    },
+
+    async delete(id: string): Promise<void> {
+        await fetchWithCredentials(`${API_BASE}/api/time-block-types/${id}`, {
+            method: 'DELETE',
+        });
+    },
+
+    async reorder(typeIds: string[]): Promise<TimeBlockType[]> {
+        return fetchWithCredentials(`${API_BASE}/api/time-block-types/reorder`, {
+            method: 'PUT',
+            body: JSON.stringify({ typeIds }),
         });
     },
 };

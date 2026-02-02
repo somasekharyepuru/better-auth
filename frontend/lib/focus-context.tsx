@@ -86,44 +86,68 @@ export function FocusProvider({ children }: FocusProviderProps) {
 
     // Load persisted state on mount
     useEffect(() => {
-        try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                // Calculate elapsed time since last save
-                const elapsed = Math.floor((Date.now() - parsed.lastUpdated) / 1000);
-                const wasRunning = parsed.isRunning;
-                const adjustedRemaining = Math.max(0, parsed.remainingSeconds - (wasRunning ? elapsed : 0));
+        const initializeState = async () => {
+            // STEP 1: Check backend for active session FIRST (source of truth)
+            try {
+                const backendSession = await focusSessionsApi.getActive();
+                
+                if (backendSession) {
+                    // Backend has an active session - sync to it
+                    const elapsed = Math.floor((Date.now() - new Date(backendSession.startedAt).getTime()) / 1000);
+                    const targetDuration = backendSession.targetDuration || DEFAULT_FOCUS_DURATION;
+                    const remaining = Math.max(0, targetDuration - elapsed);
 
-                // If timer ran out while away, handle completion
-                if (adjustedRemaining <= 0 && wasRunning) {
-                    // Timer completed while navigating away
                     setState({
-                        ...initialState,
-                        sessionCount: parsed.sessionCount + 1,
-                        activePriorityId: parsed.activePriorityId,
-                        activePriorityTitle: parsed.activePriorityTitle,
-                        mode: "shortBreak",
-                        remainingSeconds: durations.shortBreak,
-                        targetDuration: durations.shortBreak,
-                        isPaused: true,
+                        activeSession: backendSession,
+                        activePriorityId: backendSession.timeBlock?.priority?.id || null,
+                        activePriorityTitle: backendSession.timeBlock?.priority?.title || backendSession.timeBlock?.title || null,
+                        remainingSeconds: remaining,
+                        targetDuration,
+                        isRunning: remaining > 0,
+                        isPaused: false,
+                        mode: "focus",
+                        sessionCount: 0,
                     });
-                } else {
-                    setState({
-                        ...parsed,
-                        remainingSeconds: adjustedRemaining,
-                        // Auto-resume if was running (seamless navigation experience)
-                        isRunning: wasRunning && adjustedRemaining > 0,
-                        isPaused: !wasRunning && parsed.isPaused,
-                    });
+                    return;
                 }
-            }
-        } catch {
-            // Ignore parse errors
-        }
 
-        // Check for active session on backend
-        checkActiveSession();
+                // STEP 2: No backend session - check localStorage for paused state
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    
+                    // Only restore BREAK states from localStorage (not focus sessions)
+                    // Focus sessions MUST have a backend session, so if no backend session exists,
+                    // any "focus" state in localStorage is stale
+                    const isBreakMode = parsed.mode === 'shortBreak' || parsed.mode === 'longBreak';
+                    
+                    if (isBreakMode && parsed.isPaused && parsed.remainingSeconds > 0) {
+                        // Restore break state - these don't have backend sessions
+                        setState({
+                            activeSession: null, // No backend session for breaks
+                            activePriorityId: parsed.activePriorityId || null,
+                            activePriorityTitle: parsed.activePriorityTitle || null,
+                            remainingSeconds: parsed.remainingSeconds,
+                            targetDuration: parsed.targetDuration || parsed.remainingSeconds,
+                            isRunning: false,
+                            isPaused: true,
+                            mode: parsed.mode,
+                            sessionCount: parsed.sessionCount || 0,
+                        });
+                        return;
+                    }
+                    
+                    // Clear stale localStorage if we get here
+                    localStorage.removeItem(STORAGE_KEY);
+                }
+            } catch (error) {
+                console.error("Failed to initialize focus state:", error);
+                // Clear potentially stale localStorage
+                localStorage.removeItem(STORAGE_KEY);
+            }
+        };
+
+        initializeState();
     }, []);
 
     // Persist state changes - save when timer is active
@@ -163,31 +187,6 @@ export function FocusProvider({ children }: FocusProviderProps) {
         };
     }, [state.isRunning, state.remainingSeconds]);
 
-    const checkActiveSession = async () => {
-        try {
-            const active = await focusSessionsApi.getActive();
-            if (active) {
-                // Calculate remaining time based on session start
-                const elapsed = Math.floor((Date.now() - new Date(active.startedAt).getTime()) / 1000);
-                const targetDuration = active.targetDuration || DEFAULT_FOCUS_DURATION;
-                const remaining = Math.max(0, targetDuration - elapsed);
-
-                setState(prev => ({
-                    ...prev,
-                    activeSession: active,
-                    activePriorityId: active.timeBlock?.priority?.id || null,
-                    activePriorityTitle: active.timeBlock?.priority?.title || active.timeBlock?.title || null,
-                    remainingSeconds: remaining,
-                    targetDuration,
-                    isRunning: remaining > 0,
-                    mode: "focus",
-                }));
-            }
-        } catch (error) {
-            console.error("Failed to check active session:", error);
-        }
-    };
-
     const handleTimerComplete = (prevState: FocusState): FocusState => {
         if (prevState.mode === "focus") {
             // Focus session completed, start break
@@ -212,11 +211,17 @@ export function FocusProvider({ children }: FocusProviderProps) {
             };
         } else {
             // Break completed, ready for new focus session
+            // Use durations from settings for proper targetDuration
             return {
-                ...initialState,
-                sessionCount: prevState.sessionCount,
+                activeSession: null,
                 activePriorityId: prevState.activePriorityId,
                 activePriorityTitle: prevState.activePriorityTitle,
+                remainingSeconds: durations.focus,
+                targetDuration: durations.focus,
+                isRunning: false,
+                isPaused: false,
+                mode: "focus",
+                sessionCount: prevState.sessionCount,
             };
         }
     };
@@ -247,6 +252,11 @@ export function FocusProvider({ children }: FocusProviderProps) {
     };
 
     const startFocusForPriority = useCallback(async (priority: TopPriority, durationMins = 25) => {
+        // Guard: Check if there's already an active session
+        if (state.activeSession || state.isRunning || state.isPaused) {
+            throw new Error("A focus session is already in progress. Please stop it first.");
+        }
+
         setIsLoading(true);
         try {
             // Call backend to create time block and start session
@@ -272,9 +282,14 @@ export function FocusProvider({ children }: FocusProviderProps) {
         } finally {
             setIsLoading(false);
         }
-    }, [state.sessionCount]);
+    }, [state.sessionCount, state.activeSession, state.isRunning, state.isPaused]);
 
     const startStandaloneSession = useCallback(async (durationMins = 25, sessionType = 'focus') => {
+        // Guard: Check if there's already an active session
+        if (state.activeSession || state.isRunning || state.isPaused) {
+            throw new Error("A focus session is already in progress. Please stop it first.");
+        }
+
         setIsLoading(true);
         try {
             // Call backend to create standalone pomodoro session
@@ -302,7 +317,7 @@ export function FocusProvider({ children }: FocusProviderProps) {
         } finally {
             setIsLoading(false);
         }
-    }, [state.sessionCount]);
+    }, [state.sessionCount, state.activeSession, state.isRunning, state.isPaused]);
 
     const pauseTimer = useCallback(() => {
         setState(prev => ({ ...prev, isRunning: false, isPaused: true }));
@@ -321,22 +336,37 @@ export function FocusProvider({ children }: FocusProviderProps) {
         } catch (error) {
             console.error("Failed to end session:", error);
         } finally {
+            // Clear localStorage to prevent stale state on next load
+            localStorage.removeItem(STORAGE_KEY);
+            
             setState({
-                ...initialState,
+                activeSession: null,
+                activePriorityId: null,
+                activePriorityTitle: null,
+                remainingSeconds: durations.focus,
+                targetDuration: durations.focus,
+                isRunning: false,
+                isPaused: false,
+                mode: "focus",
                 sessionCount: state.sessionCount,
             });
             setIsLoading(false);
         }
-    }, [state.activeSession, state.sessionCount]);
+    }, [state.activeSession, state.sessionCount, durations.focus]);
 
     const skipBreak = useCallback(() => {
         setState(prev => ({
-            ...initialState,
-            sessionCount: prev.sessionCount,
+            activeSession: null,
             activePriorityId: prev.activePriorityId,
             activePriorityTitle: prev.activePriorityTitle,
+            remainingSeconds: durations.focus,
+            targetDuration: durations.focus,
+            isRunning: false,
+            isPaused: false,
+            mode: "focus",
+            sessionCount: prev.sessionCount,
         }));
-    }, []);
+    }, [durations.focus]);
 
     const value: FocusContextValue = {
         ...state,

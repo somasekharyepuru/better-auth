@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Injectable } from "@nestjs/common";
+import { PrismaClient } from "@prisma/client";
 
 @Injectable()
 export class OrganizationService {
@@ -13,7 +13,7 @@ export class OrganizationService {
     // Try to find existing default organization
     let org = await this.prisma.organization.findFirst({
       where: {
-        slug: 'default',
+        slug: "default",
       },
     });
 
@@ -23,8 +23,8 @@ export class OrganizationService {
       org = await this.prisma.organization.create({
         data: {
           id: `org_${Date.now()}`,
-          name: 'Default Organization',
-          slug: 'default',
+          name: "Default Organization",
+          slug: "default",
           createdAt: new Date(),
         },
       });
@@ -36,7 +36,7 @@ export class OrganizationService {
   /**
    * Add a user to the default organization
    */
-  async addUserToDefaultOrganization(userId: string, role: string = 'member') {
+  async addUserToDefaultOrganization(userId: string, role: string = "member") {
     const org = await this.getOrCreateDefaultOrganization();
 
     // Check if user is already a member
@@ -103,7 +103,7 @@ export class OrganizationService {
         id: `member_${Date.now()}`,
         userId,
         organizationId: org.id,
-        role: 'owner',
+        role: "owner",
         createdAt: new Date(),
       },
     });
@@ -111,4 +111,3 @@ export class OrganizationService {
     return org;
   }
 }
-

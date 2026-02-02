@@ -1,4 +1,4 @@
-import { CalendarProvider } from '@prisma/client';
+import { CalendarProvider } from "@prisma/client";
 import {
   OAuthTokens,
   ExternalCalendar,
@@ -9,19 +9,29 @@ import {
   UpdateEventInput,
   WebhookChannel,
   GetEventsOptions,
-} from '../types/calendar.types';
+} from "../types/calendar.types";
 
 export interface ICalendarProvider {
   readonly providerType: CalendarProvider;
   readonly supportsWebhooks: boolean;
 
   getAuthorizationUrl(state: string, redirectUri: string): string;
-  exchangeCodeForTokens(code: string, redirectUri: string): Promise<OAuthTokens>;
+  exchangeCodeForTokens(
+    code: string,
+    redirectUri: string,
+  ): Promise<OAuthTokens>;
   refreshAccessToken(refreshToken: string): Promise<OAuthTokens>;
   revokeAccess(accessToken: string): Promise<void>;
 
-  listCalendars(accessToken: string, additionalParams?: Record<string, string>): Promise<ExternalCalendar[]>;
-  getCalendar(accessToken: string, calendarId: string, additionalParams?: Record<string, string>): Promise<ExternalCalendar>;
+  listCalendars(
+    accessToken: string,
+    additionalParams?: Record<string, string>,
+  ): Promise<ExternalCalendar[]>;
+  getCalendar(
+    accessToken: string,
+    calendarId: string,
+    additionalParams?: Record<string, string>,
+  ): Promise<ExternalCalendar>;
 
   getEvents(
     accessToken: string,

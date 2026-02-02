@@ -104,7 +104,7 @@ export default function LoginPage() {
   // Show loading state while checking auth
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <Spinner size="lg" />
       </div>
     );
@@ -117,16 +117,16 @@ export default function LoginPage() {
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-gray-200" />
+            <span className="w-full border-t border-gray-200 dark:border-gray-700" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-4 text-gray-400">or</span>
+            <span className="bg-white dark:bg-gray-900 px-4 text-gray-400 dark:text-gray-500">or</span>
           </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {error && (
-            <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl">
+            <div className="p-4 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl">
               {error}
             </div>
           )}
@@ -155,7 +155,7 @@ export default function LoginPage() {
               />
               <button
                 type="button"
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
@@ -175,7 +175,7 @@ export default function LoginPage() {
           <div className="text-right">
             <Link
               href="/forgot-password"
-              className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
+              className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
             >
               Forgot password?
             </Link>
@@ -187,10 +187,10 @@ export default function LoginPage() {
         </form>
 
         <div className="text-center">
-          <span className="text-gray-500">Don't have an account? </span>
+          <span className="text-gray-500 dark:text-gray-400">Don't have an account? </span>
           <Link
             href="/signup"
-            className="text-gray-900 font-medium hover:underline"
+            className="text-gray-900 dark:text-white font-medium hover:underline"
           >
             Sign up
           </Link>

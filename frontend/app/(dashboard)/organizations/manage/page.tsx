@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { hasPermission } from "@/lib/permissions";
 import Link from "next/link";
+import { Breadcrumb, BREADCRUMB_ROUTES } from "@/components/ui/breadcrumb";
+import { Building, Settings } from "lucide-react";
 
 export default function ManageOrganizationsPage() {
   const router = useRouter();
@@ -20,7 +22,7 @@ export default function ManageOrganizationsPage() {
   // Form states
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"member" | "admin" | "owner">(
-    "member"
+    "member",
   );
   const [inviting, setInviting] = useState(false);
 
@@ -48,17 +50,17 @@ export default function ManageOrganizationsPage() {
         const membersResult = await authClient.organization.listMembers({});
         if (membersResult.data) {
           setMembers(
-            Array.isArray(membersResult.data) ? membersResult.data : []
+            Array.isArray(membersResult.data) ? membersResult.data : [],
           );
         }
 
         // Get invitations
         const invitationsResult = await authClient.organization.listInvitations(
-          {}
+          {},
         );
         if (invitationsResult.data) {
           setInvitations(
-            Array.isArray(invitationsResult.data) ? invitationsResult.data : []
+            Array.isArray(invitationsResult.data) ? invitationsResult.data : [],
           );
         }
       } catch (err) {
@@ -90,11 +92,11 @@ export default function ManageOrganizationsPage() {
         setInviteEmail("");
         // Refresh invitations
         const invitationsResult = await authClient.organization.listInvitations(
-          {}
+          {},
         );
         if (invitationsResult.data) {
           setInvitations(
-            Array.isArray(invitationsResult.data) ? invitationsResult.data : []
+            Array.isArray(invitationsResult.data) ? invitationsResult.data : [],
           );
         }
       }
@@ -120,7 +122,7 @@ export default function ManageOrganizationsPage() {
         const membersResult = await authClient.organization.listMembers({});
         if (membersResult.data) {
           setMembers(
-            Array.isArray(membersResult.data) ? membersResult.data : []
+            Array.isArray(membersResult.data) ? membersResult.data : [],
           );
         }
       }
@@ -147,7 +149,7 @@ export default function ManageOrganizationsPage() {
         const membersResult = await authClient.organization.listMembers({});
         if (membersResult.data) {
           setMembers(
-            Array.isArray(membersResult.data) ? membersResult.data : []
+            Array.isArray(membersResult.data) ? membersResult.data : [],
           );
         }
       }
@@ -175,10 +177,21 @@ export default function ManageOrganizationsPage() {
 
   return (
     <div style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          BREADCRUMB_ROUTES.dashboard,
+          {
+            label: "Organizations",
+            href: "/organizations",
+            icon: <Building className="w-3.5 h-3.5" />,
+          },
+          { label: "Manage", icon: <Settings className="w-3.5 h-3.5" /> },
+        ]}
+        className="mb-6"
+      />
+
       <h1>Manage Organization</h1>
-      <div style={{ marginBottom: "1rem" }}>
-        <Link href="/">Back to Dashboard</Link>
-      </div>
 
       {error && (
         <div style={{ color: "red", marginBottom: "1rem" }}>{error}</div>
@@ -233,7 +246,7 @@ export default function ManageOrganizationsPage() {
                   value={inviteRole}
                   onChange={(e) =>
                     setInviteRole(
-                      e.target.value as "member" | "admin" | "owner"
+                      e.target.value as "member" | "admin" | "owner",
                     )
                   }
                   style={{
@@ -389,7 +402,7 @@ export default function ManageOrganizationsPage() {
                               setInvitations(
                                 Array.isArray(invitationsResult.data)
                                   ? invitationsResult.data
-                                  : []
+                                  : [],
                               );
                             }
                           } catch (err) {

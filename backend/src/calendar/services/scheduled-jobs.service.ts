@@ -1,10 +1,10 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
-import { PrismaService } from '../../prisma/prisma.service';
-import { CALENDAR_QUEUES } from '../queue/calendar-queue.constants';
-import { CalendarConnectionService } from './calendar-connection.service';
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
+import { InjectQueue } from "@nestjs/bullmq";
+import { Queue } from "bullmq";
+import { PrismaService } from "../../prisma/prisma.service";
+import { CALENDAR_QUEUES } from "../queue/calendar-queue.constants";
+import { CalendarConnectionService } from "./calendar-connection.service";
 
 @Injectable()
 export class ScheduledJobsService implements OnModuleInit {
@@ -21,13 +21,13 @@ export class ScheduledJobsService implements OnModuleInit {
 
   async onModuleInit() {
     // Refresh webhooks on startup to ensure they're registered with current URL
-    this.logger.log('Refreshing webhooks on startup...');
+    this.logger.log("Refreshing webhooks on startup...");
 
     const connections = await this.prisma.calendarConnection.findMany({
       where: {
-        status: 'ACTIVE',
+        status: "ACTIVE",
         enabled: true,
-        provider: { in: ['GOOGLE', 'MICROSOFT'] },
+        provider: { in: ["GOOGLE", "MICROSOFT"] },
       },
     });
 
@@ -36,16 +36,21 @@ export class ScheduledJobsService implements OnModuleInit {
         await this.connectionService.refreshWebhooks(connection.id);
         this.logger.log(`Refreshed webhooks for connection ${connection.id}`);
       } catch (error) {
-        this.logger.error(`Failed to refresh webhooks for ${connection.id}:`, error);
+        this.logger.error(
+          `Failed to refresh webhooks for ${connection.id}:`,
+          error,
+        );
       }
     }
 
-    this.logger.log(`Webhook refresh complete for ${connections.length} connections`);
+    this.logger.log(
+      `Webhook refresh complete for ${connections.length} connections`,
+    );
   }
 
-  @Cron('*/15 * * * *')
+  @Cron("*/15 * * * *")
   async checkExpiringTokens() {
-    this.logger.log('Checking for expiring tokens');
+    this.logger.log("Checking for expiring tokens");
 
     const expiringTokens = await this.prisma.calendarToken.findMany({
       where: {
@@ -58,7 +63,7 @@ export class ScheduledJobsService implements OnModuleInit {
     });
 
     for (const token of expiringTokens) {
-      await this.tokenQueue.add('proactive-refresh', {
+      await this.tokenQueue.add("proactive-refresh", {
         connectionId: token.connectionId,
         provider: token.connection.provider,
         expiresAt: token.expiresAt,
@@ -71,9 +76,9 @@ export class ScheduledJobsService implements OnModuleInit {
     }
   }
 
-  @Cron('0 * * * *')
+  @Cron("0 * * * *")
   async checkExpiringWebhooks() {
-    this.logger.log('Checking for expiring webhooks');
+    this.logger.log("Checking for expiring webhooks");
 
     // Query sources with expiring webhooks
     const expiringSources = await this.prisma.calendarSource.findMany({
@@ -83,16 +88,19 @@ export class ScheduledJobsService implements OnModuleInit {
           lte: new Date(Date.now() + 24 * 60 * 60 * 1000),
         },
         connection: {
-          status: 'ACTIVE',
-          provider: { in: ['GOOGLE', 'MICROSOFT'] },
+          status: "ACTIVE",
+          provider: { in: ["GOOGLE", "MICROSOFT"] },
         },
       },
       include: { connection: true },
     });
 
     for (const source of expiringSources) {
-      const queue = source.connection.provider === 'GOOGLE' ? this.googleQueue : this.microsoftQueue;
-      await queue.add('renew-webhook', {
+      const queue =
+        source.connection.provider === "GOOGLE"
+          ? this.googleQueue
+          : this.microsoftQueue;
+      await queue.add("renew-webhook", {
         connectionId: source.connectionId,
         sourceId: source.id,
         provider: source.connection.provider,
@@ -104,14 +112,14 @@ export class ScheduledJobsService implements OnModuleInit {
     }
   }
 
-  @Cron('*/10 * * * *')
+  @Cron("*/10 * * * *")
   async pollAppleCalendars() {
-    this.logger.log('Polling Apple calendars');
+    this.logger.log("Polling Apple calendars");
 
     const appleConnections = await this.prisma.calendarConnection.findMany({
       where: {
-        provider: 'APPLE',
-        status: 'ACTIVE',
+        provider: "APPLE",
+        status: "ACTIVE",
         enabled: true,
       },
       include: {
@@ -122,12 +130,12 @@ export class ScheduledJobsService implements OnModuleInit {
     let jobCount = 0;
     for (const connection of appleConnections) {
       for (const source of connection.sources) {
-        await this.appleQueue.add('poll-sync', {
+        await this.appleQueue.add("poll-sync", {
           connectionId: connection.id,
           userId: connection.userId,
-          provider: 'APPLE',
+          provider: "APPLE",
           sourceId: source.id,
-          triggeredBy: 'poll',
+          triggeredBy: "poll",
         });
         jobCount++;
       }
@@ -138,9 +146,9 @@ export class ScheduledJobsService implements OnModuleInit {
     }
   }
 
-  @Cron('0 3 * * *')
+  @Cron("0 3 * * *")
   async cleanupStaleData() {
-    this.logger.log('Running daily cleanup');
+    this.logger.log("Running daily cleanup");
 
     const deletedLogs = await this.prisma.syncAuditLog.deleteMany({
       where: {
@@ -155,18 +163,20 @@ export class ScheduledJobsService implements OnModuleInit {
       },
     });
 
-    this.logger.log(`Cleaned up ${deletedLogs.count} logs, ${deletedConflicts.count} conflicts`);
+    this.logger.log(
+      `Cleaned up ${deletedLogs.count} logs, ${deletedConflicts.count} conflicts`,
+    );
   }
 
-  @Cron('*/30 * * * *')
+  @Cron("*/30 * * * *")
   async syncActiveConnections() {
-    this.logger.log('Running scheduled sync for active connections');
+    this.logger.log("Running scheduled sync for active connections");
 
     const connections = await this.prisma.calendarConnection.findMany({
       where: {
-        status: 'ACTIVE',
+        status: "ACTIVE",
         enabled: true,
-        provider: { in: ['GOOGLE', 'MICROSOFT'] },
+        provider: { in: ["GOOGLE", "MICROSOFT"] },
       },
       include: {
         sources: { where: { syncEnabled: true } },
@@ -178,16 +188,19 @@ export class ScheduledJobsService implements OnModuleInit {
       const syncInterval = connection.syncIntervalMins * 60 * 1000;
 
       if (!lastSync || Date.now() - lastSync.getTime() > syncInterval) {
-        const queue = connection.provider === 'GOOGLE' ? this.googleQueue : this.microsoftQueue;
+        const queue =
+          connection.provider === "GOOGLE"
+            ? this.googleQueue
+            : this.microsoftQueue;
 
         for (const source of connection.sources) {
-          await queue.add('scheduled-sync', {
+          await queue.add("scheduled-sync", {
             connectionId: connection.id,
             userId: connection.userId,
             provider: connection.provider,
             sourceId: source.id,
             syncToken: source.calendarSyncToken,
-            triggeredBy: 'poll',
+            triggeredBy: "poll",
           });
         }
       }

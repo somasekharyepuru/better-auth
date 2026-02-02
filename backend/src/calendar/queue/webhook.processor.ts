@@ -1,9 +1,9 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger, Inject, forwardRef } from '@nestjs/common';
-import { Job } from 'bullmq';
-import { CALENDAR_QUEUES } from './calendar-queue.constants';
-import { WebhookProcessJobData } from '../types/calendar.types';
-import { CalendarWebhookService } from '../webhook/webhook.service';
+import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { Logger, Inject, forwardRef } from "@nestjs/common";
+import { Job } from "bullmq";
+import { CALENDAR_QUEUES } from "./calendar-queue.constants";
+import { WebhookProcessJobData } from "../types/calendar.types";
+import { CalendarWebhookService } from "../webhook/webhook.service";
 
 @Processor(CALENDAR_QUEUES.WEBHOOK_PROCESS)
 export class WebhookProcessor extends WorkerHost {
@@ -18,39 +18,58 @@ export class WebhookProcessor extends WorkerHost {
 
   async process(job: Job<WebhookProcessJobData>): Promise<void> {
     const { connectionId, sourceId, provider, payload } = job.data;
-    this.logger.log(`Processing webhook for source ${sourceId} from ${provider}`);
+    this.logger.log(
+      `Processing webhook for source ${sourceId} from ${provider}`,
+    );
 
     try {
       switch (provider) {
-        case 'GOOGLE':
+        case "GOOGLE":
           await this.processGoogleWebhook(connectionId, sourceId, payload);
           break;
-        case 'MICROSOFT':
+        case "MICROSOFT":
           await this.processMicrosoftWebhook(connectionId, sourceId, payload);
           break;
         default:
           this.logger.warn(`Unknown provider for webhook: ${provider}`);
       }
     } catch (error) {
-      this.logger.error(`Failed to process webhook for source ${sourceId}:`, error);
+      this.logger.error(
+        `Failed to process webhook for source ${sourceId}:`,
+        error,
+      );
       throw error;
     }
   }
 
-  private async processGoogleWebhook(connectionId: string, sourceId: string, payload: Record<string, unknown>): Promise<void> {
-    this.logger.debug(`Google webhook payload for source ${sourceId}:`, payload);
+  private async processGoogleWebhook(
+    connectionId: string,
+    sourceId: string,
+    payload: Record<string, unknown>,
+  ): Promise<void> {
+    this.logger.debug(
+      `Google webhook payload for source ${sourceId}:`,
+      payload,
+    );
     const resourceState = payload.resourceState as string;
 
-    if (resourceState === 'exists' || resourceState === 'update') {
+    if (resourceState === "exists" || resourceState === "update") {
       await this.webhookService.triggerIncrementalSync(connectionId, sourceId);
     }
   }
 
-  private async processMicrosoftWebhook(connectionId: string, sourceId: string, payload: Record<string, unknown>): Promise<void> {
-    this.logger.debug(`Microsoft webhook payload for source ${sourceId}:`, payload);
+  private async processMicrosoftWebhook(
+    connectionId: string,
+    sourceId: string,
+    payload: Record<string, unknown>,
+  ): Promise<void> {
+    this.logger.debug(
+      `Microsoft webhook payload for source ${sourceId}:`,
+      payload,
+    );
     const changeType = payload.changeType as string;
 
-    if (['created', 'updated', 'deleted'].includes(changeType)) {
+    if (["created", "updated", "deleted"].includes(changeType)) {
       await this.webhookService.triggerIncrementalSync(connectionId, sourceId);
     }
   }

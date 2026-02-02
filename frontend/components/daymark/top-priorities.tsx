@@ -177,7 +177,7 @@ function SortablePriorityItem({
     );
 }
 
-export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAreaId, readOnly = false, lifeAreas = [], onMove }: TopPrioritiesProps) {
+export function TopPriorities({ date, priorities, onUpdate, lifeAreaId, readOnly = false, lifeAreas = [], onMove }: TopPrioritiesProps) {
     const [localPriorities, setLocalPriorities] = useState<TopPriority[]>(priorities);
     const [isAdding, setIsAdding] = useState(false);
     const [newTitle, setNewTitle] = useState("");
@@ -353,7 +353,6 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
         }
     };
 
-    const canAddMore = localPriorities.length < maxItems;
     const completedCount = localPriorities.filter(p => p.completed).length;
 
     // Read-only summary view for past days
@@ -361,7 +360,7 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
         return (
             <div className="card-premium">
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg text-subheading">Top {maxItems} Priorities</h2>
+                    <h2 className="text-lg text-subheading">Top Priorities</h2>
                     <span className="text-sm text-muted">
                         {completedCount}/{localPriorities.length} completed
                     </span>
@@ -413,7 +412,7 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
     return (
         <div className="card-premium">
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg text-subheading">Top {maxItems} Priorities</h2>
+                <h2 className="text-lg text-subheading">Top Priorities</h2>
                 <span className="text-sm text-muted">
                     {completedCount}/{localPriorities.length} completed
                 </span>
@@ -458,8 +457,8 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
                 </SortableContext>
             </DndContext>
 
-            {/* Add Priority button when there's room */}
-            {canAddMore && !isAdding && (
+            {/* Add Priority button */}
+            {!isAdding && (
                 <button
                     onClick={() => setIsAdding(true)}
                     className="flex items-center gap-2 p-3 mt-2 w-full rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all"
@@ -510,12 +509,6 @@ export function TopPriorities({ date, priorities, onUpdate, maxItems = 3, lifeAr
                 </div>
             )}
 
-            {/* Max reached notice */}
-            {!canAddMore && (
-                <p className="text-xs text-gray-400 text-center pt-4">
-                    Maximum {maxItems} priorities reached
-                </p>
-            )}
         </div >
     );
 }

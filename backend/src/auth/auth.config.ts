@@ -1,39 +1,39 @@
-import { betterAuth } from 'better-auth';
-import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { PrismaClient } from '@prisma/client';
-import { emailOTP, admin, twoFactor, organization } from 'better-auth/plugins';
-import { createAccessControl } from 'better-auth/plugins/access';
-import { expo } from '@better-auth/expo';
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { PrismaClient } from "@prisma/client";
+import { emailOTP, admin, twoFactor, organization } from "better-auth/plugins";
+import { createAccessControl } from "better-auth/plugins/access";
+import { expo } from "@better-auth/expo";
 
 const prisma = new PrismaClient();
 
 // Create access control for organization permissions
 const statement = {
-  user: ['create', 'read', 'update', 'delete'],
-  organization: ['update', 'delete'],
-  member: ['create', 'update', 'delete'],
-  invitation: ['create', 'cancel'],
+  user: ["create", "read", "update", "delete"],
+  organization: ["update", "delete"],
+  member: ["create", "update", "delete"],
+  invitation: ["create", "cancel"],
 } as const;
 
 const ac = createAccessControl(statement);
 
 // Define roles with permissions
 const owner = ac.newRole({
-  user: ['create', 'read', 'update', 'delete'],
-  organization: ['update', 'delete'],
-  member: ['create', 'update', 'delete'],
-  invitation: ['create', 'cancel'],
+  user: ["create", "read", "update", "delete"],
+  organization: ["update", "delete"],
+  member: ["create", "update", "delete"],
+  invitation: ["create", "cancel"],
 });
 
 const adminRole = ac.newRole({
-  user: ['create', 'read', 'update'],
-  organization: ['update'],
-  member: ['create', 'update', 'delete'],
-  invitation: ['create', 'cancel'],
+  user: ["create", "read", "update"],
+  organization: ["update"],
+  member: ["create", "update", "delete"],
+  invitation: ["create", "cancel"],
 });
 
 const member = ac.newRole({
-  user: ['read'],
+  user: ["read"],
   organization: [],
   member: [],
   invitation: [],
@@ -41,15 +41,15 @@ const member = ac.newRole({
 
 // Custom role example: Manager
 const manager = ac.newRole({
-  user: ['read', 'update'],
-  organization: ['update'],
-  member: ['create', 'update'],
-  invitation: ['create', 'cancel'],
+  user: ["read", "update"],
+  organization: ["update"],
+  member: ["create", "update"],
+  invitation: ["create", "cancel"],
 });
 
 // Custom role example: Viewer (read-only)
 const viewer = ac.newRole({
-  user: ['read'],
+  user: ["read"],
   organization: [],
   member: [],
   invitation: [],
@@ -57,10 +57,14 @@ const viewer = ac.newRole({
 
 // Lazy-load MailService to avoid initialization issues
 // We'll use a simple fetch-based approach to avoid circular dependencies
-async function sendEmailViaWebhook(email: string, otp: string, type: string): Promise<boolean> {
+async function sendEmailViaWebhook(
+  email: string,
+  otp: string,
+  type: string,
+): Promise<boolean> {
   const webhookUrl = process.env.N8N_WEBHOOK_URL;
   if (!webhookUrl) {
-    throw new Error('N8N_WEBHOOK_URL environment variable is required');
+    throw new Error("N8N_WEBHOOK_URL environment variable is required");
   }
 
   const maxRetries = Number(process.env.MAIL_MAX_RETRIES || 3);
@@ -72,14 +76,22 @@ async function sendEmailViaWebhook(email: string, otp: string, type: string): Pr
     attempt += 1;
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(new Error('Mail webhook timeout')), timeoutMs);
+      const timeout = setTimeout(
+        () => controller.abort(new Error("Mail webhook timeout")),
+        timeoutMs,
+      );
 
       const response = await fetch(webhookUrl, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ type, otp, email, timestamp: new Date().toISOString() }),
+        body: JSON.stringify({
+          type,
+          otp,
+          email,
+          timestamp: new Date().toISOString(),
+        }),
         signal: controller.signal as any,
       });
 
@@ -97,30 +109,30 @@ async function sendEmailViaWebhook(email: string, otp: string, type: string): Pr
     }
   }
 
-  throw lastErr || new Error('Failed to send email');
+  throw lastErr || new Error("Failed to send email");
 }
 
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3002',
-  basePath: '/api/auth',
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3002",
+  basePath: "/api/auth",
   trustedOrigins: process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+    ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim())
     : [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:5173',
-      'http://localhost:4173',
-      'http://localhost:8080',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:3001',
-      'http://127.0.0.1:5173',
-      'http://127.0.0.1:4173',
-      'http://127.0.0.1:8080',
-      'mobile://', // Expo mobile app scheme
-      'mobile://*', // Allow all mobile deep link paths
-      'exp://192.168.0.6:8081', // Expo Go dev server
-      'exp+mobile://', // Expo development client
-    ],
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:5173",
+        "http://localhost:4173",
+        "http://localhost:8080",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:4173",
+        "http://127.0.0.1:8080",
+        "mobile://", // Expo mobile app scheme
+        "mobile://*", // Allow all mobile deep link paths
+        "exp://192.168.0.6:8081", // Expo Go dev server
+        "exp+mobile://", // Expo development client
+      ],
   // Advanced settings for mobile app support
   advanced: {
     // Allow requests without Origin header (required for mobile apps)
@@ -128,7 +140,7 @@ export const auth = betterAuth({
   },
 
   database: prismaAdapter(prisma, {
-    provider: 'postgresql',
+    provider: "postgresql",
   }),
   databaseHooks: {
     user: {
@@ -138,15 +150,15 @@ export const auth = betterAuth({
           try {
             // Find or create default organization
             let defaultOrg = await prisma.organization.findFirst({
-              where: { slug: 'default' },
+              where: { slug: "default" },
             });
 
             if (!defaultOrg) {
               defaultOrg = await prisma.organization.create({
                 data: {
                   id: `org_${Date.now()}`,
-                  name: 'Default Organization',
-                  slug: 'default',
+                  name: "Default Organization",
+                  slug: "default",
                   createdAt: new Date(),
                 },
               });
@@ -158,14 +170,16 @@ export const auth = betterAuth({
                 id: `member_${Date.now()}`,
                 userId: user.id,
                 organizationId: defaultOrg.id,
-                role: 'member',
+                role: "member",
                 createdAt: new Date(),
               },
             });
 
-            console.log(`Auto-added user ${user.email} to default organization`);
+            console.log(
+              `Auto-added user ${user.email} to default organization`,
+            );
           } catch (error) {
-            console.error('Failed to add user to default organization:', error);
+            console.error("Failed to add user to default organization:", error);
             // Don't throw - user creation should still succeed
           }
         },
@@ -175,9 +189,9 @@ export const auth = betterAuth({
   user: {
     additionalFields: {
       role: {
-        type: 'string',
+        type: "string",
         required: false,
-        defaultValue: 'user',
+        defaultValue: "user",
         input: false,
         returned: true,
       },
@@ -194,18 +208,20 @@ export const auth = betterAuth({
     maxPasswordLength: 128,
   },
   socialProviders: {
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && {
-      google: {
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      },
-    }),
-    ...(process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET && {
-      microsoft: {
-        clientId: process.env.MICROSOFT_CLIENT_ID,
-        clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
-      },
-    }),
+    ...(process.env.GOOGLE_CLIENT_ID &&
+      process.env.GOOGLE_CLIENT_SECRET && {
+        google: {
+          clientId: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        },
+      }),
+    ...(process.env.MICROSOFT_CLIENT_ID &&
+      process.env.MICROSOFT_CLIENT_SECRET && {
+        microsoft: {
+          clientId: process.env.MICROSOFT_CLIENT_ID,
+          clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
+        },
+      }),
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
@@ -221,16 +237,16 @@ export const auth = betterAuth({
         try {
           // Map Better Auth types to email types
           const emailTypeMap: Record<string, string> = {
-            'email-verification': 'email-verification',
-            'sign-up': 'signup-email',
-            'forgot-password': 'forgot-password',
-            'reset-password': 'reset-password',
+            "email-verification": "email-verification",
+            "sign-up": "signup-email",
+            "forgot-password": "forgot-password",
+            "reset-password": "reset-password",
           };
 
           const emailType = emailTypeMap[type] || type;
           await sendEmailViaWebhook(email, otp, emailType);
         } catch (error) {
-          console.error('Failed to send email:', error);
+          console.error("Failed to send email:", error);
           throw error;
         }
       },
@@ -240,7 +256,7 @@ export const auth = betterAuth({
     expo(), // Expo mobile app support
     admin(),
     twoFactor({
-      issuer: process.env.APP_NAME || 'Auth Service',
+      issuer: process.env.APP_NAME || "Auth Service",
     }),
     organization({
       ac,
@@ -248,13 +264,13 @@ export const auth = betterAuth({
         owner,
         admin: adminRole,
         member,
-        manager,  // Custom role
-        viewer,   // Custom role
+        manager, // Custom role
+        viewer, // Custom role
       },
       // Single organization approach - allow admins to create
       allowUserToCreateOrganization: async (user) => {
         // Only allow users with admin role to create organizations
-        return user.role === 'admin' || user.role === 'owner';
+        return user.role === "admin" || user.role === "owner";
       },
       // Send invitation emails via webhook
       async sendInvitationEmail(data) {
@@ -263,12 +279,14 @@ export const auth = betterAuth({
           await sendEmailViaWebhook(
             data.email,
             data.id, // Use invitation ID as identifier
-            'organization-invitation'
+            "organization-invitation",
           );
 
-          console.log(`Invitation email sent to ${data.email} for organization ${data.organization.name}`);
+          console.log(
+            `Invitation email sent to ${data.email} for organization ${data.organization.name}`,
+          );
         } catch (error) {
-          console.error('Failed to send invitation email:', error);
+          console.error("Failed to send invitation email:", error);
           throw error;
         }
       },
@@ -276,17 +294,22 @@ export const auth = betterAuth({
       organizationHooks: {
         afterCreateOrganization: async ({ organization, user }) => {
           // Log organization creation
-          console.log(`Organization ${organization.name} created by ${user.email}`);
+          console.log(
+            `Organization ${organization.name} created by ${user.email}`,
+          );
         },
         // Auto-add new users to the first available organization
         afterAddMember: async ({ member, user, organization }) => {
-          console.log(`User ${user.email} added to organization ${organization.name} with role ${member.role}`);
+          console.log(
+            `User ${user.email} added to organization ${organization.name} with role ${member.role}`,
+          );
         },
         afterAcceptInvitation: async ({ member, user, organization }) => {
-          console.log(`User ${user.email} accepted invitation and joined ${organization.name} as ${member.role}`);
+          console.log(
+            `User ${user.email} accepted invitation and joined ${organization.name} as ${member.role}`,
+          );
         },
       },
     }),
   ],
 });
-

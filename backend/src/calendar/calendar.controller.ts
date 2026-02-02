@@ -8,13 +8,13 @@ import {
   Body,
   Query,
   Req,
-} from '@nestjs/common';
-import { Request } from 'express';
-import { CalendarConnectionService } from './services/calendar-connection.service';
-import { CalendarSyncService } from './services/calendar-sync.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { CircuitBreakerService } from './rate-limit/circuit-breaker.service';
-import { CalendarRateLimiterService } from './rate-limit/rate-limiter.service';
+} from "@nestjs/common";
+import { Request } from "express";
+import { CalendarConnectionService } from "./services/calendar-connection.service";
+import { CalendarSyncService } from "./services/calendar-sync.service";
+import { PrismaService } from "../prisma/prisma.service";
+import { CircuitBreakerService } from "./rate-limit/circuit-breaker.service";
+import { CalendarRateLimiterService } from "./rate-limit/rate-limiter.service";
 import {
   InitiateConnectionDto,
   CompleteConnectionDto,
@@ -23,13 +23,13 @@ import {
   UpdateSourceDto,
   UpdateCalendarSettingsDto,
   ResolveConflictDto,
-} from './dto/calendar.dto';
+} from "./dto/calendar.dto";
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string };
 }
 
-@Controller('api/calendar')
+@Controller("api/calendar")
 export class CalendarController {
   constructor(
     private readonly connectionService: CalendarConnectionService,
@@ -39,23 +39,31 @@ export class CalendarController {
     private readonly rateLimiter: CalendarRateLimiterService,
   ) {}
 
-  @Post('connections')
+  @Post("connections")
   async initiateConnection(
     @Body() dto: InitiateConnectionDto,
     @Req() req: AuthenticatedRequest,
   ) {
     const userId = req.user?.id;
-    if (!userId) throw new Error('Unauthorized');
+    if (!userId) throw new Error("Unauthorized");
 
-    return this.connectionService.initiateConnection(userId, dto.provider, dto.redirectUri);
+    return this.connectionService.initiateConnection(
+      userId,
+      dto.provider,
+      dto.redirectUri,
+    );
   }
 
-  @Post('connections/callback')
+  @Post("connections/callback")
   async completeConnection(@Body() dto: CompleteConnectionDto) {
-    return this.connectionService.completeConnection(dto.state, dto.code, dto.redirectUri);
+    return this.connectionService.completeConnection(
+      dto.state,
+      dto.code,
+      dto.redirectUri,
+    );
   }
 
-  @Post('connections/apple/complete')
+  @Post("connections/apple/complete")
   async completeAppleConnection(@Body() dto: CompleteAppleConnectionDto) {
     return this.connectionService.completeAppleConnection(
       dto.state,
@@ -64,93 +72,105 @@ export class CalendarController {
     );
   }
 
-  @Get('connections')
+  @Get("connections")
   async getConnections(@Req() req: AuthenticatedRequest) {
     const userId = req.user?.id;
-    if (!userId) throw new Error('Unauthorized');
+    if (!userId) throw new Error("Unauthorized");
 
     return this.connectionService.getConnections(userId);
   }
 
-  @Get('connections/:id')
-  async getConnection(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+  @Get("connections/:id")
+  async getConnection(
+    @Param("id") id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
     const userId = req.user?.id;
-    if (!userId) throw new Error('Unauthorized');
+    if (!userId) throw new Error("Unauthorized");
 
     return this.connectionService.getConnection(id, userId);
   }
 
-  @Put('connections/:id')
+  @Put("connections/:id")
   async updateConnection(
-    @Param('id') id: string,
+    @Param("id") id: string,
     @Body() dto: UpdateConnectionDto,
     @Req() req: AuthenticatedRequest,
   ) {
     const userId = req.user?.id;
-    if (!userId) throw new Error('Unauthorized');
+    if (!userId) throw new Error("Unauthorized");
 
     return this.connectionService.updateConnection(id, userId, dto);
   }
 
-  @Delete('connections/:id')
-  async disconnectConnection(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+  @Delete("connections/:id")
+  async disconnectConnection(
+    @Param("id") id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
     const userId = req.user?.id;
-    if (!userId) throw new Error('Unauthorized');
+    if (!userId) throw new Error("Unauthorized");
 
     await this.connectionService.disconnectConnection(id, userId);
     return { success: true };
   }
 
-  @Post('connections/:id/sync')
-  async triggerSync(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+  @Post("connections/:id/sync")
+  async triggerSync(@Param("id") id: string, @Req() req: AuthenticatedRequest) {
     const userId = req.user?.id;
-    if (!userId) throw new Error('Unauthorized');
+    if (!userId) throw new Error("Unauthorized");
 
     await this.syncService.triggerInitialSync(id);
-    return { success: true, message: 'Sync queued' };
+    return { success: true, message: "Sync queued" };
   }
 
-  @Post('connections/:id/setup-webhooks')
-  async setupWebhooks(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+  @Post("connections/:id/setup-webhooks")
+  async setupWebhooks(
+    @Param("id") id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
     const userId = req.user?.id;
-    if (!userId) throw new Error('Unauthorized');
+    if (!userId) throw new Error("Unauthorized");
 
     const connection = await this.connectionService.getConnection(id, userId);
-    if (!connection) throw new Error('Connection not found');
+    if (!connection) throw new Error("Connection not found");
 
     await this.connectionService.refreshWebhooks(id);
     return {
       success: true,
-      message: 'Webhooks refreshed',
+      message: "Webhooks refreshed",
       webhookUrl: process.env.WEBHOOK_BASE_URL,
     };
   }
 
-  @Get('connections/:id/sources')
-  async getSources(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+  @Get("connections/:id/sources")
+  async getSources(@Param("id") id: string, @Req() req: AuthenticatedRequest) {
     const userId = req.user?.id;
-    if (!userId) throw new Error('Unauthorized');
+    if (!userId) throw new Error("Unauthorized");
 
     const connection = await this.connectionService.getConnection(id, userId);
     return connection.sources;
   }
 
-  @Post('connections/:id/sources/refresh')
-  async refreshSources(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+  @Post("connections/:id/sources/refresh")
+  async refreshSources(
+    @Param("id") id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
     const userId = req.user?.id;
-    if (!userId) throw new Error('Unauthorized');
+    if (!userId) throw new Error("Unauthorized");
 
     return this.connectionService.refreshCalendarList(id, userId);
   }
 
-  @Put('sources/:id')
+  @Put("sources/:id")
   async updateSource(
-    @Param('id') id: string,
+    @Param("id") id: string,
     @Body() dto: UpdateSourceDto,
     @Req() req: AuthenticatedRequest,
   ) {
     const userId = req.user?.id;
-    if (!userId) throw new Error('Unauthorized');
+    if (!userId) throw new Error("Unauthorized");
 
     const source = await this.prisma.calendarSource.findUnique({
       where: { id },
@@ -158,7 +178,7 @@ export class CalendarController {
     });
 
     if (!source || source.connection.userId !== userId) {
-      throw new Error('Source not found');
+      throw new Error("Source not found");
     }
 
     return this.prisma.calendarSource.update({
@@ -167,10 +187,10 @@ export class CalendarController {
     });
   }
 
-  @Get('settings')
+  @Get("settings")
   async getSettings(@Req() req: AuthenticatedRequest) {
     const userId = req.user?.id;
-    if (!userId) throw new Error('Unauthorized');
+    if (!userId) throw new Error("Unauthorized");
 
     let settings = await this.prisma.userCalendarSettings.findUnique({
       where: { userId },
@@ -185,13 +205,13 @@ export class CalendarController {
     return settings;
   }
 
-  @Put('settings')
+  @Put("settings")
   async updateSettings(
     @Body() dto: UpdateCalendarSettingsDto,
     @Req() req: AuthenticatedRequest,
   ) {
     const userId = req.user?.id;
-    if (!userId) throw new Error('Unauthorized');
+    if (!userId) throw new Error("Unauthorized");
 
     return this.prisma.userCalendarSettings.upsert({
       where: { userId },
@@ -200,33 +220,33 @@ export class CalendarController {
     });
   }
 
-  @Get('conflicts')
+  @Get("conflicts")
   async getConflicts(
-    @Query('resolved') resolved: string,
+    @Query("resolved") resolved: string,
     @Req() req: AuthenticatedRequest,
   ) {
     const userId = req.user?.id;
-    if (!userId) throw new Error('Unauthorized');
+    if (!userId) throw new Error("Unauthorized");
 
     return this.prisma.calendarConflict.findMany({
       where: {
         connection: { userId },
-        resolved: resolved === 'true',
+        resolved: resolved === "true",
       },
       include: { connection: true },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       take: 50,
     });
   }
 
-  @Put('conflicts/:id')
+  @Put("conflicts/:id")
   async resolveConflict(
-    @Param('id') id: string,
+    @Param("id") id: string,
     @Body() dto: ResolveConflictDto,
     @Req() req: AuthenticatedRequest,
   ) {
     const userId = req.user?.id;
-    if (!userId) throw new Error('Unauthorized');
+    if (!userId) throw new Error("Unauthorized");
 
     const conflict = await this.prisma.calendarConflict.findUnique({
       where: { id },
@@ -234,7 +254,7 @@ export class CalendarController {
     });
 
     if (!conflict || conflict.connection.userId !== userId) {
-      throw new Error('Conflict not found');
+      throw new Error("Conflict not found");
     }
 
     return this.prisma.calendarConflict.update({
@@ -247,10 +267,10 @@ export class CalendarController {
     });
   }
 
-  @Get('status')
+  @Get("status")
   async getSyncStatus(@Req() req: AuthenticatedRequest) {
     const userId = req.user?.id;
-    if (!userId) throw new Error('Unauthorized');
+    if (!userId) throw new Error("Unauthorized");
 
     const connections = await this.prisma.calendarConnection.findMany({
       where: { userId },
@@ -266,7 +286,7 @@ export class CalendarController {
     const circuitStatus = await this.circuitBreaker.getAllStatus();
 
     const providerStats = await Promise.all(
-      (['GOOGLE', 'MICROSOFT', 'APPLE'] as const).map(async (provider) => ({
+      (["GOOGLE", "MICROSOFT", "APPLE"] as const).map(async (provider) => ({
         provider,
         stats: await this.rateLimiter.getStats(provider),
       })),
@@ -275,7 +295,9 @@ export class CalendarController {
     return {
       connections,
       circuitBreakers: circuitStatus,
-      rateLimitStats: Object.fromEntries(providerStats.map((p) => [p.provider, p.stats])),
+      rateLimitStats: Object.fromEntries(
+        providerStats.map((p) => [p.provider, p.stats]),
+      ),
     };
   }
 }

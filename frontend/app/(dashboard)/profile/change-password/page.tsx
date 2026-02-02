@@ -11,7 +11,8 @@ import { useToast } from "@/components/ui/toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Lock, Eye, EyeOff, Shield } from "lucide-react";
+import { Breadcrumb, BREADCRUMB_ROUTES } from "@/components/ui/breadcrumb";
+import { Lock, Eye, EyeOff, Shield, User } from "lucide-react";
 import { APP_CONFIG } from "@/config/app.constants";
 
 const changePasswordSchema = z
@@ -72,10 +73,10 @@ export default function ChangePasswordPage() {
 
       // Sign out the user for security after password change
       await authClient.signOut();
-      
+
       // Clear cached auth to prevent flash
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('auth_user');
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("auth_user");
       }
 
       // Small delay to show the toast message before redirect
@@ -98,20 +99,26 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push("/profile")}
-                className="flex items-center space-x-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to Profile</span>
-              </Button>
+              {/* Breadcrumb */}
+              <Breadcrumb
+                items={[
+                  BREADCRUMB_ROUTES.dashboard,
+                  {
+                    label: "Profile",
+                    href: "/profile",
+                    icon: <User className="w-3.5 h-3.5" />,
+                  },
+                  {
+                    label: "Change Password",
+                    icon: <Lock className="w-3.5 h-3.5" />,
+                  },
+                ]}
+              />
             </div>
 
             <div className="flex items-center space-x-2">
@@ -129,10 +136,10 @@ export default function ChangePasswordPage() {
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               Change Password
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               Update your password to keep your account secure
             </p>
           </div>
@@ -150,7 +157,7 @@ export default function ChangePasswordPage() {
                 <div>
                   <label
                     htmlFor="currentPassword"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                   >
                     Current Password
                   </label>
@@ -191,7 +198,7 @@ export default function ChangePasswordPage() {
                 <div>
                   <label
                     htmlFor="newPassword"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                   >
                     New Password
                   </label>
@@ -228,7 +235,7 @@ export default function ChangePasswordPage() {
                 <div>
                   <label
                     htmlFor="confirmPassword"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                   >
                     Confirm New Password
                   </label>
@@ -266,14 +273,14 @@ export default function ChangePasswordPage() {
                 </div>
 
                 {/* Password Requirements */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                   <div className="flex items-start space-x-2">
-                    <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-medium text-blue-900">
+                      <h4 className="text-sm font-medium text-blue-900 dark:text-blue-200">
                         Password Requirements
                       </h4>
-                      <ul className="text-sm text-blue-700 mt-1 space-y-1">
+                      <ul className="text-sm text-blue-700 dark:text-blue-300 mt-1 space-y-1">
                         <li>• At least 8 characters long</li>
                         <li>• Maximum 128 characters</li>
                       </ul>

@@ -1,4 +1,4 @@
-import { CalendarProvider } from '@prisma/client';
+import { CalendarProvider } from "@prisma/client";
 
 export interface OAuthTokens {
   accessToken: string;
@@ -15,7 +15,7 @@ export interface ExternalCalendar {
   color?: string;
   timeZone?: string;
   isPrimary: boolean;
-  accessRole: 'owner' | 'writer' | 'reader';
+  accessRole: "owner" | "writer" | "reader";
 }
 
 export interface ExternalEvent {
@@ -29,8 +29,8 @@ export interface ExternalEvent {
   endTime: Date;
   isAllDay: boolean;
   timeZone?: string;
-  status: 'confirmed' | 'tentative' | 'cancelled';
-  visibility: 'public' | 'private' | 'confidential';
+  status: "confirmed" | "tentative" | "cancelled";
+  visibility: "public" | "private" | "confidential";
   attendees?: EventAttendee[];
   recurrence?: string[];
   updatedAt: Date;
@@ -97,22 +97,22 @@ export interface RateLimitConfig {
 }
 
 export interface CircuitState {
-  status: 'closed' | 'open' | 'half-open';
+  status: "closed" | "open" | "half-open";
   failures: number;
   nextAttemptAt: number;
   lastError?: string;
 }
 
 export enum CalendarJobType {
-  INITIAL_SYNC = 'initial_sync',
-  INCREMENTAL_SYNC = 'incremental_sync',
-  WEBHOOK_SYNC = 'webhook_sync',
-  OUTBOUND_CREATE = 'outbound_create',
-  OUTBOUND_UPDATE = 'outbound_update',
-  OUTBOUND_DELETE = 'outbound_delete',
-  TOKEN_REFRESH = 'token_refresh',
-  WEBHOOK_RENEW = 'webhook_renew',
-  CLEANUP_STALE = 'cleanup_stale',
+  INITIAL_SYNC = "initial_sync",
+  INCREMENTAL_SYNC = "incremental_sync",
+  WEBHOOK_SYNC = "webhook_sync",
+  OUTBOUND_CREATE = "outbound_create",
+  OUTBOUND_UPDATE = "outbound_update",
+  OUTBOUND_DELETE = "outbound_delete",
+  TOKEN_REFRESH = "token_refresh",
+  WEBHOOK_RENEW = "webhook_renew",
+  CLEANUP_STALE = "cleanup_stale",
 }
 
 export interface InitialSyncJobData {
@@ -128,14 +128,14 @@ export interface IncrementalSyncJobData {
   provider: CalendarProvider;
   sourceId: string;
   syncToken?: string;
-  triggeredBy: 'webhook' | 'poll' | 'manual';
+  triggeredBy: "webhook" | "poll" | "manual";
 }
 
 export interface OutboundSyncJobData {
   connectionId: string;
   sourceId: string;
   timeBlockId: string;
-  action: 'create' | 'update' | 'delete';
+  action: "create" | "update" | "delete";
   previousData?: {
     externalEventId?: string;
     title?: string;

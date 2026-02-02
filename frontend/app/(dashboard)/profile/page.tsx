@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { useSettings } from "@/lib/settings-context";
+import { useTimeBlockTypes } from "@/lib/time-block-types-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
@@ -35,6 +36,9 @@ import {
   Sun,
   Monitor,
   Calendar,
+  Plus,
+  Trash2,
+  Tag,
 } from "lucide-react";
 
 const profileSchema = z.object({
@@ -70,22 +74,54 @@ interface UserData {
 }
 
 const SECTION_OPTIONS = [
-  { key: "priorities", label: "Top Priorities", description: "Your main focus items for the day" },
-  { key: "discussion", label: "To Discuss", description: "Items to bring up in meetings" },
-  { key: "schedule", label: "Today's Schedule", description: "Time blocks for your day" },
+  {
+    key: "priorities",
+    label: "Top Priorities",
+    description: "Your main focus items for the day",
+  },
+  {
+    key: "discussion",
+    label: "To Discuss",
+    description: "Items to bring up in meetings",
+  },
+  {
+    key: "schedule",
+    label: "Today's Schedule",
+    description: "Time blocks for your day",
+  },
   { key: "notes", label: "Quick Notes", description: "Freeform notes area" },
-  { key: "progress", label: "Day Progress", description: "Progress indicator for priorities" },
-  { key: "review", label: "End-of-Day Review", description: "Daily reflection prompts" },
+  {
+    key: "progress",
+    label: "Day Progress",
+    description: "Progress indicator for priorities",
+  },
+  {
+    key: "review",
+    label: "End-of-Day Review",
+    description: "Daily reflection prompts",
+  },
 ];
 
-const TIME_BLOCK_TYPES = ["Deep Work", "Meeting", "Personal", "Break", "Admin"];
+// Available colors for time block types
+const AVAILABLE_COLORS = [
+  { name: "Blue", hex: "#3B82F6" },
+  { name: "Purple", hex: "#8B5CF6" },
+  { name: "Green", hex: "#10B981" },
+  { name: "Yellow", hex: "#F59E0B" },
+  { name: "Gray", hex: "#6B7280" },
+  { name: "Red", hex: "#EF4444" },
+  { name: "Pink", hex: "#EC4899" },
+  { name: "Indigo", hex: "#6366F1" },
+  { name: "Teal", hex: "#14B8A6" },
+  { name: "Orange", hex: "#F97316" },
+];
 
 type TabType = "account" | "preferences";
 
 function ProfilePageContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>(
-    (searchParams.get("tab") as TabType) || "account"
+    (searchParams.get("tab") as TabType) || "account",
   );
   const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -101,11 +137,28 @@ function ProfilePageContent() {
   const router = useRouter();
   const { addToast } = useToast();
   const { theme, setTheme } = useTheme();
-  const { settings, isLoading: isSettingsLoading, updateSettings } = useSettings();
+  const {
+    settings,
+    isLoading: isSettingsLoading,
+    updateSettings,
+  } = useSettings();
+  const {
+    types: timeBlockTypes,
+    activeTypes,
+    addType,
+    updateType,
+    deleteType,
+    isLoading: isTypesLoading,
+  } = useTimeBlockTypes();
+
+  // Time block type management state
+  const [showAddType, setShowAddType] = useState(false);
+  const [newTypeName, setNewTypeName] = useState("");
+  const [newTypeColor, setNewTypeColor] = useState("#6366F1");
+  const [isAddingType, setIsAddingType] = useState(false);
+  const [deletingTypeId, setDeletingTypeId] = useState<string | null>(null);
 
   // Settings local state
-  const [maxPriorities, setMaxPriorities] = useState(3);
-  const [maxDiscussion, setMaxDiscussion] = useState(3);
   const [enabledSections, setEnabledSections] = useState<string[]>([]);
   const [defaultDuration, setDefaultDuration] = useState(60);
   const [defaultType, setDefaultType] = useState("Deep Work");
@@ -174,8 +227,6 @@ function ProfilePageContent() {
   // Sync local state with settings
   useEffect(() => {
     if (settings) {
-      setMaxPriorities(settings.maxTopPriorities);
-      setMaxDiscussion(settings.maxDiscussionItems);
       setEnabledSections(settings.enabledSections);
       setDefaultDuration(settings.defaultTimeBlockDuration);
       setDefaultType(settings.defaultTimeBlockType);
@@ -264,8 +315,8 @@ function ProfilePageContent() {
     try {
       await authClient.signOut();
       // Clear cached auth to prevent flash
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('auth_user');
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("auth_user");
       }
       router.push("/");
     } catch (error) {
@@ -278,8 +329,6 @@ function ProfilePageContent() {
     setSaveMessage("");
     try {
       await updateSettings({
-        maxTopPriorities: maxPriorities,
-        maxDiscussionItems: maxDiscussion,
         enabledSections,
         defaultTimeBlockDuration: defaultDuration,
         defaultTimeBlockType: defaultType,
@@ -320,6 +369,54 @@ function ProfilePageContent() {
     });
   };
 
+  const handleAddTimeBlockType = async () => {
+    if (!newTypeName.trim()) return;
+
+    setIsAddingType(true);
+    try {
+      await addType({
+        name: newTypeName.trim(),
+        color: newTypeColor,
+      });
+      setNewTypeName("");
+      setNewTypeColor("#6366F1");
+      setShowAddType(false);
+      addToast({
+        type: "success",
+        title: "Time block type added",
+        duration: 3000,
+      });
+    } catch (error: any) {
+      addToast({
+        type: "error",
+        title: error.message || "Failed to add type",
+        duration: 3000,
+      });
+    } finally {
+      setIsAddingType(false);
+    }
+  };
+
+  const handleDeleteTimeBlockType = async (id: string) => {
+    setDeletingTypeId(id);
+    try {
+      await deleteType(id);
+      addToast({
+        type: "success",
+        title: "Time block type deleted",
+        duration: 3000,
+      });
+    } catch (error: any) {
+      addToast({
+        type: "error",
+        title: error.message || "Failed to delete type",
+        duration: 3000,
+      });
+    } finally {
+      setDeletingTypeId(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
@@ -342,7 +439,9 @@ function ProfilePageContent() {
               {user.name.charAt(0).toUpperCase()}
             </span>
           </div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{user.name}</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+            {user.name}
+          </h1>
           <p className="text-gray-500 dark:text-gray-400">{user.email}</p>
           {user.emailVerified ? (
             <div className="flex items-center justify-center gap-1 mt-2 text-green-600">
@@ -361,20 +460,22 @@ function ProfilePageContent() {
         <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl mb-8">
           <button
             onClick={() => handleTabChange("account")}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === "account"
-              ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
-              : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-              }`}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${
+              activeTab === "account"
+                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+            }`}
           >
             <User className="w-4 h-4" />
             Account
           </button>
           <button
             onClick={() => handleTabChange("preferences")}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === "preferences"
-              ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
-              : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-              }`}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${
+              activeTab === "preferences"
+                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+            }`}
           >
             <Settings className="w-4 h-4" />
             Preferences
@@ -390,7 +491,10 @@ function ProfilePageContent() {
                 Profile
               </h2>
               <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
-                <form onSubmit={handleSubmit(onProfileSubmit)} className="space-y-4">
+                <form
+                  onSubmit={handleSubmit(onProfileSubmit)}
+                  className="space-y-4"
+                >
                   {profileError && (
                     <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl">
                       {profileError}
@@ -406,7 +510,9 @@ function ProfilePageContent() {
                       disabled={isUpdating}
                     />
                     {errors.name && (
-                      <p className="mt-2 text-sm text-red-500">{errors.name.message}</p>
+                      <p className="mt-2 text-sm text-red-500">
+                        {errors.name.message}
+                      </p>
                     )}
                   </div>
                   <div>
@@ -423,7 +529,11 @@ function ProfilePageContent() {
                       Email cannot be changed
                     </p>
                   </div>
-                  <Button type="submit" className="w-full" disabled={isUpdating}>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isUpdating}
+                  >
                     {isUpdating ? "Saving..." : "Save changes"}
                   </Button>
                 </form>
@@ -447,13 +557,18 @@ function ProfilePageContent() {
                         <Lock className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">Password</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Change your password</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
+                          Password
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Change your password
+                        </p>
                       </div>
                     </div>
                     <ChevronRight
-                      className={`w-5 h-5 text-gray-400 transition-transform ${showPasswordForm ? "rotate-90" : ""
-                        }`}
+                      className={`w-5 h-5 text-gray-400 transition-transform ${
+                        showPasswordForm ? "rotate-90" : ""
+                      }`}
                     />
                   </button>
 
@@ -477,9 +592,15 @@ function ProfilePageContent() {
                         <button
                           type="button"
                           className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
-                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                          onClick={() =>
+                            setShowCurrentPassword(!showCurrentPassword)
+                          }
                         >
-                          {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          {showCurrentPassword ? (
+                            <EyeOff className="h-5 w-5" />
+                          ) : (
+                            <Eye className="h-5 w-5" />
+                          )}
                         </button>
                         {passwordErrors.currentPassword && (
                           <p className="mt-2 text-sm text-red-500">
@@ -499,7 +620,11 @@ function ProfilePageContent() {
                           className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
                           onClick={() => setShowNewPassword(!showNewPassword)}
                         >
-                          {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          {showNewPassword ? (
+                            <EyeOff className="h-5 w-5" />
+                          ) : (
+                            <Eye className="h-5 w-5" />
+                          )}
                         </button>
                         {passwordErrors.newPassword && (
                           <p className="mt-2 text-sm text-red-500">
@@ -517,9 +642,15 @@ function ProfilePageContent() {
                         <button
                           type="button"
                           className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
                         >
-                          {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          {showConfirmPassword ? (
+                            <EyeOff className="h-5 w-5" />
+                          ) : (
+                            <Eye className="h-5 w-5" />
+                          )}
                         </button>
                         {passwordErrors.confirmPassword && (
                           <p className="mt-2 text-sm text-red-500">
@@ -527,7 +658,11 @@ function ProfilePageContent() {
                           </p>
                         )}
                       </div>
-                      <Button type="submit" className="w-full" disabled={isChangingPassword}>
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={isChangingPassword}
+                      >
                         {isChangingPassword ? "Changing..." : "Change password"}
                       </Button>
                     </form>
@@ -544,8 +679,12 @@ function ProfilePageContent() {
                       <Shield className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">Two-factor authentication</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Add an extra layer of security</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">
+                        Two-factor authentication
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Add an extra layer of security
+                      </p>
                     </div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -561,7 +700,9 @@ function ProfilePageContent() {
               <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl">
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Member since</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      Member since
+                    </span>
                     <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {new Date(user.createdAt).toLocaleDateString("en-US", {
                         year: "numeric",
@@ -593,7 +734,7 @@ function ProfilePageContent() {
               </div>
             ) : (
               <>
-                {/* Calendar Integration */}
+                {/* Calendar Integration - Temporarily hidden
                 <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
                   <button
                     onClick={() => router.push("/settings/calendars")}
@@ -611,29 +752,41 @@ function ProfilePageContent() {
                     <ChevronRight className="w-5 h-5 text-gray-400" />
                   </button>
                 </section>
+                */}
 
                 {/* Theme Preferences */}
                 <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
                   <div className="flex items-center gap-2 mb-6">
                     <Sun className="w-5 h-5 text-gray-400" />
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Appearance</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Appearance
+                    </h2>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
-                    {['light', 'dark', 'system'].map((mode) => (
+                    {["light", "dark", "system"].map((mode) => (
                       <button
                         key={mode}
-                        onClick={() => setTheme(mode)}
+                        onClick={async () => {
+                          setTheme(mode);
+                          // Save theme preference to backend
+                          try {
+                            await updateSettings({ theme: mode });
+                          } catch (err) {
+                            console.error("Failed to save theme preference:", err);
+                          }
+                        }}
                         className={`
                           flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all border
-                          ${mounted && theme === mode
-                            ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white shadow-sm'
-                            : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600'
+                          ${
+                            mounted && theme === mode
+                              ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white shadow-sm"
+                              : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
                           }
                         `}
                       >
-                        {mode === 'light' && <Sun className="w-4 h-4" />}
-                        {mode === 'dark' && <Moon className="w-4 h-4" />}
-                        {mode === 'system' && <Monitor className="w-4 h-4" />}
+                        {mode === "light" && <Sun className="w-4 h-4" />}
+                        {mode === "dark" && <Moon className="w-4 h-4" />}
+                        {mode === "system" && <Monitor className="w-4 h-4" />}
                         <span className="capitalize font-medium">{mode}</span>
                       </button>
                     ))}
@@ -644,63 +797,9 @@ function ProfilePageContent() {
                 <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
                   <div className="flex items-center gap-2 mb-6">
                     <ListChecks className="w-5 h-5 text-gray-400" />
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Dashboard Preferences</h2>
-                  </div>
-
-                  <div className="space-y-5">
-                    {/* Max Priorities */}
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">Top Priorities</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Maximum items per day (1-5)</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setMaxPriorities((p) => Math.max(1, p - 1))}
-                          className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        >
-                          -
-                        </button>
-                        <span className="w-8 text-center font-medium text-gray-900 dark:text-gray-100">{maxPriorities}</span>
-                        <button
-                          onClick={() => setMaxPriorities((p) => Math.min(5, p + 1))}
-                          className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Max Discussion */}
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">To Discuss Items</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Maximum items per day (0-5)</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setMaxDiscussion((p) => Math.max(0, p - 1))}
-                          className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        >
-                          -
-                        </button>
-                        <span className="w-8 text-center font-medium text-gray-900 dark:text-gray-100">{maxDiscussion}</span>
-                        <button
-                          onClick={() => setMaxDiscussion((p) => Math.min(5, p + 1))}
-                          className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                {/* Section Visibility */}
-                <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
-                  <div className="flex items-center gap-2 mb-5">
-                    <Eye className="w-5 h-5 text-gray-400" />
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Section Visibility</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Dashboard Preferences
+                    </h2>
                   </div>
 
                   <div className="space-y-3">
@@ -710,8 +809,12 @@ function ProfilePageContent() {
                         className="flex items-center justify-between p-3 rounded-xl hover:bg-white dark:hover:bg-gray-700 cursor-pointer transition-colors"
                       >
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-gray-100">{section.label}</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">{section.description}</p>
+                          <p className="font-medium text-gray-900 dark:text-gray-100">
+                            {section.label}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {section.description}
+                          </p>
                         </div>
                         <input
                           type="checkbox"
@@ -728,19 +831,27 @@ function ProfilePageContent() {
                 <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
                   <div className="flex items-center gap-2 mb-5">
                     <Clock className="w-5 h-5 text-gray-400" />
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Scheduling Defaults</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Scheduling Defaults
+                    </h2>
                   </div>
 
                   <div className="space-y-5">
                     {/* Default Duration */}
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">Default Duration</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">For new time blocks</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
+                          Default Duration
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          For new time blocks
+                        </p>
                       </div>
                       <select
                         value={defaultDuration}
-                        onChange={(e) => setDefaultDuration(Number(e.target.value))}
+                        onChange={(e) =>
+                          setDefaultDuration(Number(e.target.value))
+                        }
                         className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-gray-300"
                       >
                         <option value={15}>15 minutes</option>
@@ -755,37 +866,175 @@ function ProfilePageContent() {
                     {/* Default Type */}
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">Default Type</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">For new time blocks</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
+                          Default Type
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          For new time blocks
+                        </p>
                       </div>
                       <select
                         value={defaultType}
                         onChange={(e) => setDefaultType(e.target.value)}
                         className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-gray-300"
+                        disabled={isTypesLoading || activeTypes.length === 0}
                       >
-                        {TIME_BLOCK_TYPES.map((type) => (
-                          <option key={type} value={type}>
-                            {type}
-                          </option>
-                        ))}
+                        {activeTypes.length === 0 ? (
+                          <option value={defaultType}>{defaultType}</option>
+                        ) : (
+                          activeTypes.map((type) => (
+                            <option key={type.id} value={type.name}>
+                              {type.name}
+                            </option>
+                          ))
+                        )}
                       </select>
                     </div>
                   </div>
+                </section>
+
+                {/* Time Block Types Management */}
+                <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-2">
+                      <Tag className="w-5 h-5 text-gray-400" />
+                      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        Time Block Types
+                      </h2>
+                    </div>
+                    {!showAddType && (
+                      <button
+                        onClick={() => setShowAddType(true)}
+                        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Type
+                      </button>
+                    )}
+                  </div>
+
+                  {isTypesLoading ? (
+                    <div className="flex justify-center py-4">
+                      <Spinner size="sm" />
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {/* Existing Types */}
+                      {timeBlockTypes.map((type) => (
+                        <div
+                          key={type.id}
+                          className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-gray-700"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-4 h-4 rounded-full"
+                              style={{ backgroundColor: type.color }}
+                            />
+                            <span className="font-medium text-gray-900 dark:text-gray-100">
+                              {type.name}
+                            </span>
+                            {type.isDefault && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-400">
+                                Default
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => handleDeleteTimeBlockType(type.id)}
+                            disabled={
+                              deletingTypeId === type.id ||
+                              timeBlockTypes.length <= 1
+                            }
+                            className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={
+                              timeBlockTypes.length <= 1
+                                ? "Cannot delete the last type"
+                                : "Delete type"
+                            }
+                          >
+                            {deletingTypeId === type.id ? (
+                              <Spinner size="sm" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Add New Type Form */}
+                      {showAddType && (
+                        <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 space-y-3">
+                          <Input
+                            type="text"
+                            value={newTypeName}
+                            onChange={(e) => setNewTypeName(e.target.value)}
+                            placeholder="Type name (e.g., Research)"
+                            autoFocus
+                          />
+                          <div>
+                            <label className="block text-sm text-gray-500 dark:text-gray-400 mb-2">
+                              Color
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                              {AVAILABLE_COLORS.map((color) => (
+                                <button
+                                  key={color.hex}
+                                  type="button"
+                                  onClick={() => setNewTypeColor(color.hex)}
+                                  className={`w-8 h-8 rounded-full border-2 transition-all ${
+                                    newTypeColor === color.hex
+                                      ? "border-gray-900 dark:border-white scale-110"
+                                      : "border-transparent hover:scale-105"
+                                  }`}
+                                  style={{ backgroundColor: color.hex }}
+                                  title={color.name}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex justify-end gap-2 pt-2">
+                            <Button
+                              variant="ghost"
+                              onClick={() => {
+                                setShowAddType(false);
+                                setNewTypeName("");
+                                setNewTypeColor("#6366F1");
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              onClick={handleAddTimeBlockType}
+                              disabled={!newTypeName.trim() || isAddingType}
+                            >
+                              {isAddingType ? "Adding..." : "Add Type"}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </section>
 
                 {/* Tools Settings */}
                 <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
                   <div className="flex items-center gap-2 mb-5">
                     <Wrench className="w-5 h-5 text-gray-400" />
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Tools</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Tools
+                    </h2>
                   </div>
 
                   <div className="space-y-4">
                     {/* Tools Tab Toggle */}
                     <label className="flex items-center justify-between p-3 rounded-xl hover:bg-white dark:hover:bg-gray-700 cursor-pointer transition-colors">
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">Show Tools Tab</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Display tools link in dashboard header</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
+                          Show Tools Tab
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Display tools link in dashboard header
+                        </p>
                       </div>
                       <input
                         type="checkbox"
@@ -798,20 +1047,28 @@ function ProfilePageContent() {
                     {toolsEnabled && (
                       <>
                         <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Available Tools</p>
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
+                            Available Tools
+                          </p>
                           <div className="space-y-3">
                             <label className="flex items-center justify-between p-3 rounded-xl hover:bg-white dark:hover:bg-gray-700 cursor-pointer transition-colors">
                               <div className="flex items-center gap-3">
                                 <Timer className="w-5 h-5 text-blue-500" />
                                 <div>
-                                  <p className="font-medium text-gray-900 dark:text-gray-100">Pomodoro Timer</p>
-                                  <p className="text-sm text-gray-500 dark:text-gray-400">Focus timer for deep work</p>
+                                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                                    Pomodoro Timer
+                                  </p>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    Focus timer for deep work
+                                  </p>
                                 </div>
                               </div>
                               <input
                                 type="checkbox"
                                 checked={pomodoroEnabled}
-                                onChange={(e) => setPomodoroEnabled(e.target.checked)}
+                                onChange={(e) =>
+                                  setPomodoroEnabled(e.target.checked)
+                                }
                                 className="w-5 h-5 rounded text-gray-900 focus:ring-gray-500"
                               />
                             </label>
@@ -820,14 +1077,20 @@ function ProfilePageContent() {
                               <div className="flex items-center gap-3">
                                 <Grid3X3 className="w-5 h-5 text-purple-500" />
                                 <div>
-                                  <p className="font-medium text-gray-900 dark:text-gray-100">Eisenhower Matrix</p>
-                                  <p className="text-sm text-gray-500 dark:text-gray-400">Prioritize tasks by urgency</p>
+                                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                                    Eisenhower Matrix
+                                  </p>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    Prioritize tasks by urgency
+                                  </p>
                                 </div>
                               </div>
                               <input
                                 type="checkbox"
                                 checked={eisenhowerEnabled}
-                                onChange={(e) => setEisenhowerEnabled(e.target.checked)}
+                                onChange={(e) =>
+                                  setEisenhowerEnabled(e.target.checked)
+                                }
                                 className="w-5 h-5 rounded text-gray-900 focus:ring-gray-500"
                               />
                             </label>
@@ -836,14 +1099,20 @@ function ProfilePageContent() {
                               <div className="flex items-center gap-3">
                                 <BookOpen className="w-5 h-5 text-green-500" />
                                 <div>
-                                  <p className="font-medium text-gray-900 dark:text-gray-100">Decision Log</p>
-                                  <p className="text-sm text-gray-500 dark:text-gray-400">Track important decisions</p>
+                                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                                    Decision Log
+                                  </p>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    Track important decisions
+                                  </p>
                                 </div>
                               </div>
                               <input
                                 type="checkbox"
                                 checked={decisionLogEnabled}
-                                onChange={(e) => setDecisionLogEnabled(e.target.checked)}
+                                onChange={(e) =>
+                                  setDecisionLogEnabled(e.target.checked)
+                                }
                                 className="w-5 h-5 rounded text-gray-900 focus:ring-gray-500"
                               />
                             </label>
@@ -852,18 +1121,26 @@ function ProfilePageContent() {
 
                         {pomodoroEnabled && (
                           <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Pomodoro Settings</p>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
+                              Pomodoro Settings
+                            </p>
                             <div className="space-y-4">
                               {/* Sound Toggle */}
                               <label className="flex items-center justify-between p-3 rounded-xl hover:bg-white dark:hover:bg-gray-700 cursor-pointer transition-colors">
                                 <div>
-                                  <p className="font-medium text-gray-900 dark:text-gray-100">Notification Sound</p>
-                                  <p className="text-sm text-gray-500 dark:text-gray-400">Play sound when timer completes</p>
+                                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                                    Notification Sound
+                                  </p>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    Play sound when timer completes
+                                  </p>
                                 </div>
                                 <input
                                   type="checkbox"
                                   checked={pomodoroSoundEnabled}
-                                  onChange={(e) => setPomodoroSoundEnabled(e.target.checked)}
+                                  onChange={(e) =>
+                                    setPomodoroSoundEnabled(e.target.checked)
+                                  }
                                   className="w-5 h-5 rounded text-gray-900 focus:ring-gray-500"
                                 />
                               </label>
@@ -871,33 +1148,53 @@ function ProfilePageContent() {
                               {/* Block External Calendars */}
                               <label className="flex items-center justify-between p-3 rounded-xl hover:bg-white dark:hover:bg-gray-700 cursor-pointer transition-colors">
                                 <div>
-                                  <p className="font-medium text-gray-900 dark:text-gray-100">Block External Calendars</p>
-                                  <p className="text-sm text-gray-500 dark:text-gray-400">Create busy events during focus sessions</p>
+                                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                                    Block External Calendars
+                                  </p>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    Create busy events during focus sessions
+                                  </p>
                                 </div>
                                 <input
                                   type="checkbox"
                                   checked={focusBlocksCalendar}
-                                  onChange={(e) => setFocusBlocksCalendar(e.target.checked)}
+                                  onChange={(e) =>
+                                    setFocusBlocksCalendar(e.target.checked)
+                                  }
                                   className="w-5 h-5 rounded text-gray-900 focus:ring-gray-500"
                                 />
                               </label>
 
                               {/* Duration Controls */}
                               <div className="pt-2">
-                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Durations</p>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
+                                  Durations
+                                </p>
                                 <div className="space-y-4">
                                   <div className="flex items-center justify-between">
-                                    <p className="text-gray-700 dark:text-gray-300">Focus</p>
+                                    <p className="text-gray-700 dark:text-gray-300">
+                                      Focus
+                                    </p>
                                     <div className="flex items-center gap-2">
                                       <button
-                                        onClick={() => setFocusDuration((p) => Math.max(5, p - 5))}
+                                        onClick={() =>
+                                          setFocusDuration((p) =>
+                                            Math.max(5, p - 5),
+                                          )
+                                        }
                                         className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                                       >
                                         -
                                       </button>
-                                      <span className="w-16 text-center font-medium text-gray-900 dark:text-gray-100">{focusDuration} min</span>
+                                      <span className="w-16 text-center font-medium text-gray-900 dark:text-gray-100">
+                                        {focusDuration} min
+                                      </span>
                                       <button
-                                        onClick={() => setFocusDuration((p) => Math.min(120, p + 5))}
+                                        onClick={() =>
+                                          setFocusDuration((p) =>
+                                            Math.min(120, p + 5),
+                                          )
+                                        }
                                         className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                                       >
                                         +
@@ -905,17 +1202,29 @@ function ProfilePageContent() {
                                     </div>
                                   </div>
                                   <div className="flex items-center justify-between">
-                                    <p className="text-gray-700 dark:text-gray-300">Short Break</p>
+                                    <p className="text-gray-700 dark:text-gray-300">
+                                      Short Break
+                                    </p>
                                     <div className="flex items-center gap-2">
                                       <button
-                                        onClick={() => setShortBreak((p) => Math.max(1, p - 1))}
+                                        onClick={() =>
+                                          setShortBreak((p) =>
+                                            Math.max(1, p - 1),
+                                          )
+                                        }
                                         className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                                       >
                                         -
                                       </button>
-                                      <span className="w-16 text-center font-medium text-gray-900 dark:text-gray-100">{shortBreak} min</span>
+                                      <span className="w-16 text-center font-medium text-gray-900 dark:text-gray-100">
+                                        {shortBreak} min
+                                      </span>
                                       <button
-                                        onClick={() => setShortBreak((p) => Math.min(30, p + 1))}
+                                        onClick={() =>
+                                          setShortBreak((p) =>
+                                            Math.min(30, p + 1),
+                                          )
+                                        }
                                         className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                                       >
                                         +
@@ -923,17 +1232,29 @@ function ProfilePageContent() {
                                     </div>
                                   </div>
                                   <div className="flex items-center justify-between">
-                                    <p className="text-gray-700 dark:text-gray-300">Long Break</p>
+                                    <p className="text-gray-700 dark:text-gray-300">
+                                      Long Break
+                                    </p>
                                     <div className="flex items-center gap-2">
                                       <button
-                                        onClick={() => setLongBreak((p) => Math.max(5, p - 5))}
+                                        onClick={() =>
+                                          setLongBreak((p) =>
+                                            Math.max(5, p - 5),
+                                          )
+                                        }
                                         className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                                       >
                                         -
                                       </button>
-                                      <span className="w-16 text-center font-medium text-gray-900 dark:text-gray-100">{longBreak} min</span>
+                                      <span className="w-16 text-center font-medium text-gray-900 dark:text-gray-100">
+                                        {longBreak} min
+                                      </span>
                                       <button
-                                        onClick={() => setLongBreak((p) => Math.min(60, p + 5))}
+                                        onClick={() =>
+                                          setLongBreak((p) =>
+                                            Math.min(60, p + 5),
+                                          )
+                                        }
                                         className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                                       >
                                         +
@@ -954,13 +1275,19 @@ function ProfilePageContent() {
                 <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
                   <div className="flex items-center gap-2 mb-5">
                     <Moon className="w-5 h-5 text-gray-400" />
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Review Preferences</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Review Preferences
+                    </h2>
                   </div>
 
                   <label className="flex items-center justify-between p-3 rounded-xl hover:bg-white dark:hover:bg-gray-700 cursor-pointer transition-colors">
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">End-of-Day Review</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Enable daily reflection prompts</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">
+                        End-of-Day Review
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Enable daily reflection prompts
+                      </p>
                     </div>
                     <input
                       type="checkbox"
@@ -975,14 +1302,20 @@ function ProfilePageContent() {
                 <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
                   <div className="flex items-center gap-2 mb-5">
                     <Zap className="w-5 h-5 text-gray-400" />
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Daily Behavior</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Daily Behavior
+                    </h2>
                   </div>
 
                   <div className="space-y-3">
                     <label className="flex items-center justify-between p-3 rounded-xl hover:bg-white dark:hover:bg-gray-700 cursor-pointer transition-colors">
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">Auto-carry unfinished</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Move incomplete priorities to next day</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
+                          Auto-carry unfinished
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Move incomplete priorities to next day
+                        </p>
                       </div>
                       <input
                         type="checkbox"
@@ -994,8 +1327,12 @@ function ProfilePageContent() {
 
                     <label className="flex items-center justify-between p-3 rounded-xl hover:bg-white dark:hover:bg-gray-700 cursor-pointer transition-colors">
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">Auto-create next day</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Automatically prepare tomorrow's dashboard</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
+                          Auto-create next day
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Automatically prepare tomorrow's dashboard
+                        </p>
                       </div>
                       <input
                         type="checkbox"
@@ -1011,8 +1348,11 @@ function ProfilePageContent() {
                 <div className="flex items-center justify-end gap-4 mt-4">
                   {saveMessage && (
                     <p
-                      className={`text-sm ${saveMessage.includes("Failed") ? "text-red-500" : "text-green-600"
-                        }`}
+                      className={`text-sm ${
+                        saveMessage.includes("Failed")
+                          ? "text-red-500"
+                          : "text-green-600"
+                      }`}
                     >
                       {saveMessage}
                     </p>
@@ -1037,11 +1377,13 @@ function ProfilePageContent() {
 // Wrap in Suspense for useSearchParams() support in Next.js 15
 export default function ProfilePage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
-        <Spinner size="lg" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+          <Spinner size="lg" />
+        </div>
+      }
+    >
       <ProfilePageContent />
     </Suspense>
   );

@@ -1,96 +1,94 @@
 import {
-    Controller,
-    Get,
-    Post,
-    Patch,
-    Delete,
-    Body,
-    Param,
-    Req,
-    UnauthorizedException,
-} from '@nestjs/common';
-import { LifeAreasService, CreateLifeAreaDto, UpdateLifeAreaDto } from './life-areas.service';
-import { Request } from 'express';
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Req,
+  UnauthorizedException,
+} from "@nestjs/common";
+import {
+  LifeAreasService,
+  CreateLifeAreaDto,
+  UpdateLifeAreaDto,
+} from "./life-areas.service";
+import { Request } from "express";
 
-@Controller('api/life-areas')
+@Controller("api/life-areas")
 export class LifeAreasController {
-    constructor(private lifeAreasService: LifeAreasService) { }
+  constructor(private lifeAreasService: LifeAreasService) { }
 
-    /**
-     * Get user ID from request (set by auth middleware)
-     */
-    private getUserIdFromRequest(req: Request): string {
-        const userId = (req as any).userId;
-        if (!userId) {
-            throw new UnauthorizedException('Not authenticated');
-        }
-        return userId;
+  /**
+   * Get user ID from request (set by auth middleware)
+   */
+  private getUserIdFromRequest(req: Request): string {
+    const userId = (req as any).userId;
+    if (!userId) {
+      throw new UnauthorizedException("Not authenticated");
     }
+    return userId;
+  }
 
-    @Get()
-    async getLifeAreas(@Req() req: Request) {
-        const userId = this.getUserIdFromRequest(req);
-        return this.lifeAreasService.getLifeAreas(userId);
-    }
+  @Get()
+  async getLifeAreas(@Req() req: Request) {
+    const userId = this.getUserIdFromRequest(req);
+    return this.lifeAreasService.getLifeAreas(userId);
+  }
 
-    @Get('default')
-    async getDefaultLifeArea(@Req() req: Request) {
-        const userId = this.getUserIdFromRequest(req);
-        return this.lifeAreasService.getDefaultLifeArea(userId);
-    }
+  @Get("default")
+  async getDefaultLifeArea(@Req() req: Request) {
+    const userId = this.getUserIdFromRequest(req);
+    return this.lifeAreasService.getDefaultLifeArea(userId);
+  }
 
-    @Get(':id')
-    async getLifeArea(
-        @Param('id') id: string,
-        @Req() req: Request,
-    ) {
-        const userId = this.getUserIdFromRequest(req);
-        return this.lifeAreasService.getLifeArea(id, userId);
-    }
+  @Get(":id/pending-items")
+  async getPendingItemsCount(@Param("id") id: string, @Req() req: Request) {
+    const userId = this.getUserIdFromRequest(req);
+    return this.lifeAreasService.getPendingItemsCount(id, userId);
+  }
 
-    @Post()
-    async createLifeArea(
-        @Body() data: CreateLifeAreaDto,
-        @Req() req: Request,
-    ) {
-        const userId = this.getUserIdFromRequest(req);
-        return this.lifeAreasService.createLifeArea(userId, data);
-    }
+  @Get(":id")
+  async getLifeArea(@Param("id") id: string, @Req() req: Request) {
+    const userId = this.getUserIdFromRequest(req);
+    return this.lifeAreasService.getLifeArea(id, userId);
+  }
 
-    @Patch(':id')
-    async updateLifeArea(
-        @Param('id') id: string,
-        @Body() data: UpdateLifeAreaDto,
-        @Req() req: Request,
-    ) {
-        const userId = this.getUserIdFromRequest(req);
-        return this.lifeAreasService.updateLifeArea(id, userId, data);
-    }
+  @Post()
+  async createLifeArea(@Body() data: CreateLifeAreaDto, @Req() req: Request) {
+    const userId = this.getUserIdFromRequest(req);
+    return this.lifeAreasService.createLifeArea(userId, data);
+  }
 
-    @Delete(':id')
-    async archiveLifeArea(
-        @Param('id') id: string,
-        @Req() req: Request,
-    ) {
-        const userId = this.getUserIdFromRequest(req);
-        return this.lifeAreasService.archiveLifeArea(id, userId);
-    }
+  @Patch(":id")
+  async updateLifeArea(
+    @Param("id") id: string,
+    @Body() data: UpdateLifeAreaDto,
+    @Req() req: Request,
+  ) {
+    const userId = this.getUserIdFromRequest(req);
+    return this.lifeAreasService.updateLifeArea(id, userId, data);
+  }
 
-    @Post(':id/restore')
-    async restoreLifeArea(
-        @Param('id') id: string,
-        @Req() req: Request,
-    ) {
-        const userId = this.getUserIdFromRequest(req);
-        return this.lifeAreasService.restoreLifeArea(id, userId);
-    }
+  @Delete(":id")
+  async archiveLifeArea(@Param("id") id: string, @Req() req: Request) {
+    const userId = this.getUserIdFromRequest(req);
+    return this.lifeAreasService.archiveLifeArea(id, userId);
+  }
 
-    @Post('reorder')
-    async reorderLifeAreas(
-        @Body() body: { orderedIds: string[] },
-        @Req() req: Request,
-    ) {
-        const userId = this.getUserIdFromRequest(req);
-        return this.lifeAreasService.reorderLifeAreas(userId, body.orderedIds);
-    }
+  @Post(":id/restore")
+  async restoreLifeArea(@Param("id") id: string, @Req() req: Request) {
+    const userId = this.getUserIdFromRequest(req);
+    return this.lifeAreasService.restoreLifeArea(id, userId);
+  }
+
+  @Post("reorder")
+  async reorderLifeAreas(
+    @Body() body: { orderedIds: string[] },
+    @Req() req: Request,
+  ) {
+    const userId = this.getUserIdFromRequest(req);
+    return this.lifeAreasService.reorderLifeAreas(userId, body.orderedIds);
+  }
 }

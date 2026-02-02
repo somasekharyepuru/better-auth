@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Breadcrumb, BREADCRUMB_ROUTES } from "@/components/ui/breadcrumb";
 import {
   Shield,
   Smartphone,
@@ -20,6 +21,7 @@ import {
   EyeOff,
   Copy,
   ChevronRight,
+  User,
 } from "lucide-react";
 import { QRCodeComponent } from "@/components/ui/qr-code";
 
@@ -55,7 +57,9 @@ export default function TwoFactorPage() {
   const [showSetup, setShowSetup] = useState(false);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [passwordAction, setPasswordAction] = useState<"enable" | "disable">("enable");
+  const [passwordAction, setPasswordAction] = useState<"enable" | "disable">(
+    "enable",
+  );
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -121,7 +125,9 @@ export default function TwoFactorPage() {
       });
 
       if (result.error) {
-        setError(result.error.message || "Failed to enable two-factor authentication");
+        setError(
+          result.error.message || "Failed to enable two-factor authentication",
+        );
         return;
       }
 
@@ -188,7 +194,9 @@ export default function TwoFactorPage() {
       });
 
       if (result.error) {
-        setError(result.error.message || "Failed to disable two-factor authentication");
+        setError(
+          result.error.message || "Failed to disable two-factor authentication",
+        );
         return;
       }
 
@@ -223,7 +231,7 @@ export default function TwoFactorPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
         <Spinner size="lg" />
       </div>
     );
@@ -234,40 +242,57 @@ export default function TwoFactorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       <main className="max-w-2xl mx-auto px-6 py-12">
+        {/* Breadcrumb */}
+        <Breadcrumb
+          items={[
+            BREADCRUMB_ROUTES.dashboard,
+            {
+              label: "Profile",
+              href: "/profile",
+              icon: <User className="w-3.5 h-3.5" />,
+            },
+            {
+              label: "Two-Factor Authentication",
+              icon: <Shield className="w-3.5 h-3.5" />,
+            },
+          ]}
+          className="mb-8"
+        />
+
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Shield className="w-8 h-8 text-gray-600" />
+          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Shield className="w-8 h-8 text-gray-600 dark:text-gray-400" />
           </div>
-          <h1 className="text-2xl font-semibold text-gray-900">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
             Two-Factor Authentication
           </h1>
-          <p className="text-gray-500 mt-2">
+          <p className="text-gray-500 dark:text-gray-400 mt-2">
             Add an extra layer of security to your account
           </p>
         </div>
 
         {/* Status Section */}
         <section className="mb-8">
-          <div className="bg-gray-50 rounded-2xl p-6">
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 {twoFactorStatus.enabled ? (
-                  <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                    <CheckCircle className="w-6 h-6 text-green-600" />
+                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+                    <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
                   </div>
                 ) : (
-                  <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
-                    <AlertTriangle className="w-6 h-6 text-amber-600" />
+                  <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center">
+                    <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                   </div>
                 )}
                 <div>
-                  <p className="font-medium text-gray-900">
+                  <p className="font-medium text-gray-900 dark:text-white">
                     {twoFactorStatus.enabled ? "Enabled" : "Not enabled"}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {twoFactorStatus.enabled
                       ? "Your account is protected"
                       : "Your account is less secure"}
@@ -275,7 +300,11 @@ export default function TwoFactorPage() {
                 </div>
               </div>
               <Button
-                onClick={twoFactorStatus.enabled ? handleDisableTwoFactor : handleEnableTwoFactor}
+                onClick={
+                  twoFactorStatus.enabled
+                    ? handleDisableTwoFactor
+                    : handleEnableTwoFactor
+                }
                 variant={twoFactorStatus.enabled ? "outline" : "default"}
                 disabled={isEnabling || isDisabling}
               >
@@ -294,20 +323,20 @@ export default function TwoFactorPage() {
         {/* Password Prompt */}
         {showPasswordPrompt && (
           <section className="mb-8">
-            <div className="bg-gray-50 rounded-2xl p-6">
-              <h3 className="font-medium text-gray-900 mb-4">
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
+              <h3 className="font-medium text-gray-900 dark:text-white mb-4">
                 Confirm your password
               </h3>
               <form
                 onSubmit={handleSubmitPassword(
                   passwordAction === "enable"
                     ? handleEnableTwoFactorWithPassword
-                    : handleDisableTwoFactorWithPassword
+                    : handleDisableTwoFactorWithPassword,
                 )}
                 className="space-y-4"
               >
                 {error && (
-                  <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl">
+                  <div className="p-4 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl">
                     {error}
                   </div>
                 )}
@@ -319,10 +348,14 @@ export default function TwoFactorPage() {
                   />
                   <button
                     type="button"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
                   </button>
                   {passwordErrors.password && (
                     <p className="mt-2 text-sm text-red-500">
@@ -331,7 +364,11 @@ export default function TwoFactorPage() {
                   )}
                 </div>
                 <div className="flex gap-3">
-                  <Button type="submit" className="flex-1" disabled={isEnabling || isDisabling}>
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                    disabled={isEnabling || isDisabling}
+                  >
                     {isEnabling || isDisabling ? "Processing..." : "Continue"}
                   </Button>
                   <Button
@@ -357,35 +394,52 @@ export default function TwoFactorPage() {
         {showSetup && (
           <section className="mb-8 space-y-6">
             {/* QR Code */}
-            <div className="bg-gray-50 rounded-2xl p-6">
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
-                  <Smartphone className="w-5 h-5 text-gray-600" />
+                <div className="w-10 h-10 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center">
+                  <Smartphone className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900">Scan QR Code</h3>
-                  <p className="text-sm text-gray-500">Use your authenticator app</p>
+                  <h3 className="font-medium text-gray-900 dark:text-white">
+                    Scan QR Code
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Use your authenticator app
+                  </p>
                 </div>
               </div>
 
               {qrCodeUrl && (
-                <div className="flex justify-center p-6 bg-white rounded-xl mb-4">
-                  <QRCodeComponent value={qrCodeUrl} size={180} className="w-44 h-44" />
+                <div className="flex justify-center p-6 bg-white dark:bg-gray-700 rounded-xl mb-4">
+                  <QRCodeComponent
+                    value={qrCodeUrl}
+                    size={180}
+                    className="w-44 h-44"
+                  />
                 </div>
               )}
 
-              <div className="bg-white rounded-xl p-4">
-                <p className="text-xs text-gray-500 mb-2">Manual entry key:</p>
-                <code className="text-sm font-mono break-all text-gray-900">{secret}</code>
+              <div className="bg-white dark:bg-gray-700 rounded-xl p-4">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                  Manual entry key:
+                </p>
+                <code className="text-sm font-mono break-all text-gray-900 dark:text-white">
+                  {secret}
+                </code>
               </div>
             </div>
 
             {/* Verification */}
-            <div className="bg-gray-50 rounded-2xl p-6">
-              <h3 className="font-medium text-gray-900 mb-4">Enter verification code</h3>
-              <form onSubmit={handleSubmit(handleVerifyAndEnable)} className="space-y-4">
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
+              <h3 className="font-medium text-gray-900 dark:text-white mb-4">
+                Enter verification code
+              </h3>
+              <form
+                onSubmit={handleSubmit(handleVerifyAndEnable)}
+                className="space-y-4"
+              >
                 {error && (
-                  <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl">
+                  <div className="p-4 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl">
                     {error}
                   </div>
                 )}
@@ -409,26 +463,38 @@ export default function TwoFactorPage() {
         {/* Backup Codes */}
         {backupCodes.length > 0 && (
           <section className="mb-8">
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6">
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-6">
               <div className="flex items-start gap-3 mb-4">
-                <Key className="w-5 h-5 text-amber-600 mt-0.5" />
+                <Key className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" />
                 <div>
-                  <h3 className="font-medium text-amber-900">Save your backup codes</h3>
-                  <p className="text-sm text-amber-700 mt-1">
-                    Store these codes safely. You can use them if you lose access to your authenticator.
+                  <h3 className="font-medium text-amber-900 dark:text-amber-200">
+                    Save your backup codes
+                  </h3>
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                    Store these codes safely. You can use them if you lose
+                    access to your authenticator.
                   </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2 mb-4">
                 {backupCodes.map((code, index) => (
-                  <div key={index} className="bg-white/60 p-3 rounded-xl">
-                    <code className="text-sm font-mono">{code}</code>
+                  <div
+                    key={index}
+                    className="bg-white/60 dark:bg-amber-900/30 p-3 rounded-xl"
+                  >
+                    <code className="text-sm font-mono text-amber-900 dark:text-amber-200">
+                      {code}
+                    </code>
                   </div>
                 ))}
               </div>
 
-              <Button variant="outline" onClick={copyBackupCodes} className="w-full">
+              <Button
+                variant="outline"
+                onClick={copyBackupCodes}
+                className="w-full"
+              >
                 <Copy className="w-4 h-4 mr-2" />
                 Copy all codes
               </Button>
@@ -438,21 +504,34 @@ export default function TwoFactorPage() {
 
         {/* How it works */}
         <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
+          <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">
             How it works
           </h2>
-          <div className="bg-gray-50 rounded-2xl divide-y divide-gray-200">
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl divide-y divide-gray-200 dark:divide-gray-700">
             {[
-              { step: "1", text: "Install an authenticator app like Google Authenticator or Authy" },
-              { step: "2", text: "Scan the QR code or enter the setup key manually" },
+              {
+                step: "1",
+                text: "Install an authenticator app like Google Authenticator or Authy",
+              },
+              {
+                step: "2",
+                text: "Scan the QR code or enter the setup key manually",
+              },
               { step: "3", text: "Enter the 6-digit code when signing in" },
-              { step: "4", text: "Keep your backup codes safe for emergencies" },
+              {
+                step: "4",
+                text: "Keep your backup codes safe for emergencies",
+              },
             ].map((item) => (
               <div key={item.step} className="flex items-center gap-4 p-4">
-                <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center shrink-0">
-                  <span className="text-white text-sm font-medium">{item.step}</span>
+                <div className="w-8 h-8 bg-gray-900 dark:bg-gray-700 rounded-full flex items-center justify-center shrink-0">
+                  <span className="text-white text-sm font-medium">
+                    {item.step}
+                  </span>
                 </div>
-                <p className="text-sm text-gray-600">{item.text}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  {item.text}
+                </p>
               </div>
             ))}
           </div>

@@ -1,5 +1,18 @@
-import { IsString, IsEnum, IsOptional, IsBoolean, IsNumber, Min, Max } from 'class-validator';
-import { CalendarProvider, SyncDirection, PrivacyMode, ConflictStrategy } from '@prisma/client';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsBoolean,
+  IsNumber,
+  Min,
+  Max,
+} from "class-validator";
+import {
+  CalendarProvider,
+  SyncDirection,
+  PrivacyMode,
+  ConflictStrategy,
+} from "@prisma/client";
 
 export class InitiateConnectionDto {
   @IsEnum(CalendarProvider)
@@ -104,8 +117,8 @@ export class UpdateCalendarSettingsDto {
 }
 
 export class ResolveConflictDto {
-  @IsEnum(['local', 'remote', 'merge'] as const)
-  resolution!: 'local' | 'remote' | 'merge';
+  @IsEnum(["local", "remote", "merge"] as const)
+  resolution!: "local" | "remote" | "merge";
 
   @IsOptional()
   @IsString()
