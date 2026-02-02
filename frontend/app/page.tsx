@@ -9,6 +9,7 @@ import { SettingsProvider } from "@/lib/settings-context";
 import { LifeAreasProvider } from "@/lib/life-areas-context";
 import { FocusProvider } from "@/lib/focus-context";
 import { FloatingFocusTimer } from "@/components/focus/floating-focus-timer";
+import { ThemeSyncer } from "@/components/theme-syncer";
 
 interface User {
   id: string;
@@ -77,7 +78,7 @@ export default function HomePage() {
   // Otherwise show minimal loading
   if (isCheckingAuth && !cachedAuth) {
     return (
-      <div className="min-h-screen bg-white" />
+      <div className="min-h-screen bg-white dark:bg-gray-900" />
     );
   }
 
@@ -85,6 +86,7 @@ export default function HomePage() {
   if (user) {
     return (
       <SettingsProvider>
+        <ThemeSyncer />
         <LifeAreasProvider>
           <FocusProvider>
             <AppHeader />

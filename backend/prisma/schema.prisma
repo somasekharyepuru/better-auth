@@ -345,6 +345,9 @@ model UserSettings {
   id     String @id @default(cuid())
   userId String @unique
 
+  // Theme Preferences
+  theme String @default("system") // "light", "dark", or "system"
+
   // Dashboard Preferences
   maxTopPriorities   Int @default(3) // 1-5
   maxDiscussionItems Int @default(3) // 0-5

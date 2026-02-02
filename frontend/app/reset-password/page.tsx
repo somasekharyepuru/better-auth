@@ -121,11 +121,11 @@ function ResetPasswordContent() {
     return (
       <AuthLayout title="Password updated">
         <div className="text-center space-y-8">
-          <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto">
-            <CheckCircle className="w-8 h-8 text-green-600" />
+          <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center mx-auto">
+            <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
           <div className="space-y-2">
-            <p className="text-gray-500">
+            <p className="text-gray-500 dark:text-gray-400">
               Your password has been reset successfully.
             </p>
           </div>
@@ -142,7 +142,7 @@ function ResetPasswordContent() {
       <div className="space-y-6">
         <Link
           href="/forgot-password"
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 transition-colors"
+          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
@@ -150,25 +150,25 @@ function ResetPasswordContent() {
 
         {/* Email indicator */}
         {email && (
-          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+          <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
             <Mail className="w-5 h-5 text-gray-400" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-500">Code sent to</p>
-              <p className="text-sm font-medium text-gray-900 truncate">{email}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Code sent to</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{email}</p>
             </div>
           </div>
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {error && (
-            <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl">
+            <div className="p-4 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl">
               {error}
             </div>
           )}
 
           {/* OTP Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Verification code
             </label>
             <Input
@@ -185,7 +185,7 @@ function ResetPasswordContent() {
               type="button"
               onClick={handleResendCode}
               disabled={isResending || !email}
-              className="mt-2 text-sm text-gray-500 hover:text-gray-900 disabled:opacity-50"
+              className="mt-2 text-sm text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 disabled:opacity-50"
             >
               {isResending ? "Sending..." : "Didn't receive code? Resend"}
             </button>
@@ -193,7 +193,7 @@ function ResetPasswordContent() {
 
           {/* New Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               New password
             </label>
             <div className="relative">
@@ -205,7 +205,7 @@ function ResetPasswordContent() {
               />
               <button
                 type="button"
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
@@ -224,7 +224,7 @@ function ResetPasswordContent() {
 
           {/* Confirm Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Confirm password
             </label>
             <div className="relative">
@@ -236,7 +236,7 @@ function ResetPasswordContent() {
               />
               <button
                 type="button"
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               >
                 {showConfirmPassword ? (

@@ -766,7 +766,15 @@ function ProfilePageContent() {
                     {["light", "dark", "system"].map((mode) => (
                       <button
                         key={mode}
-                        onClick={() => setTheme(mode)}
+                        onClick={async () => {
+                          setTheme(mode);
+                          // Save theme preference to backend
+                          try {
+                            await updateSettings({ theme: mode });
+                          } catch (err) {
+                            console.error("Failed to save theme preference:", err);
+                          }
+                        }}
                         className={`
                           flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all border
                           ${

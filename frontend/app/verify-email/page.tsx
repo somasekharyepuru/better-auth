@@ -116,10 +116,10 @@ function VerifyEmailContent() {
     return (
       <AuthLayout title="Email verified!">
         <div className="text-center space-y-8">
-          <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto">
-            <CheckCircle className="w-8 h-8 text-green-600" />
+          <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center mx-auto">
+            <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-gray-400">
             Your email has been verified. Redirecting you to sign in...
           </p>
           <Button onClick={() => router.push("/login")} className="w-full">
@@ -135,25 +135,25 @@ function VerifyEmailContent() {
       <div className="space-y-6">
         <Link
           href="/signup"
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 transition-colors"
+          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Link>
 
         <div className="text-center space-y-4">
-          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto">
-            <Mail className="w-8 h-8 text-gray-600" />
+          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto">
+            <Mail className="w-8 h-8 text-gray-600 dark:text-gray-400" />
           </div>
           <div className="space-y-2">
-            <p className="text-gray-500">We sent a verification code to:</p>
-            <p className="font-medium text-gray-900">{email}</p>
+            <p className="text-gray-500 dark:text-gray-400">We sent a verification code to:</p>
+            <p className="font-medium text-gray-900 dark:text-white">{email}</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {error && (
-            <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl">
+            <div className="p-4 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl">
               {error}
             </div>
           )}
@@ -184,11 +184,11 @@ function VerifyEmailContent() {
         </form>
 
         <div className="text-center">
-          <span className="text-gray-500">Didn't receive the code? </span>
+          <span className="text-gray-500 dark:text-gray-400">Didn't receive the code? </span>
           <button
             onClick={handleResendOTP}
             disabled={isResending}
-            className="text-gray-900 font-medium hover:underline disabled:opacity-50"
+            className="text-gray-900 dark:text-white font-medium hover:underline disabled:opacity-50"
           >
             {isResending ? "Sending..." : "Resend"}
           </button>

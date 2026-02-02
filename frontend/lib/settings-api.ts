@@ -4,6 +4,7 @@ const API_BASE = process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:3002';
 export interface UserSettings {
     id: string;
     userId: string;
+    theme: string;
     maxTopPriorities: number;
     maxDiscussionItems: number;
     enabledSections: string[];
@@ -25,6 +26,7 @@ export interface UserSettings {
 }
 
 export interface UpdateSettingsDto {
+    theme?: string;
     maxTopPriorities?: number;
     maxDiscussionItems?: number;
     enabledSections?: string[];
@@ -49,6 +51,7 @@ export interface UpdateSettingsDto {
 export const DEFAULT_SETTINGS: UserSettings = {
     id: '',
     userId: '',
+    theme: 'system',
     maxTopPriorities: 3,
     maxDiscussionItems: 3,
     enabledSections: ['priorities', 'discussion', 'schedule', 'notes', 'progress', 'review'],

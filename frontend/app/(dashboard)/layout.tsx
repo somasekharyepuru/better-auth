@@ -4,6 +4,7 @@ import { LifeAreasProvider } from "@/lib/life-areas-context";
 import { FocusProvider } from "@/lib/focus-context";
 import { TimeBlockTypesProvider } from "@/lib/time-block-types-context";
 import { FloatingFocusTimer } from "@/components/focus/floating-focus-timer";
+import { ThemeSyncer } from "@/components/theme-syncer";
 
 export default function DashboardLayout({
   children,
@@ -12,6 +13,7 @@ export default function DashboardLayout({
 }) {
   return (
     <SettingsProvider>
+      <ThemeSyncer />
       <TimeBlockTypesProvider>
         <LifeAreasProvider>
           <FocusProvider>

@@ -98,21 +98,21 @@ function Verify2FAContent() {
       <div className="space-y-6">
         <Link
           href="/login"
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 transition-colors"
+          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to sign in
         </Link>
 
         <div className="flex justify-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center">
-            <Shield className="w-8 h-8 text-gray-600" />
+          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center">
+            <Shield className="w-8 h-8 text-gray-600 dark:text-gray-400" />
           </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {error && (
-            <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl">
+            <div className="p-4 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl">
               {error}
             </div>
           )}
@@ -147,7 +147,7 @@ function Verify2FAContent() {
           <button
             type="button"
             onClick={() => setUseBackupCode(!useBackupCode)}
-            className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
+            className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
           >
             {useBackupCode
               ? "Use authenticator app instead"
@@ -155,14 +155,14 @@ function Verify2FAContent() {
           </button>
         </div>
 
-        <div className="bg-gray-50 rounded-xl p-4">
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
           <div className="flex items-start gap-3">
             <Shield className="w-5 h-5 text-gray-400 mt-0.5 shrink-0" />
             <div>
-              <h4 className="text-sm font-medium text-gray-900">
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white">
                 Security tip
               </h4>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {useBackupCode
                   ? "Each backup code can only be used once. Keep your remaining codes safe."
                   : "Open your authenticator app and enter the 6-digit code. Codes refresh every 30 seconds."}

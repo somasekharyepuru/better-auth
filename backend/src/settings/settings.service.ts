@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 
 export interface UpdateSettingsDto {
+  theme?: string;
   maxTopPriorities?: number;
   maxDiscussionItems?: number;
   enabledSections?: string[];
@@ -28,6 +29,7 @@ export interface UpdateSettingsDto {
 export interface UserSettingsResponse {
   id: string;
   userId: string;
+  theme: string;
   maxTopPriorities: number;
   maxDiscussionItems: number;
   enabledSections: string[];
@@ -79,6 +81,13 @@ export class SettingsService {
     userId: string,
     data: UpdateSettingsDto,
   ): Promise<UserSettingsResponse> {
+    // Validate theme
+    if (data.theme !== undefined) {
+      const validThemes = ["light", "dark", "system"];
+      if (!validThemes.includes(data.theme)) {
+        data.theme = "system";
+      }
+    }
     // Validate limits
     if (data.maxTopPriorities !== undefined) {
       data.maxTopPriorities = Math.max(1, Math.min(5, data.maxTopPriorities));
@@ -144,6 +153,7 @@ export class SettingsService {
     return {
       id: settings.id,
       userId: settings.userId,
+      theme: settings.theme,
       maxTopPriorities: settings.maxTopPriorities,
       maxDiscussionItems: settings.maxDiscussionItems,
       enabledSections: JSON.parse(settings.enabledSections),
