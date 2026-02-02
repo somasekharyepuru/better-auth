@@ -323,22 +323,28 @@ export class CalendarSyncService {
     // Skip if this event is a Daymark-created blocking event (has [Focus] prefix)
     // This prevents infinite loops where blocking events create more blocking events
     if (event.title?.startsWith("[Focus]")) {
-      this.logger.debug(
+      this.logger.log(
         `Skipping blocking event creation for Daymark focus event: ${event.title}`,
       );
       return;
     }
 
     // Also skip if the description indicates it's a Daymark blocking event
-    if (
-      event.description?.includes("Focus time blocked by Daymark") ||
-      event.description?.includes("Blocked time from another calendar")
-    ) {
-      this.logger.debug(
+    // But only skip events with EXACT Daymark descriptions (not user events)
+    const isDaymarkBlockingEvent =
+      event.description === "Focus time blocked by Daymark - please do not schedule during this time" ||
+      event.description === "Blocked time from another calendar";
+    
+    if (isDaymarkBlockingEvent) {
+      this.logger.log(
         `Skipping blocking event creation for existing blocking event: ${event.title}`,
       );
       return;
     }
+
+    this.logger.log(
+      `Will create blocking events for event: "${event.title}" (description: "${event.description?.substring(0, 50) || 'none'}")`,
+    );
 
     this.logger.log(
       `Looking for other calendars: userId=${userId}, excludeSourceId=${sourceCalendarSourceId}`,
