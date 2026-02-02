@@ -1,4 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
+import { ConnectionStatus, SyncDirection } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CalendarProviderFactory } from "../providers/calendar-provider.factory";
 import { CalendarTokenService } from "./calendar-token.service";
@@ -37,17 +38,21 @@ export class ExternalBlockingService {
     const blockedCalendars: string[] = [];
     const errors: string[] = [];
 
+    this.logger.log(
+      `Creating blocking events for user ${userId}, timeBlock ${timeBlockId}`,
+    );
+
     // Get all writable calendar sources for this user
     const sources = await this.prisma.calendarSource.findMany({
       where: {
         connection: {
           userId,
           enabled: true,
-          status: "ACTIVE",
+          status: ConnectionStatus.ACTIVE,
         },
         syncEnabled: true,
         syncDirection: {
-          in: ["BIDIRECTIONAL", "WRITE_ONLY"],
+          in: [SyncDirection.BIDIRECTIONAL, SyncDirection.WRITE_ONLY],
         },
       },
       include: {
@@ -60,6 +65,30 @@ export class ExternalBlockingService {
         },
       },
     });
+
+    this.logger.log(
+      `Found ${sources.length} writable calendar sources for user ${userId}`,
+    );
+
+    if (sources.length === 0) {
+      // Log why no sources were found - check user's connections
+      const allConnections = await this.prisma.calendarConnection.findMany({
+        where: { userId },
+        select: { id: true, enabled: true, status: true, provider: true },
+      });
+      const allSources = await this.prisma.calendarSource.findMany({
+        where: { connection: { userId } },
+        select: {
+          id: true,
+          syncEnabled: true,
+          syncDirection: true,
+          name: true,
+        },
+      });
+      this.logger.warn(
+        `No writable sources found. Connections: ${JSON.stringify(allConnections)}, Sources: ${JSON.stringify(allSources)}`,
+      );
+    }
 
     // Create a "busy" event on each writable source
     for (const source of sources) {

@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
   BadRequestException,
@@ -64,6 +65,8 @@ export interface StartStandaloneInput {
 
 @Injectable()
 export class FocusSessionService {
+  private readonly logger = new Logger(FocusSessionService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly externalBlockingService: ExternalBlockingService,
@@ -416,6 +419,9 @@ export class FocusSessionService {
     });
 
     // Create blocking events on external calendars if enabled
+    this.logger.log(
+      `Focus session created for user ${userId}, blockCalendar: ${blockCalendar}, timeBlockId: ${timeBlock.id}`,
+    );
     if (blockCalendar) {
       this.externalBlockingService
         .createBlockingEvents(
@@ -425,9 +431,14 @@ export class FocusSessionService {
           now,
           endTime,
         )
-        .catch((err) =>
-          console.error("Failed to create calendar blocking events:", err),
-        );
+        .then((result) => {
+          this.logger.log(
+            `Calendar blocking result: success=${result.success}, blocked=${result.blockedCalendars.join(", ")}, errors=${result.errors.join(", ")}`,
+          );
+        })
+        .catch((err) => {
+          this.logger.error("Failed to create calendar blocking events:", err);
+        });
     }
 
     // Create the focus session
@@ -561,10 +572,13 @@ export class FocusSessionService {
     });
 
     // Create blocking events on external calendars if enabled (only for focus sessions)
-    if (
+    const shouldBlock =
       blockCalendar &&
-      (input.sessionType === "focus" || !input.sessionType)
-    ) {
+      (input.sessionType === "focus" || !input.sessionType);
+    this.logger.log(
+      `Standalone focus session created for user ${userId}, shouldBlock: ${shouldBlock}, timeBlockId: ${timeBlock.id}`,
+    );
+    if (shouldBlock) {
       this.externalBlockingService
         .createBlockingEvents(
           userId,
@@ -573,9 +587,14 @@ export class FocusSessionService {
           now,
           endTime,
         )
-        .catch((err) =>
-          console.error("Failed to create calendar blocking events:", err),
-        );
+        .then((result) => {
+          this.logger.log(
+            `Calendar blocking result: success=${result.success}, blocked=${result.blockedCalendars.join(", ")}, errors=${result.errors.join(", ")}`,
+          );
+        })
+        .catch((err) => {
+          this.logger.error("Failed to create calendar blocking events:", err);
+        });
     }
 
     // Create the focus session
