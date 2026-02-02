@@ -4,7 +4,12 @@ import {
   NotFoundException,
   ForbiddenException,
 } from "@nestjs/common";
-import { CalendarProvider, EventSyncStatus } from "@prisma/client";
+import {
+  CalendarProvider,
+  ConnectionStatus,
+  EventSyncStatus,
+  SyncDirection,
+} from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CalendarProviderFactory } from "../providers/calendar-provider.factory";
 import { CalendarTokenService } from "./calendar-token.service";
@@ -92,11 +97,11 @@ export class CalendarEventsService {
         connection: {
           userId,
           enabled: true,
-          status: "ACTIVE",
+          status: ConnectionStatus.ACTIVE,
         },
         syncEnabled: true,
         syncDirection: {
-          in: ["BIDIRECTIONAL", "WRITE_ONLY"],
+          in: [SyncDirection.BIDIRECTIONAL, SyncDirection.WRITE_ONLY],
         },
       },
       include: {
@@ -255,7 +260,10 @@ export class CalendarEventsService {
       throw new ForbiddenException("Access denied to this calendar source");
     }
 
-    if (!["BIDIRECTIONAL", "WRITE_ONLY"].includes(source.syncDirection)) {
+    if (
+      source.syncDirection !== SyncDirection.BIDIRECTIONAL &&
+      source.syncDirection !== SyncDirection.WRITE_ONLY
+    ) {
       throw new ForbiddenException("This calendar is read-only");
     }
 
@@ -445,7 +453,10 @@ export class CalendarEventsService {
     if (mapping && mapping.externalEventId && mapping.calendarSource) {
       const source = mapping.calendarSource;
 
-      if (["BIDIRECTIONAL", "WRITE_ONLY"].includes(source.syncDirection)) {
+      if (
+        source.syncDirection === SyncDirection.BIDIRECTIONAL ||
+        source.syncDirection === SyncDirection.WRITE_ONLY
+      ) {
         try {
           const accessToken = await this.tokenService.getValidToken(
             source.connection.id,
@@ -558,7 +569,10 @@ export class CalendarEventsService {
     if (mapping && mapping.externalEventId && mapping.calendarSource) {
       const source = mapping.calendarSource;
 
-      if (["BIDIRECTIONAL", "WRITE_ONLY"].includes(source.syncDirection)) {
+      if (
+        source.syncDirection === SyncDirection.BIDIRECTIONAL ||
+        source.syncDirection === SyncDirection.WRITE_ONLY
+      ) {
         try {
           const accessToken = await this.tokenService.getValidToken(
             source.connection.id,
