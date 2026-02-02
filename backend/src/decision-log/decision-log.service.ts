@@ -21,9 +21,34 @@ export interface UpdateDecisionDto {
   context?: string;
   decision?: string;
   outcome?: string;
+  lifeAreaId?: string | null;
   // Focus Suite v2: Linkage fields
   eisenhowerTaskId?: string | null;
   priorityId?: string | null;
+}
+
+// Query parameters for fetching decisions
+export interface DecisionQueryParams {
+  search?: string;
+  lifeAreaId?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+// Paginated response type
+export interface PaginatedDecisionsResponse {
+  data: DecisionWithRelations[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
 }
 
 // Focus Suite v2: Response type with relations
@@ -54,26 +79,76 @@ export class DecisionLogService {
 
   async getAllDecisions(
     userId: string,
-    search?: string,
-    lifeAreaId?: string,
-  ): Promise<DecisionWithRelations[]> {
+    params: DecisionQueryParams = {},
+  ): Promise<PaginatedDecisionsResponse> {
+    const {
+      search,
+      lifeAreaId,
+      page = 1,
+      limit = 10,
+      sortBy = "date",
+      sortOrder = "desc",
+      dateFrom,
+      dateTo,
+    } = params;
+
     const where: any = { userId };
 
-    if (search) {
-      where.OR = [
-        { title: { contains: search, mode: "insensitive" } },
-        { context: { contains: search, mode: "insensitive" } },
-        { decision: { contains: search, mode: "insensitive" } },
-      ];
+    // Date range filtering - must come before search to avoid conflict
+    if (dateFrom || dateTo) {
+      where.date = {};
+      if (dateFrom) {
+        where.date.gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        // Set to end of day to include the full dateTo day
+        const endDate = new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        where.date.lte = endDate;
+      }
     }
 
     if (lifeAreaId) {
       where.lifeAreaId = lifeAreaId;
     }
 
-    return this.prisma.decisionEntry.findMany({
+    if (search) {
+      where.AND = [
+        {
+          OR: [
+            { title: { contains: search, mode: "insensitive" } },
+            { context: { contains: search, mode: "insensitive" } },
+            { decision: { contains: search, mode: "insensitive" } },
+            { outcome: { contains: search, mode: "insensitive" } },
+          ],
+        },
+      ];
+    }
+
+    // Get total count for pagination
+    const total = await this.prisma.decisionEntry.count({ where });
+
+    // Build sort order
+    const orderBy: any = {};
+    if (sortBy === "date") {
+      orderBy.date = sortOrder;
+    } else if (sortBy === "title") {
+      orderBy.title = sortOrder;
+    } else if (sortBy === "createdAt") {
+      orderBy.createdAt = sortOrder;
+    } else {
+      orderBy.date = sortOrder;
+    }
+
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+    const totalPages = Math.ceil(total / limit);
+
+    const data = await this.prisma.decisionEntry.findMany({
       where,
-      orderBy: { date: "desc" },
+      orderBy,
+      skip,
+      take: limit,
       include: {
         lifeArea: { select: { id: true, name: true, color: true } },
         eisenhowerTask: { select: { id: true, title: true, quadrant: true } },
@@ -87,6 +162,17 @@ export class DecisionLogService {
         },
       },
     });
+
+    return {
+      data,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasMore: page < totalPages,
+      },
+    };
   }
 
   async getDecision(
@@ -165,6 +251,8 @@ export class DecisionLogService {
     if (data.context !== undefined) updateData.context = data.context;
     if (data.decision !== undefined) updateData.decision = data.decision;
     if (data.outcome !== undefined) updateData.outcome = data.outcome;
+    // Life area update
+    if (data.lifeAreaId !== undefined) updateData.lifeAreaId = data.lifeAreaId;
     // Focus Suite v2: Linkage updates
     if (data.eisenhowerTaskId !== undefined)
       updateData.eisenhowerTaskId = data.eisenhowerTaskId;

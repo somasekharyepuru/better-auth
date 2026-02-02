@@ -30,9 +30,28 @@ export class DecisionLogController {
   }
 
   @Get()
-  async getAllDecisions(@Query("search") search: string, @Req() req: Request) {
+  async getAllDecisions(
+    @Query("search") search: string,
+    @Query("lifeAreaId") lifeAreaId: string,
+    @Query("page") page: string,
+    @Query("limit") limit: string,
+    @Query("sortBy") sortBy: string,
+    @Query("sortOrder") sortOrder: string,
+    @Query("dateFrom") dateFrom: string,
+    @Query("dateTo") dateTo: string,
+    @Req() req: Request,
+  ) {
     const userId = this.getUserIdFromRequest(req);
-    return this.decisionLogService.getAllDecisions(userId, search);
+    return this.decisionLogService.getAllDecisions(userId, {
+      search,
+      lifeAreaId,
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 10,
+      sortBy: sortBy || "date",
+      sortOrder: (sortOrder as "asc" | "desc") || "desc",
+      dateFrom,
+      dateTo,
+    });
   }
 
   @Get(":id")
