@@ -387,6 +387,29 @@ model UserSettings {
 }
 
 // ==========================================
+// User Time Block Types - Customizable block types
+// ==========================================
+
+model TimeBlockType {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   // e.g., "Deep Work", "Meeting", "Personal"
+  color     String   @default("#6366F1") // Hex color code
+  icon      String?  // Optional icon identifier
+  isDefault Boolean  @default(false) // Whether this is a system default type
+  isActive  Boolean  @default(true) // Whether the type is active/visible
+  order     Int      @default(0) // Display order
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@index([isDefault])
+  @@map("time_block_type")
+}
+
+// ==========================================
 // Tools - Eisenhower Matrix
 // ==========================================
 

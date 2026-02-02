@@ -18,7 +18,7 @@ import { Request } from "express";
 
 @Controller("api/life-areas")
 export class LifeAreasController {
-  constructor(private lifeAreasService: LifeAreasService) {}
+  constructor(private lifeAreasService: LifeAreasService) { }
 
   /**
    * Get user ID from request (set by auth middleware)
@@ -41,6 +41,12 @@ export class LifeAreasController {
   async getDefaultLifeArea(@Req() req: Request) {
     const userId = this.getUserIdFromRequest(req);
     return this.lifeAreasService.getDefaultLifeArea(userId);
+  }
+
+  @Get(":id/pending-items")
+  async getPendingItemsCount(@Param("id") id: string, @Req() req: Request) {
+    const userId = this.getUserIdFromRequest(req);
+    return this.lifeAreasService.getPendingItemsCount(id, userId);
   }
 
   @Get(":id")

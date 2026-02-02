@@ -248,7 +248,7 @@ export function DashboardContent({ user }: DashboardContentProps) {
           {/* Secondary Toolbar: Life Areas + Actions */}
           <div className="flex items-center justify-between py-2 border-t border-gray-200 dark:border-gray-700">
             {/* Life Area Tabs */}
-            <LifeAreaSelector />
+            <LifeAreaSelector showSettings />
 
             {/* Actions */}
             <div className="flex items-center gap-2">

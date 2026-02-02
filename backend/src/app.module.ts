@@ -12,6 +12,7 @@ import { DaysModule } from "./days/days.module";
 import { PrioritiesModule } from "./priorities/priorities.module";
 import { DiscussionItemsModule } from "./discussion-items/discussion-items.module";
 import { TimeBlocksModule } from "./time-blocks/time-blocks.module";
+import { TimeBlockTypesModule } from "./time-block-types/time-block-types.module";
 import { QuickNotesModule } from "./quick-notes/quick-notes.module";
 import { DailyReviewModule } from "./daily-review/daily-review.module";
 import { SettingsModule } from "./settings/settings.module";
@@ -53,6 +54,7 @@ import { AuthMiddleware } from "./auth/auth.middleware";
     PrioritiesModule,
     DiscussionItemsModule,
     TimeBlocksModule,
+    TimeBlockTypesModule,
     QuickNotesModule,
     DailyReviewModule,
     SettingsModule,

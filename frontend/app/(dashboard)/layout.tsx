@@ -2,6 +2,7 @@ import { AppHeader } from "@/components/app-header";
 import { SettingsProvider } from "@/lib/settings-context";
 import { LifeAreasProvider } from "@/lib/life-areas-context";
 import { FocusProvider } from "@/lib/focus-context";
+import { TimeBlockTypesProvider } from "@/lib/time-block-types-context";
 import { FloatingFocusTimer } from "@/components/focus/floating-focus-timer";
 
 export default function DashboardLayout({
@@ -11,14 +12,15 @@ export default function DashboardLayout({
 }) {
   return (
     <SettingsProvider>
-      <LifeAreasProvider>
-        <FocusProvider>
-          <AppHeader />
-          <div className="pt-16">{children}</div>
-          <FloatingFocusTimer />
-        </FocusProvider>
-      </LifeAreasProvider>
+      <TimeBlockTypesProvider>
+        <LifeAreasProvider>
+          <FocusProvider>
+            <AppHeader />
+            <div className="pt-16">{children}</div>
+            <FloatingFocusTimer />
+          </FocusProvider>
+        </LifeAreasProvider>
+      </TimeBlockTypesProvider>
     </SettingsProvider>
   );
 }
-

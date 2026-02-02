@@ -34,7 +34,7 @@ const MAX_LIFE_AREAS = 5;
 
 @Injectable()
 export class LifeAreasService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   /**
    * Get all active life areas for a user
@@ -254,6 +254,66 @@ export class LifeAreasService {
     }
 
     return lifeArea;
+  }
+
+  /**
+   * Get pending items count for a life area (for today)
+   * Used to show warning before archiving
+   */
+  async getPendingItemsCount(
+    id: string,
+    userId: string,
+  ): Promise<{
+    incompletePriorities: number;
+    upcomingTimeBlocks: number;
+    discussionItems: number;
+    eisenhowerTasks: number;
+  }> {
+    await this.verifyOwnership(id, userId);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Get day for this life area today
+    const day = await this.prisma.day.findFirst({
+      where: {
+        userId,
+        lifeAreaId: id,
+        date: {
+          gte: today,
+          lt: tomorrow,
+        },
+      },
+      include: {
+        priorities: {
+          where: { completed: false },
+        },
+        discussionItems: true,
+        timeBlocks: {
+          where: {
+            endTime: { gte: new Date() }, // Only future/ongoing time blocks
+          },
+        },
+      },
+    });
+
+    // Count Eisenhower tasks for this life area
+    const eisenhowerTasksCount = await this.prisma.eisenhowerTask.count({
+      where: {
+        userId,
+        lifeAreaId: id,
+      },
+    });
+
+    return {
+      incompletePriorities: day?.priorities.length ?? 0,
+      upcomingTimeBlocks: day?.timeBlocks.length ?? 0,
+      discussionItems: day?.discussionItems.length ?? 0,
+      eisenhowerTasks: eisenhowerTasksCount,
+    };
   }
 
   /**

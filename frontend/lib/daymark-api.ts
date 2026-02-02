@@ -152,6 +152,15 @@ export const lifeAreasApi = {
             body: JSON.stringify({ orderedIds }),
         });
     },
+
+    async getPendingItemsCount(id: string): Promise<{
+        incompletePriorities: number;
+        upcomingTimeBlocks: number;
+        discussionItems: number;
+        eisenhowerTasks: number;
+    }> {
+        return fetchWithCredentials(`${API_BASE}/api/life-areas/${id}/pending-items`);
+    },
 };
 
 // Days API
