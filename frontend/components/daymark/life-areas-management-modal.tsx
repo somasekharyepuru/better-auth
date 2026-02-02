@@ -513,7 +513,7 @@ export function LifeAreasManagementModal({
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">
-                      Archive "{deleteConfirmation.lifeArea?.name}"?
+                      Archive &quot;{deleteConfirmation.lifeArea?.name}&quot;?
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       This will hide it from your dashboard
@@ -585,7 +585,7 @@ export function LifeAreasManagementModal({
                       )}
                     </ul>
                     <p className="text-xs text-amber-600 dark:text-amber-500 mt-2">
-                      These items will remain but won't be visible after
+                      These items will remain but won&apos;t be visible after
                       archiving.
                     </p>
                   </div>

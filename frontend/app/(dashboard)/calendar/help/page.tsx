@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import {
-    Calendar, Brain, Target, Clock, Keyboard, ArrowLeft, ArrowRight,
+    Calendar, Brain, Target, Clock, Keyboard, ArrowLeft,
     Play, Pause, AlertTriangle, RefreshCw, Wifi, WifiOff, Move,
-    Check, X, ChevronDown, ChevronUp, Zap, MousePointer, Timer
+    Check, X, ChevronDown, ChevronUp, Zap, Timer
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -310,7 +310,7 @@ export default function CalendarHelpPage() {
                                     <span className="font-medium text-gray-900 dark:text-white">Cancel</span>
                                 </div>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    Don't create the conflicting block
+                                    Don&apos;t create the conflicting block
                                 </p>
                             </div>
                         </div>
@@ -368,7 +368,7 @@ export default function CalendarHelpPage() {
                                     <span className="font-medium text-red-800 dark:text-red-200">Sync Error</span>
                                 </div>
                                 <p className="text-sm text-red-700 dark:text-red-300">
-                                    Red banner appears when a calendar fails to sync. Click "Retry" to attempt again.
+                                    Red banner appears when a calendar fails to sync. Click &quot;Retry&quot; to attempt again.
                                 </p>
                             </div>
                             <div className="p-4 border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-900/20 rounded-r-lg">
@@ -377,7 +377,7 @@ export default function CalendarHelpPage() {
                                     <span className="font-medium text-amber-800 dark:text-amber-200">Disconnected</span>
                                 </div>
                                 <p className="text-sm text-amber-700 dark:text-amber-300">
-                                    Amber banner when a calendar is disconnected. Click "Reconnect" to re-authorize.
+                                    Amber banner when a calendar is disconnected. Click &quot;Reconnect&quot; to re-authorize.
                                 </p>
                             </div>
                         </div>

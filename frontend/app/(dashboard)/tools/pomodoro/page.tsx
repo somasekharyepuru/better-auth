@@ -424,7 +424,7 @@ export default function PomodoroPage() {
                         </div>
 
                         <p className="text-gray-600 dark:text-gray-400 mb-6">
-                            You've completed your focus session{completedSessions > 0 ? ` (${completedSessions} today)` : ''}. Time for a break?
+                            You&apos;ve completed your focus session{completedSessions > 0 ? ` (${completedSessions} today)` : ''}. Time for a break?
                         </p>
 
                         <div className="flex gap-3">
@@ -446,3 +446,5 @@ export default function PomodoroPage() {
                 </div>
             )}
         </div>
+    );
+}

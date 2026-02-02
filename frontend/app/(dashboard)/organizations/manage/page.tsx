@@ -8,11 +8,38 @@ import Link from "next/link";
 import { Breadcrumb, BREADCRUMB_ROUTES } from "@/components/ui/breadcrumb";
 import { Building, Settings } from "lucide-react";
 
+interface Session {
+  user?: {
+    role?: string;
+  };
+  [key: string]: unknown;
+}
+
+interface Member {
+  id: string;
+  role: string;
+  createdAt: Date | string;
+  user?: {
+    name: string;
+    email: string;
+  };
+  [key: string]: unknown;
+}
+
+interface Invitation {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  expiresAt: Date | string;
+  [key: string]: unknown;
+}
+
 export default function ManageOrganizationsPage() {
   const router = useRouter();
-  const [session, setSession] = useState<any>(null);
-  const [members, setMembers] = useState<any[]>([]);
-  const [invitations, setInvitations] = useState<any[]>([]);
+  const [session, setSession] = useState<Session | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -29,15 +56,17 @@ export default function ManageOrganizationsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const sess = await authClient.getSession();
-        if (!sess) {
+        const sessResult = await authClient.getSession();
+        if (!sessResult?.data) {
           router.push("/login");
           return;
         }
-        setSession(sess);
+        const sess = sessResult.data;
+        setSession(sess as Session);
 
         // Check permissions
-        const userRole = (sess as any)?.user?.role || "member";
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const userRole = (sess?.user as any)?.role || "member";
         if (!hasPermission("member", "create", userRole)) {
           setError("You do not have permission to manage organizations");
           setLoading(false);

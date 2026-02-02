@@ -4,25 +4,19 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   Calendar,
-  Brain,
   Target,
   Clock,
   Keyboard,
-  Play,
   Users,
   Settings,
   ChevronDown,
   ChevronUp,
-  Zap,
   LayoutDashboard,
   Timer,
   Grid3X3,
   Scale,
   Moon,
-  Sun,
-  CheckCircle,
   Star,
-  RefreshCw,
   Wifi,
   Shield,
   Building,
@@ -148,13 +142,13 @@ export default function HelpPage() {
           <nav aria-label="Breadcrumb" className="text-sm mb-6">
             <ol className="flex items-center gap-1">
               <li>
-                <a
+                <Link
                   href="/"
                   className="flex items-center gap-1.5 text-white/70 hover:text-white transition-colors"
                 >
                   <Home className="w-3.5 h-3.5" />
                   <span>Dashboard</span>
-                </a>
+                </Link>
               </li>
               <li className="text-white/40">
                 <ChevronRight className="w-4 h-4" />
@@ -228,7 +222,7 @@ export default function HelpPage() {
         >
           <div className="space-y-4">
             <p className="text-gray-600 dark:text-gray-400">
-              Daymark is your personal productivity system. Here's how to get
+              Daymark is your personal productivity system. Here&apos;s how to get
               the most out of it:
             </p>
             <div className="grid md:grid-cols-3 gap-4">
@@ -304,7 +298,7 @@ export default function HelpPage() {
                       Time Blocks
                     </span>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      See today's scheduled blocks with linked priorities.
+                      See today&apos;s scheduled blocks with linked priorities.
                     </p>
                   </div>
                 </div>
@@ -412,7 +406,7 @@ export default function HelpPage() {
               <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                 <p className="text-sm text-purple-800 dark:text-purple-200">
                   <strong>External Blocking:</strong> Focus blocks automatically
-                  mark you as "busy" in Google, Microsoft, and Apple calendars.
+                  mark you as &quot;busy&quot; in Google, Microsoft, and Apple calendars.
                 </p>
               </div>
 

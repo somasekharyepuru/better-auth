@@ -7,12 +7,24 @@ import Link from "next/link";
 import { Breadcrumb, BREADCRUMB_ROUTES } from "@/components/ui/breadcrumb";
 import { Building, Settings } from "lucide-react";
 
+interface Organization {
+  name: string;
+  slug: string;
+  [key: string]: unknown;
+}
+
+interface Member {
+  id: string;
+  role: string;
+  [key: string]: unknown;
+}
+
 export default function OrganizationSettingsPage() {
   const router = useRouter();
   const params = useParams();
   const organizationId = params.id as string;
 
-  const [organization, setOrganization] = useState<any>(null);
+  const [organization, setOrganization] = useState<Organization | null>(null);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [loading, setLoading] = useState(true);
@@ -20,7 +32,7 @@ export default function OrganizationSettingsPage() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [activeMember, setActiveMember] = useState<any>(null);
+  const [activeMember, setActiveMember] = useState<Member | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,7 +49,7 @@ export default function OrganizationSettingsPage() {
         });
 
         if (orgResult.data) {
-          const data = orgResult.data as any;
+          const data = orgResult.data as Organization;
           setOrganization(data);
           setName(data.name);
           setSlug(data.slug);
@@ -46,7 +58,7 @@ export default function OrganizationSettingsPage() {
         // Get active member to check permissions
         const memberResult = await authClient.organization.getActiveMember();
         if (memberResult.data) {
-          setActiveMember(memberResult.data);
+          setActiveMember(memberResult.data as Member);
         }
       } catch (err) {
         setError("Failed to load organization");
@@ -117,11 +129,16 @@ export default function OrganizationSettingsPage() {
     if (!confirm("Are you sure you want to leave this organization?")) {
       return;
     }
+    
+    if (!activeMember?.id) {
+      setError("Unable to identify current member");
+      return;
+    }
 
     try {
       // Remove self from organization
       const result = await authClient.organization.removeMember({
-        memberIdOrEmail: activeMember?.id,
+        memberIdOrEmail: activeMember.id,
       });
 
       if (result.error) {

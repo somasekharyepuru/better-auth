@@ -5,12 +5,26 @@ import { useRouter, useParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 
+interface Invitation {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  organizationId: string;
+  organizationName?: string;
+  expiresAt: Date | string;
+  organization?: {
+    name: string;
+  };
+  [key: string]: unknown;
+}
+
 export default function AcceptInvitationPage() {
   const router = useRouter();
   const params = useParams();
   const invitationId = params.id as string;
 
-  const [invitation, setInvitation] = useState<any>(null);
+  const [invitation, setInvitation] = useState<Invitation | null>(null);
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState("");

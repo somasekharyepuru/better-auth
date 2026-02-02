@@ -7,14 +7,34 @@ import Link from "next/link";
 import { Breadcrumb, BREADCRUMB_ROUTES } from "@/components/ui/breadcrumb";
 import { Building } from "lucide-react";
 
+interface Organization {
+  name: string;
+  slug: string;
+  createdAt: Date | string;
+  logo?: string;
+  members?: Member[];
+  [key: string]: unknown;
+}
+
+interface Member {
+  id: string;
+  role: string;
+  createdAt: Date | string;
+  user?: {
+    name: string;
+    email: string;
+  };
+  [key: string]: unknown;
+}
+
 export default function OrganizationDetailPage() {
   const router = useRouter();
   const params = useParams();
   const organizationId = params.id as string;
 
-  const [organization, setOrganization] = useState<any>(null);
-  const [members, setMembers] = useState<any[]>([]);
-  const [activeMember, setActiveMember] = useState<any>(null);
+  const [organization, setOrganization] = useState<Organization | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [activeMember, setActiveMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -35,7 +55,7 @@ export default function OrganizationDetailPage() {
         });
         if (orgResult.data) {
           // Based on Better Auth docs, the response should contain organization data and members directly
-          const data = orgResult.data as any;
+          const data = orgResult.data as Organization;
           setOrganization(data);
           setMembers(data.members || []);
         }
@@ -43,7 +63,7 @@ export default function OrganizationDetailPage() {
         // Get active member role
         const memberResult = await authClient.organization.getActiveMember();
         if (memberResult.data) {
-          setActiveMember(memberResult.data);
+          setActiveMember(memberResult.data as Member);
         }
       } catch (err) {
         setError("Failed to load organization details");
