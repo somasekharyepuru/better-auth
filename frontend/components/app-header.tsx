@@ -135,27 +135,29 @@ export function AppHeader() {
                   {user.name.charAt(0).toUpperCase()}
                 </button>
                 {isProfileDropdownOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
-                    <button
-                      onClick={() => {
-                        router.push("/profile");
-                        setIsProfileDropdownOpen(false);
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      <User className="w-4 h-4" />
-                      Profile
-                    </button>
-                    <button
-                      onClick={async () => {
-                        await authClient.signOut();
-                        router.push("/login");
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Sign out
-                    </button>
+                  <div className="absolute right-0 top-full pt-1">
+                    <div className="w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
+                      <button
+                        onClick={() => {
+                          router.push("/profile");
+                          setIsProfileDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        <User className="w-4 h-4" />
+                        Profile
+                      </button>
+                      <button
+                        onClick={async () => {
+                          await authClient.signOut();
+                          router.push("/login");
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sign out
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
