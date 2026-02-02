@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from "@nestjs/common";
+import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { SettingsService } from "../settings/settings.service";
 
@@ -6,12 +6,14 @@ export interface CreateEisenhowerTaskDto {
   title: string;
   note?: string;
   quadrant: number; // 1-4
+  lifeAreaId?: string; // Optional life area association
 }
 
 export interface UpdateEisenhowerTaskDto {
   title?: string;
   note?: string;
   quadrant?: number;
+  lifeAreaId?: string | null; // Can update or clear life area
 }
 
 @Injectable()
@@ -24,6 +26,11 @@ export class EisenhowerService {
   async getAllTasks(userId: string) {
     return this.prisma.eisenhowerTask.findMany({
       where: { userId },
+      include: {
+        lifeArea: {
+          select: { id: true, name: true, color: true },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
   }
@@ -32,12 +39,23 @@ export class EisenhowerService {
     // Validate quadrant (1-4)
     const quadrant = Math.max(1, Math.min(4, data.quadrant));
 
+    // Validate lifeAreaId if provided
+    if (data.lifeAreaId) {
+      await this.validateLifeAreaOwnership(data.lifeAreaId, userId);
+    }
+
     return this.prisma.eisenhowerTask.create({
       data: {
         userId,
         title: data.title,
         note: data.note,
         quadrant,
+        lifeAreaId: data.lifeAreaId,
+      },
+      include: {
+        lifeArea: {
+          select: { id: true, name: true, color: true },
+        },
       },
     });
   }
@@ -58,10 +76,22 @@ export class EisenhowerService {
     if (data.quadrant !== undefined) {
       updateData.quadrant = Math.max(1, Math.min(4, data.quadrant));
     }
+    if (data.lifeAreaId !== undefined) {
+      // Validate lifeAreaId if provided (and not null)
+      if (data.lifeAreaId) {
+        await this.validateLifeAreaOwnership(data.lifeAreaId, userId);
+      }
+      updateData.lifeAreaId = data.lifeAreaId;
+    }
 
     return this.prisma.eisenhowerTask.update({
       where: { id },
       data: updateData,
+      include: {
+        lifeArea: {
+          select: { id: true, name: true, color: true },
+        },
+      },
     });
   }
 
@@ -80,7 +110,12 @@ export class EisenhowerService {
     });
   }
 
-  async promoteToDaily(id: string, userId: string, date: string) {
+  async promoteToDaily(
+    id: string,
+    userId: string,
+    date: string,
+    lifeAreaId?: string | null,
+  ) {
     // Get user's max priorities setting
     const settings = await this.settingsService.getSettings(userId);
     const maxPriorities = settings.maxTopPriorities;
@@ -94,14 +129,34 @@ export class EisenhowerService {
       throw new Error("Task not found");
     }
 
-    // Get or create day
+    // Determine which life area to use:
+    // 1. Explicitly provided lifeAreaId (can be null to promote to "All" area)
+    // 2. Task's existing lifeAreaId
+    // 3. null (no life area - goes to general "All" day)
+    const targetLifeAreaId =
+      lifeAreaId !== undefined ? lifeAreaId : task.lifeAreaId;
+
+    // Validate lifeAreaId if provided (and not null)
+    if (targetLifeAreaId) {
+      await this.validateLifeAreaOwnership(targetLifeAreaId, userId);
+    }
+
+    // Get or create day for the specific life area
     let day = await this.prisma.day.findFirst({
-      where: { userId, date: new Date(date) },
+      where: {
+        userId,
+        date: new Date(date),
+        lifeAreaId: targetLifeAreaId,
+      },
     });
 
     if (!day) {
       day = await this.prisma.day.create({
-        data: { userId, date: new Date(date) },
+        data: {
+          userId,
+          date: new Date(date),
+          lifeAreaId: targetLifeAreaId,
+        },
       });
     }
 
@@ -132,5 +187,27 @@ export class EisenhowerService {
     });
 
     return priority;
+  }
+
+  /**
+   * Validate that a life area belongs to the user and is not archived
+   */
+  private async validateLifeAreaOwnership(
+    lifeAreaId: string,
+    userId: string,
+  ): Promise<void> {
+    const lifeArea = await this.prisma.lifeArea.findFirst({
+      where: {
+        id: lifeAreaId,
+        userId,
+        isArchived: false,
+      },
+    });
+
+    if (!lifeArea) {
+      throw new NotFoundException(
+        "Life area not found or does not belong to you",
+      );
+    }
   }
 }

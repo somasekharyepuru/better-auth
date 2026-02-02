@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { useSettings } from "@/lib/settings-context";
+import { useLifeAreas } from "@/lib/life-areas-context";
+import { useToast } from "@/components/ui/toast";
 import { Spinner } from "@/components/ui/spinner";
 import {
     ChevronLeft,
@@ -14,17 +16,26 @@ import {
     Star,
     ArrowRight,
     Info,
-    HelpCircle
+    HelpCircle,
+    Circle
 } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
 
 const API_BASE = process.env.NEXT_PUBLIC_AUTH_URL || "http://localhost:3002";
+
+interface LifeArea {
+    id: string;
+    name: string;
+    color: string | null;
+}
 
 interface EisenhowerTask {
     id: string;
     title: string;
     note?: string;
     quadrant: number;
+    lifeAreaId?: string | null;
+    lifeArea?: LifeArea | null;
     createdAt: string;
 }
 
@@ -72,13 +83,19 @@ async function fetchApi(url: string, options: RequestInit = {}) {
 export default function EisenhowerPage() {
     const router = useRouter();
     const { isLoading: settingsLoading } = useSettings();
+    const { lifeAreas, selectedLifeArea, isLoading: lifeAreasLoading } = useLifeAreas();
+    const { addToast } = useToast();
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [tasks, setTasks] = useState<EisenhowerTask[]>([]);
     const [addingToQuadrant, setAddingToQuadrant] = useState<number | null>(null);
     const [newTitle, setNewTitle] = useState("");
+    const [newTaskLifeAreaId, setNewTaskLifeAreaId] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showInfo, setShowInfo] = useState(false);
+    // Promote dialog state
+    const [promoteTaskId, setPromoteTaskId] = useState<string | null>(null);
+    const [promoteLifeAreaId, setPromoteLifeAreaId] = useState<string | null>(null);
 
     const loadTasks = useCallback(async () => {
         try {
@@ -114,13 +131,20 @@ export default function EisenhowerPage() {
         try {
             await fetchApi(`${API_BASE}/api/eisenhower`, {
                 method: "POST",
-                body: JSON.stringify({ title: newTitle.trim(), quadrant }),
+                body: JSON.stringify({
+                    title: newTitle.trim(),
+                    quadrant,
+                    lifeAreaId: newTaskLifeAreaId || selectedLifeArea?.id || null,
+                }),
             });
             setNewTitle("");
+            setNewTaskLifeAreaId(null);
             setAddingToQuadrant(null);
             loadTasks();
+            addToast({ type: "success", title: "Task added" });
         } catch (error) {
             console.error("Failed to add task:", error);
+            addToast({ type: "error", title: "Failed to add task" });
         } finally {
             setIsSubmitting(false);
         }
@@ -132,6 +156,7 @@ export default function EisenhowerPage() {
             loadTasks();
         } catch (error) {
             console.error("Failed to delete task:", error);
+            addToast({ type: "error", title: "Failed to delete task" });
         }
     };
 
@@ -144,26 +169,65 @@ export default function EisenhowerPage() {
             loadTasks();
         } catch (error) {
             console.error("Failed to move task:", error);
+            addToast({ type: "error", title: "Failed to move task" });
         }
     };
 
     const handlePromoteToDaily = async (id: string) => {
+        // Find the task to get its life area
+        const task = tasks.find((t) => t.id === id);
+        if (!task) return;
+
+        // If task has a life area, promote directly using that
+        // Otherwise, show the dialog to select a life area
+        if (task.lifeAreaId || lifeAreas.length === 0) {
+            try {
+                const today = new Date().toISOString().split("T")[0];
+                await fetchApi(`${API_BASE}/api/eisenhower/${id}/promote`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        date: today,
+                        lifeAreaId: task.lifeAreaId,
+                    }),
+                });
+                loadTasks();
+                addToast({ type: "success", title: "Promoted to today's priorities" });
+            } catch (error) {
+                console.error("Failed to promote task:", error);
+                addToast({ type: "error", title: "Failed to promote task", description: "Maximum priorities may have been reached" });
+            }
+        } else {
+            // Show dialog to select life area
+            setPromoteTaskId(id);
+            setPromoteLifeAreaId(selectedLifeArea?.id || lifeAreas[0]?.id || null);
+        }
+    };
+
+    const handleConfirmPromote = async () => {
+        if (!promoteTaskId) return;
         try {
             const today = new Date().toISOString().split("T")[0];
-            await fetchApi(`${API_BASE}/api/eisenhower/${id}/promote`, {
+            await fetchApi(`${API_BASE}/api/eisenhower/${promoteTaskId}/promote`, {
                 method: "POST",
-                body: JSON.stringify({ date: today }),
+                body: JSON.stringify({
+                    date: today,
+                    lifeAreaId: promoteLifeAreaId,
+                }),
             });
+            setPromoteTaskId(null);
+            setPromoteLifeAreaId(null);
             loadTasks();
+            addToast({ type: "success", title: "Promoted to today's priorities" });
         } catch (error) {
             console.error("Failed to promote task:", error);
+            addToast({ type: "error", title: "Failed to promote task", description: "Maximum priorities may have been reached" });
         }
     };
 
     const getTasksForQuadrant = (quadrant: number) =>
         tasks.filter((t) => t.quadrant === quadrant);
 
-    if (isLoading || settingsLoading || !isAuthenticated) {
+    if (isLoading || settingsLoading || lifeAreasLoading || !isAuthenticated) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <Spinner size="lg" />
@@ -245,7 +309,15 @@ export default function EisenhowerPage() {
                                             key={task.id}
                                             className="group flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-2.5 shadow-sm hover:shadow transition-shadow"
                                         >
-                                            <Tooltip content={task.title}>
+                                            {/* Life Area Color Indicator */}
+                                            {task.lifeArea?.color && (
+                                                <span
+                                                    className="w-2 h-2 rounded-full flex-shrink-0"
+                                                    style={{ backgroundColor: task.lifeArea.color }}
+                                                    title={task.lifeArea.name}
+                                                />
+                                            )}
+                                            <Tooltip content={task.lifeArea ? `${task.title} (${task.lifeArea.name})` : task.title}>
                                                 <span className="flex-1 text-sm text-body truncate text-gray-700">
                                                     {task.title}
                                                 </span>
@@ -288,38 +360,74 @@ export default function EisenhowerPage() {
 
                                     {/* Add Input */}
                                     {isAdding && (
-                                        <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 shadow-sm">
-                                            <input
-                                                type="text"
-                                                value={newTitle}
-                                                onChange={(e) => setNewTitle(e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === "Enter") handleAddTask(quadrant.id);
-                                                    if (e.key === "Escape") {
+                                        <div className="bg-white rounded-lg px-3 py-2 shadow-sm space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={newTitle}
+                                                    onChange={(e) => setNewTitle(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Enter") handleAddTask(quadrant.id);
+                                                        if (e.key === "Escape") {
+                                                            setAddingToQuadrant(null);
+                                                            setNewTitle("");
+                                                            setNewTaskLifeAreaId(null);
+                                                        }
+                                                    }}
+                                                    placeholder="Enter task..."
+                                                    className="flex-1 text-sm bg-transparent outline-none"
+                                                    autoFocus
+                                                />
+                                                <button
+                                                    onClick={() => handleAddTask(quadrant.id)}
+                                                    disabled={isSubmitting || !newTitle.trim()}
+                                                    className="p-1 text-green-500 hover:text-green-600 disabled:opacity-50"
+                                                >
+                                                    <Check className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => {
                                                         setAddingToQuadrant(null);
                                                         setNewTitle("");
-                                                    }
-                                                }}
-                                                placeholder="Enter task..."
-                                                className="flex-1 text-sm bg-transparent outline-none"
-                                                autoFocus
-                                            />
-                                            <button
-                                                onClick={() => handleAddTask(quadrant.id)}
-                                                disabled={isSubmitting || !newTitle.trim()}
-                                                className="p-1 text-green-500 hover:text-green-600 disabled:opacity-50"
-                                            >
-                                                <Check className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    setAddingToQuadrant(null);
-                                                    setNewTitle("");
-                                                }}
-                                                className="p-1 text-gray-400 hover:text-gray-600"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
+                                                        setNewTaskLifeAreaId(null);
+                                                    }}
+                                                    className="p-1 text-gray-400 hover:text-gray-600"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                            {/* Life Area Selector */}
+                                            {lifeAreas.length > 0 && (
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <span className="text-xs text-gray-400">Life Area:</span>
+                                                    {lifeAreas.map((area) => {
+                                                        const isSelected = newTaskLifeAreaId === area.id ||
+                                                            (!newTaskLifeAreaId && selectedLifeArea?.id === area.id);
+                                                        return (
+                                                            <button
+                                                                key={area.id}
+                                                                onClick={() => setNewTaskLifeAreaId(area.id)}
+                                                                className={`
+                                                                    flex items-center gap-1 px-2 py-0.5 rounded-full text-xs
+                                                                    transition-all duration-150
+                                                                    ${isSelected
+                                                                        ? "bg-gray-200 text-gray-800 font-medium"
+                                                                        : "text-gray-500 hover:bg-gray-100"
+                                                                    }
+                                                                `}
+                                                            >
+                                                                {area.color && (
+                                                                    <span
+                                                                        className="w-1.5 h-1.5 rounded-full"
+                                                                        style={{ backgroundColor: area.color }}
+                                                                    />
+                                                                )}
+                                                                {area.name}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
@@ -390,6 +498,89 @@ export default function EisenhowerPage() {
                                 className="px-5 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium"
                             >
                                 Got it
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Promote to Life Area Dialog */}
+            {promoteTaskId && lifeAreas.length > 0 && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full transform scale-100 animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                    Promote to Today&apos;s Priorities
+                                </h3>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    Select which life area to add this priority to
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setPromoteTaskId(null);
+                                    setPromoteLifeAreaId(null);
+                                }}
+                                className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="mb-4 p-3 bg-gray-50 rounded-xl">
+                            <p className="text-sm font-medium text-gray-700">
+                                {tasks.find((t) => t.id === promoteTaskId)?.title}
+                            </p>
+                        </div>
+
+                        <div className="space-y-2 mb-6">
+                            {lifeAreas.map((area) => (
+                                <button
+                                    key={area.id}
+                                    onClick={() => setPromoteLifeAreaId(area.id)}
+                                    className={`
+                                        w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all
+                                        ${promoteLifeAreaId === area.id
+                                            ? "border-blue-500 bg-blue-50"
+                                            : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
+                                        }
+                                    `}
+                                >
+                                    {area.color ? (
+                                        <span
+                                            className="w-3 h-3 rounded-full"
+                                            style={{ backgroundColor: area.color }}
+                                        />
+                                    ) : (
+                                        <Circle className="w-3 h-3 text-gray-300" />
+                                    )}
+                                    <span className={`text-sm ${promoteLifeAreaId === area.id ? "font-medium text-blue-900" : "text-gray-700"}`}>
+                                        {area.name}
+                                    </span>
+                                    {promoteLifeAreaId === area.id && (
+                                        <Check className="w-4 h-4 text-blue-500 ml-auto" />
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => {
+                                    setPromoteTaskId(null);
+                                    setPromoteLifeAreaId(null);
+                                }}
+                                className="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmPromote}
+                                disabled={!promoteLifeAreaId}
+                                className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
+                            >
+                                Promote
                             </button>
                         </div>
                     </div>

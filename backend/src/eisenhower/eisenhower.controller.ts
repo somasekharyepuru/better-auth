@@ -59,10 +59,15 @@ export class EisenhowerController {
   @Post(":id/promote")
   async promoteToDaily(
     @Param("id") id: string,
-    @Body() body: { date: string },
+    @Body() body: { date: string; lifeAreaId?: string | null },
     @Req() req: Request,
   ) {
     const userId = this.getUserIdFromRequest(req);
-    return this.eisenhowerService.promoteToDaily(id, userId, body.date);
+    return this.eisenhowerService.promoteToDaily(
+      id,
+      userId,
+      body.date,
+      body.lifeAreaId,
+    );
   }
 }
