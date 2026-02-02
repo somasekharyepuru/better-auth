@@ -11,7 +11,8 @@ import { useToast } from "@/components/ui/toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Lock, Eye, EyeOff, Shield } from "lucide-react";
+import { Breadcrumb, BREADCRUMB_ROUTES } from "@/components/ui/breadcrumb";
+import { Lock, Eye, EyeOff, Shield, User } from "lucide-react";
 import { APP_CONFIG } from "@/config/app.constants";
 
 const changePasswordSchema = z
@@ -72,10 +73,10 @@ export default function ChangePasswordPage() {
 
       // Sign out the user for security after password change
       await authClient.signOut();
-      
+
       // Clear cached auth to prevent flash
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('auth_user');
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("auth_user");
       }
 
       // Small delay to show the toast message before redirect
@@ -103,15 +104,21 @@ export default function ChangePasswordPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push("/profile")}
-                className="flex items-center space-x-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to Profile</span>
-              </Button>
+              {/* Breadcrumb */}
+              <Breadcrumb
+                items={[
+                  BREADCRUMB_ROUTES.dashboard,
+                  {
+                    label: "Profile",
+                    href: "/profile",
+                    icon: <User className="w-3.5 h-3.5" />,
+                  },
+                  {
+                    label: "Change Password",
+                    icon: <Lock className="w-3.5 h-3.5" />,
+                  },
+                ]}
+              />
             </div>
 
             <div className="flex items-center space-x-2">

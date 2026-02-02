@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Breadcrumb, BREADCRUMB_ROUTES } from "@/components/ui/breadcrumb";
 import {
   Shield,
   Smartphone,
@@ -20,6 +21,7 @@ import {
   EyeOff,
   Copy,
   ChevronRight,
+  User,
 } from "lucide-react";
 import { QRCodeComponent } from "@/components/ui/qr-code";
 
@@ -55,7 +57,9 @@ export default function TwoFactorPage() {
   const [showSetup, setShowSetup] = useState(false);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [passwordAction, setPasswordAction] = useState<"enable" | "disable">("enable");
+  const [passwordAction, setPasswordAction] = useState<"enable" | "disable">(
+    "enable",
+  );
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -121,7 +125,9 @@ export default function TwoFactorPage() {
       });
 
       if (result.error) {
-        setError(result.error.message || "Failed to enable two-factor authentication");
+        setError(
+          result.error.message || "Failed to enable two-factor authentication",
+        );
         return;
       }
 
@@ -188,7 +194,9 @@ export default function TwoFactorPage() {
       });
 
       if (result.error) {
-        setError(result.error.message || "Failed to disable two-factor authentication");
+        setError(
+          result.error.message || "Failed to disable two-factor authentication",
+        );
         return;
       }
 
@@ -236,6 +244,23 @@ export default function TwoFactorPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       <main className="max-w-2xl mx-auto px-6 py-12">
+        {/* Breadcrumb */}
+        <Breadcrumb
+          items={[
+            BREADCRUMB_ROUTES.dashboard,
+            {
+              label: "Profile",
+              href: "/profile",
+              icon: <User className="w-3.5 h-3.5" />,
+            },
+            {
+              label: "Two-Factor Authentication",
+              icon: <Shield className="w-3.5 h-3.5" />,
+            },
+          ]}
+          className="mb-8"
+        />
+
         {/* Header */}
         <div className="text-center mb-12">
           <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -275,7 +300,11 @@ export default function TwoFactorPage() {
                 </div>
               </div>
               <Button
-                onClick={twoFactorStatus.enabled ? handleDisableTwoFactor : handleEnableTwoFactor}
+                onClick={
+                  twoFactorStatus.enabled
+                    ? handleDisableTwoFactor
+                    : handleEnableTwoFactor
+                }
                 variant={twoFactorStatus.enabled ? "outline" : "default"}
                 disabled={isEnabling || isDisabling}
               >
@@ -302,7 +331,7 @@ export default function TwoFactorPage() {
                 onSubmit={handleSubmitPassword(
                   passwordAction === "enable"
                     ? handleEnableTwoFactorWithPassword
-                    : handleDisableTwoFactorWithPassword
+                    : handleDisableTwoFactorWithPassword,
                 )}
                 className="space-y-4"
               >
@@ -322,7 +351,11 @@ export default function TwoFactorPage() {
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
                   </button>
                   {passwordErrors.password && (
                     <p className="mt-2 text-sm text-red-500">
@@ -331,7 +364,11 @@ export default function TwoFactorPage() {
                   )}
                 </div>
                 <div className="flex gap-3">
-                  <Button type="submit" className="flex-1" disabled={isEnabling || isDisabling}>
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                    disabled={isEnabling || isDisabling}
+                  >
                     {isEnabling || isDisabling ? "Processing..." : "Continue"}
                   </Button>
                   <Button
@@ -363,27 +400,44 @@ export default function TwoFactorPage() {
                   <Smartphone className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900 dark:text-white">Scan QR Code</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Use your authenticator app</p>
+                  <h3 className="font-medium text-gray-900 dark:text-white">
+                    Scan QR Code
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Use your authenticator app
+                  </p>
                 </div>
               </div>
 
               {qrCodeUrl && (
                 <div className="flex justify-center p-6 bg-white dark:bg-gray-700 rounded-xl mb-4">
-                  <QRCodeComponent value={qrCodeUrl} size={180} className="w-44 h-44" />
+                  <QRCodeComponent
+                    value={qrCodeUrl}
+                    size={180}
+                    className="w-44 h-44"
+                  />
                 </div>
               )}
 
               <div className="bg-white dark:bg-gray-700 rounded-xl p-4">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Manual entry key:</p>
-                <code className="text-sm font-mono break-all text-gray-900 dark:text-white">{secret}</code>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                  Manual entry key:
+                </p>
+                <code className="text-sm font-mono break-all text-gray-900 dark:text-white">
+                  {secret}
+                </code>
               </div>
             </div>
 
             {/* Verification */}
             <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
-              <h3 className="font-medium text-gray-900 dark:text-white mb-4">Enter verification code</h3>
-              <form onSubmit={handleSubmit(handleVerifyAndEnable)} className="space-y-4">
+              <h3 className="font-medium text-gray-900 dark:text-white mb-4">
+                Enter verification code
+              </h3>
+              <form
+                onSubmit={handleSubmit(handleVerifyAndEnable)}
+                className="space-y-4"
+              >
                 {error && (
                   <div className="p-4 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl">
                     {error}
@@ -413,22 +467,34 @@ export default function TwoFactorPage() {
               <div className="flex items-start gap-3 mb-4">
                 <Key className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" />
                 <div>
-                  <h3 className="font-medium text-amber-900 dark:text-amber-200">Save your backup codes</h3>
+                  <h3 className="font-medium text-amber-900 dark:text-amber-200">
+                    Save your backup codes
+                  </h3>
                   <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                    Store these codes safely. You can use them if you lose access to your authenticator.
+                    Store these codes safely. You can use them if you lose
+                    access to your authenticator.
                   </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2 mb-4">
                 {backupCodes.map((code, index) => (
-                  <div key={index} className="bg-white/60 dark:bg-amber-900/30 p-3 rounded-xl">
-                    <code className="text-sm font-mono text-amber-900 dark:text-amber-200">{code}</code>
+                  <div
+                    key={index}
+                    className="bg-white/60 dark:bg-amber-900/30 p-3 rounded-xl"
+                  >
+                    <code className="text-sm font-mono text-amber-900 dark:text-amber-200">
+                      {code}
+                    </code>
                   </div>
                 ))}
               </div>
 
-              <Button variant="outline" onClick={copyBackupCodes} className="w-full">
+              <Button
+                variant="outline"
+                onClick={copyBackupCodes}
+                className="w-full"
+              >
                 <Copy className="w-4 h-4 mr-2" />
                 Copy all codes
               </Button>
@@ -443,16 +509,29 @@ export default function TwoFactorPage() {
           </h2>
           <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl divide-y divide-gray-200 dark:divide-gray-700">
             {[
-              { step: "1", text: "Install an authenticator app like Google Authenticator or Authy" },
-              { step: "2", text: "Scan the QR code or enter the setup key manually" },
+              {
+                step: "1",
+                text: "Install an authenticator app like Google Authenticator or Authy",
+              },
+              {
+                step: "2",
+                text: "Scan the QR code or enter the setup key manually",
+              },
               { step: "3", text: "Enter the 6-digit code when signing in" },
-              { step: "4", text: "Keep your backup codes safe for emergencies" },
+              {
+                step: "4",
+                text: "Keep your backup codes safe for emergencies",
+              },
             ].map((item) => (
               <div key={item.step} className="flex items-center gap-4 p-4">
                 <div className="w-8 h-8 bg-gray-900 dark:bg-gray-700 rounded-full flex items-center justify-center shrink-0">
-                  <span className="text-white text-sm font-medium">{item.step}</span>
+                  <span className="text-white text-sm font-medium">
+                    {item.step}
+                  </span>
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-300">{item.text}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  {item.text}
+                </p>
               </div>
             ))}
           </div>

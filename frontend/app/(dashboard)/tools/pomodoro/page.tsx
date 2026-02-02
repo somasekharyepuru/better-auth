@@ -8,7 +8,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { useFocus } from "@/lib/focus-context";
-import { ChevronLeft, Play, Pause, RotateCcw, Coffee, Brain, Sunset, X, Volume2, VolumeX, CheckCircle } from "lucide-react";
+import { Breadcrumb, BREADCRUMB_ROUTES } from "@/components/ui/breadcrumb";
+import { Play, Pause, RotateCcw, Coffee, Brain, Sunset, X, Volume2, VolumeX, CheckCircle, Timer, Wrench } from "lucide-react";
 
 type TimerMode = "focus" | "shortBreak" | "longBreak";
 
@@ -244,14 +245,18 @@ export default function PomodoroPage() {
     return (
         <div className="bg-premium relative">
             <main className="max-w-lg mx-auto px-4 sm:px-6 py-8">
+                {/* Breadcrumb */}
+                <Breadcrumb
+                    items={[
+                        BREADCRUMB_ROUTES.dashboard,
+                        { label: "Tools", href: "/tools", icon: <Wrench className="w-3.5 h-3.5" /> },
+                        { label: "Pomodoro Timer", icon: <Timer className="w-3.5 h-3.5" /> },
+                    ]}
+                    className="mb-6"
+                />
+
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8">
-                    <button
-                        onClick={() => router.push("/tools")}
-                        className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                    >
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
                     <div className="flex-1">
                         <h1 className="text-2xl text-heading">Pomodoro Timer</h1>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Focus on what matters</p>

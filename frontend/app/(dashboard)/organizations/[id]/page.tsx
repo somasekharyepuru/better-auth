@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
+import { Breadcrumb, BREADCRUMB_ROUTES } from "@/components/ui/breadcrumb";
+import { Building } from "lucide-react";
 
 export default function OrganizationDetailPage() {
   const router = useRouter();
@@ -83,10 +85,21 @@ export default function OrganizationDetailPage() {
 
   return (
     <div style={{ padding: "2rem", maxWidth: "1000px", margin: "0 auto" }}>
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          BREADCRUMB_ROUTES.dashboard,
+          {
+            label: "Organizations",
+            href: "/organizations",
+            icon: <Building className="w-3.5 h-3.5" />,
+          },
+          { label: organization.name },
+        ]}
+        className="mb-6"
+      />
+
       <h1>{organization.name}</h1>
-      <div style={{ marginBottom: "1rem" }}>
-        <Link href="/organizations">Back to Organizations</Link>
-      </div>
 
       {error && (
         <div style={{ color: "red", marginBottom: "1rem" }}>{error}</div>
