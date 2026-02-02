@@ -21,7 +21,6 @@ import { TimeBlocks } from "@/components/daymark/time-blocks";
 import { QuickNotes } from "@/components/daymark/quick-notes";
 import { EndOfDayReview } from "@/components/daymark/end-of-day-review";
 import { LifeAreaSelector } from "@/components/daymark/life-area-selector";
-import { UpcomingEventsDashboardCard } from "@/components/calendar/upcoming-events-card";
 import { ChevronLeft, ChevronRight, Moon } from "lucide-react";
 
 interface User {
@@ -353,8 +352,6 @@ export function DashboardContent({ user }: DashboardContentProps) {
 
               {/* Right Column */}
               <div className="flex flex-col gap-4 h-full">
-                {/* Calendar Events - Always shown for premium experience */}
-                <UpcomingEventsDashboardCard className="flex-shrink-0" />
                 {showSchedule && (
                   <TimeBlocks
                     date={currentDate}
