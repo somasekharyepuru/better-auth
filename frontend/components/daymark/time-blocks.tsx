@@ -293,7 +293,7 @@ export function TimeBlocks({
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <Clock className="w-5 h-5 text-muted" />
-          <h2 className="text-lg text-subheading">Today's Schedule</h2>
+          <h2 className="text-lg text-subheading">Today&apos;s Schedule</h2>
         </div>
         {!isAdding && !editingId && (
           <button
@@ -402,7 +402,7 @@ interface TimeBlockFormProps {
     endTime: string;
     type: string;
   };
-  setFormData: (data: any) => void;
+  setFormData: (data: { title: string; startTime: string; endTime: string; type: string }) => void;
   onSubmit: () => void;
   onCancel: () => void;
   isLoading: boolean;

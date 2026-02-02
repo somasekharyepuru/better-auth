@@ -386,10 +386,11 @@ function ProfilePageContent() {
         title: "Time block type added",
         duration: 3000,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to add type";
       addToast({
         type: "error",
-        title: error.message || "Failed to add type",
+        title: errorMessage,
         duration: 3000,
       });
     } finally {
@@ -406,10 +407,11 @@ function ProfilePageContent() {
         title: "Time block type deleted",
         duration: 3000,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete type";
       addToast({
         type: "error",
-        title: error.message || "Failed to delete type",
+        title: errorMessage,
         duration: 3000,
       });
     } finally {
@@ -1331,7 +1333,7 @@ function ProfilePageContent() {
                           Auto-create next day
                         </p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Automatically prepare tomorrow's dashboard
+                          Automatically prepare tomorrow&apos;s dashboard
                         </p>
                       </div>
                       <input

@@ -29,9 +29,11 @@ export function ToDiscuss({
   readOnly = false,
   lifeAreas = [],
   onMove,
+  maxItems,
 }: ToDiscussProps) {
   const [localItems, setLocalItems] = useState<DiscussionItem[]>(items);
   const [isAdding, setIsAdding] = useState(false);
+  const canAddMore = maxItems === undefined || localItems.length < maxItems;
   const [newContent, setNewContent] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");

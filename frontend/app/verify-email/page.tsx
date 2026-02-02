@@ -184,7 +184,7 @@ function VerifyEmailContent() {
         </form>
 
         <div className="text-center">
-          <span className="text-gray-500 dark:text-gray-400">Didn't receive the code? </span>
+          <span className="text-gray-500 dark:text-gray-400">Didn&apos;t receive the code? </span>
           <button
             onClick={handleResendOTP}
             disabled={isResending}

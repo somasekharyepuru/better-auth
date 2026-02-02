@@ -319,7 +319,7 @@ export default function ChangePasswordPage() {
                 <div className="flex items-start space-x-2">
                   <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
                   <p>
-                    Use a unique password that you don't use for other accounts
+                    Use a unique password that you don&apos;t use for other accounts
                   </p>
                 </div>
                 <div className="flex items-start space-x-2">

@@ -7,9 +7,17 @@ import Link from "next/link";
 import { Breadcrumb, BREADCRUMB_ROUTES } from "@/components/ui/breadcrumb";
 import { Building } from "lucide-react";
 
+interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  createdAt: Date | string;
+  [key: string]: unknown;
+}
+
 export default function OrganizationsPage() {
   const router = useRouter();
-  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 

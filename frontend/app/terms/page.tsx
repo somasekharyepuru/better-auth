@@ -50,7 +50,7 @@ export default function TermsOfServicePage() {
                         {/* Introduction */}
                         <section>
                             <p className="text-lg text-gray-600 leading-relaxed">
-                                Welcome to {APP_CONFIG.name}. These Terms of Service ("Terms") govern your access to and use of our productivity application, website, and related services (collectively, the "Services"). By accessing or using our Services, you agree to be bound by these Terms. If you do not agree to these Terms, please do not use our Services.
+                                Welcome to {APP_CONFIG.name}. These Terms of Service (&quot;Terms&quot;) govern your access to and use of our productivity application, website, and related services (collectively, the &quot;Services&quot;). By accessing or using our Services, you agree to be bound by these Terms. If you do not agree to these Terms, please do not use our Services.
                             </p>
                         </section>
 
@@ -58,7 +58,7 @@ export default function TermsOfServicePage() {
                         <section>
                             <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Acceptance of Terms</h2>
                             <p className="text-gray-600 mb-4">
-                                By creating an account or using our Services, you acknowledge that you have read, understood, and agree to be bound by these Terms and our Privacy Policy. You must be at least 13 years old to use our Services. If you are under 18, you represent that you have your parent's or legal guardian's permission to use the Services.
+                                By creating an account or using our Services, you acknowledge that you have read, understood, and agree to be bound by these Terms and our Privacy Policy. You must be at least 13 years old to use our Services. If you are under 18, you represent that you have your parent&apos;s or legal guardian&apos;s permission to use the Services.
                             </p>
                         </section>
 
@@ -110,7 +110,7 @@ export default function TermsOfServicePage() {
                             <ul className="list-disc pl-6 text-gray-600 space-y-2">
                                 <li>Violate any applicable laws, regulations, or third-party rights</li>
                                 <li>Use the Services to transmit harmful, offensive, or illegal content</li>
-                                <li>Attempt to gain unauthorized access to our systems or other users' accounts</li>
+                                <li>Attempt to gain unauthorized access to our systems or other users&apos; accounts</li>
                                 <li>Interfere with or disrupt the integrity or performance of the Services</li>
                                 <li>Use automated systems (bots, scrapers) to access the Services without permission</li>
                                 <li>Reverse engineer, decompile, or attempt to extract the source code of our software</li>
@@ -125,7 +125,7 @@ export default function TermsOfServicePage() {
 
                             <h3 className="text-xl font-medium text-gray-800 mb-3">Ownership</h3>
                             <p className="text-gray-600 mb-4">
-                                You retain ownership of all content you create, upload, or store through our Services ("User Content"). By using the Services, you grant us a limited license to host, store, and display your User Content solely for the purpose of providing the Services to you.
+                                You retain ownership of all content you create, upload, or store through our Services (&quot;User Content&quot;). By using the Services, you grant us a limited license to host, store, and display your User Content solely for the purpose of providing the Services to you.
                             </p>
 
                             <h3 className="text-xl font-medium text-gray-800 mb-3">Your Responsibilities</h3>
@@ -191,7 +191,7 @@ export default function TermsOfServicePage() {
                         <section>
                             <h2 className="text-2xl font-semibold text-gray-900 mb-4">9. Disclaimers</h2>
                             <p className="text-gray-600 mb-4 uppercase text-sm font-medium">
-                                THE SERVICES ARE PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO:
+                                THE SERVICES ARE PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO:
                             </p>
                             <ul className="list-disc pl-6 text-gray-600 space-y-2">
                                 <li>IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT</li>
@@ -224,7 +224,7 @@ export default function TermsOfServicePage() {
                         <section>
                             <h2 className="text-2xl font-semibold text-gray-900 mb-4">11. Indemnification</h2>
                             <p className="text-gray-600">
-                                You agree to indemnify, defend, and hold harmless {APP_CONFIG.name}, its affiliates, officers, directors, employees, and agents from and against any claims, liabilities, damages, losses, costs, or expenses (including reasonable attorneys' fees) arising out of or related to your use of the Services, your User Content, or your violation of these Terms.
+                                You agree to indemnify, defend, and hold harmless {APP_CONFIG.name}, its affiliates, officers, directors, employees, and agents from and against any claims, liabilities, damages, losses, costs, or expenses (including reasonable attorneys&apos; fees) arising out of or related to your use of the Services, your User Content, or your violation of these Terms.
                             </p>
                         </section>
 
@@ -243,7 +243,7 @@ export default function TermsOfServicePage() {
                         <section>
                             <h2 className="text-2xl font-semibold text-gray-900 mb-4">13. Modifications to Terms</h2>
                             <p className="text-gray-600">
-                                We reserve the right to modify these Terms at any time. We will notify you of any material changes by posting the updated Terms on our website and updating the "Effective Date." Your continued use of the Services after such changes constitutes your acceptance of the revised Terms. We encourage you to review these Terms periodically.
+                                We reserve the right to modify these Terms at any time. We will notify you of any material changes by posting the updated Terms on our website and updating the &quot;Effective Date.&quot; Your continued use of the Services after such changes constitutes your acceptance of the revised Terms. We encourage you to review these Terms periodically.
                             </p>
                         </section>
 

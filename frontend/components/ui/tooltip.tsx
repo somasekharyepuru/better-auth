@@ -108,6 +108,7 @@ export function Tooltip({
     }
 
     // Clone the child element and add our event handlers and ref
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     const enhancedChild = isValidElement(children)
         ? cloneElement(children as React.ReactElement<any>, {
             ref: (node: HTMLElement | null) => {
@@ -143,6 +144,7 @@ export function Tooltip({
             },
         })
         : children;
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     const tooltipElement = isVisible ? (
         <div
