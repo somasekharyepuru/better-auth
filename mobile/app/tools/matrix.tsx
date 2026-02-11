@@ -12,8 +12,8 @@ import {
     ScrollView,
     TextInput,
     ActivityIndicator,
+    Modal,
     Alert,
-    RefreshControl,
     Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,6 +25,8 @@ import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { typography, spacing, radius, shadows, sizing } from '@/constants/Theme';
 import { MatrixTask, matrixApi, formatDate } from '@/lib/api';
+import { useFocus } from '@/contexts/FocusContext';
+import { useSettings } from '@/contexts/SettingsContext';
 
 type Quadrant = 'do_first' | 'schedule' | 'delegate' | 'eliminate';
 
@@ -61,6 +63,8 @@ export default function MatrixScreen() {
     const router = useRouter();
     const colorScheme = useColorScheme() ?? 'light';
     const colors = Colors[colorScheme];
+    const { settings } = useSettings();
+    const { startFocus } = useFocus();
 
     const [items, setItems] = useState<MatrixTask[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -69,6 +73,16 @@ export default function MatrixScreen() {
     const [newItemText, setNewItemText] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [selectedTask, setSelectedTask] = useState<MatrixTask | null>(null);
+    const [showFocusModal, setShowFocusModal] = useState(false);
+
+    // Focus session modal state
+    const [showFocusModal, setShowFocusModal] = useState(false);
+
+    const handleStartFocusFromMatrix = () => {
+        if (!selectedTask) return;
+        setShowFocusModal(true);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    };
 
     const loadTasks = useCallback(async () => {
         try {
@@ -143,6 +157,13 @@ export default function MatrixScreen() {
             Alert.alert('Success', 'Task promoted to today\'s priorities!');
             setSelectedTask(null);
             loadTasks(); // Reload to reflect changes
+        };
+
+    const handleStartFocus = (item: MatrixTask) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setSelectedTask(item);
+        setShowFocusModal(true);
+    };
         } catch (error) {
             Alert.alert('Error', 'Failed to promote task');
         }
@@ -190,6 +211,14 @@ export default function MatrixScreen() {
                                 onPress={() => setSelectedTask(item)}
                             >
                                 <View style={[styles.itemDot, { backgroundColor: config.color }]} />
+                        {/* Start Focus Button */}
+                        <TouchableOpacity
+                            onPress={() => handleStartFocus(item)}
+                            style={[styles.focusButton, { opacity: item.completed ? 0.5 : 1 }]}
+                            disabled={item.completed}
+                        >
+                            <Ionicons name="play" size={14} color={item.completed ? colors.textTertiary : colors.accent} />
+                        </TouchableOpacity>
                                 <Text
                                     style={[styles.itemText, { color: colors.text }]}
                                     numberOfLines={2}
@@ -375,6 +404,52 @@ export default function MatrixScreen() {
                             <Ionicons name="trash-outline" size={18} color={colors.error} />
                             <Text style={[styles.deleteButtonText, { color: colors.error }]}>Delete Task</Text>
                         </TouchableOpacity>
+                    </View>
+                    {/* Start Focus Modal */}
+                    {showFocusModal && selectedTask && (
+                        <Modal
+                            visible={showFocusModal}
+                            transparent
+                            animationType="fade"
+                            onRequestClose={() => {
+                                setShowFocusModal(false);
+                                setSelectedTask(null);
+                            }}
+                        >
+                            <View style={styles.modalOverlay}>
+                                <View style={[styles.modal, { backgroundColor: colors.cardSolid }, shadows.lg]}>
+                                    <View style={styles.modalIcon}>
+                                        <Ionicons name="timer-outline" size={32} color={colors.accent} />
+                                    </View>
+                                    <Text style={[styles.modalTitle, { color: colors.text }]}>Start Focus Session</Text>
+                                    <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+                                        Focus on: {selectedTask?.title}
+                                    </Text>
+                                    <Text style={[styles.modalDuration, { color: colors.text }]}>
+                                        Duration: {settings.pomodoroFocusDuration || 25} minutes
+                                    </Text>
+                                    <View style={styles.modalButtons}>
+                                        <TouchableOpacity
+                                            style={[styles.modalButton, styles.cancelButton, { borderColor: colors.border }]}
+                                            onPress={() => {
+                                                setShowFocusModal(false);
+                                                setSelectedTask(null);
+                                            }}
+                                        >
+                                            <Text style={[styles.modalButtonText, { color: colors.textSecondary }]}>Cancel</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.modalButton, styles.confirmButton, { backgroundColor: colors.accent }]}
+                                            onPress={handleStartFocusFromMatrix}
+                                        >
+                                            <Ionicons name="play" size={18} color="#fff" />
+                                            <Text style={[styles.modalButtonText, { color: '#fff' }]}>Start Focus</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            </View>
+                        </Modal>
+                    )}
                     </Pressable>
                 </Pressable>
             )}
