@@ -47,7 +47,7 @@ export function TopPrioritiesCard({
     const [showFocusModal, setShowFocusModal] = useState(false);
     const [selectedPriority, setSelectedPriority] = useState<TopPriority | null>(null);
 
-    const { startSession, settings: focusSettings } = useFocus();
+    const { startFocus } = useFocus();
     const { settings } = useSettings();
 
     const handleToggle = async (priority: TopPriority) => {
@@ -121,7 +121,7 @@ export function TopPrioritiesCard({
         if (!selectedPriority) return;
 
         try {
-            await startSession({
+            await startFocus({
                 linkedEntity: {
                     type: 'priority',
                     id: selectedPriority.id,

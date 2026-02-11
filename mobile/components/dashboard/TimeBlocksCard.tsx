@@ -119,7 +119,7 @@ export function TimeBlocksCard({
         type: string;
     } | null>(null);
 
-    const { startSession } = useFocus();
+    const { startFocus } = useFocus();
     const { settings } = useSettings();
 
     // Sort blocks by start time
@@ -300,7 +300,7 @@ export function TimeBlocksCard({
         if (!selectedBlockForFocus) return;
 
         try {
-            await startSession({
+            await startFocus({
                 linkedEntity: {
                     type: 'timeBlock',
                     id: selectedBlockForFocus.id,
@@ -338,9 +338,10 @@ export function TimeBlocksCard({
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 }
                 await saveTimeBlock(pendingBlockData.startTime, pendingBlockData.endTime);
-            } else if (resolution === 'reschedule' && onRescheduleTo) {
-                // Will be handled by the reschedule flow
-                onRescheduleTo(pendingBlockData.startTime);
+            } else if (resolution === 'reschedule') {
+                // Close modal and let user manually reschedule
+                setShowConflictModal(false);
+                Alert.alert('Reschedule', 'Please edit the time block to choose a different time.');
             }
             setPendingBlockData(null);
         } catch (error) {
