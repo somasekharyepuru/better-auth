@@ -15,8 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import AppState, { AppStateStatus } from 'react-native';
 import { focusSessionsApi, FocusSession } from '@/lib/api';
-import { useNotifications } from '@/contexts/NotificationsContext';
-import { useNotifications } from '@/contexts/NotificationsContext';
+import { useNotificationsOptional } from '@/contexts/NotificationsContext';
 
 const FOCUS_STATE_KEY = 'daymark_focus_state';
 
@@ -51,6 +50,7 @@ interface FocusContextType extends FocusState {
   endFocus: (completed: boolean) => Promise<void>;
   resetTimer: () => void;
   updateLinkedEntity: (entity: LinkedEntity | null) => void;
+  setNotificationsFunctions: (funcs: { playPomodoroCompleteSound: () => void; playPomodoroStartSound: () => void } | null) => void;
 }
 
 const DEFAULT_STATE: FocusState = {
@@ -79,6 +79,7 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const lastTickRef = useRef<number>(Date.now());
+  const notificationsRef = useRef<{ playPomodoroCompleteSound: () => void; playPomodoroStartSound: () => void } | null>(null);
 
   // Load saved state on mount
   useEffect(() => {
@@ -199,13 +200,10 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
 
     const wasFocus = state.sessionType === 'focus';
 
-    // Play sound on focus session completion
-    if (wasFocus) {
+    // Play sound using stored ref (set by consuming components)
+    if (wasFocus && notificationsRef.current?.playPomodoroCompleteSound) {
       try {
-        const notifications = useNotifications();
-        if (notifications) {
-          await notifications.playPomodoroCompleteSound();
-        }
+        notificationsRef.current.playPomodoroCompleteSound();
       } catch (err) {
         console.error('Failed to play focus complete sound:', err);
       }
@@ -249,6 +247,10 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const setNotificationsFunctions = (funcs: { playPomodoroCompleteSound: () => void; playPomodoroStartSound: () => void } | null) => {
+    notificationsRef.current = funcs;
+  };
+
   const startFocus = async (
     sessionType: SessionType,
     duration?: number,
@@ -256,13 +258,10 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
   ) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // Play sound on focus session start
-    if (sessionType === 'focus') {
+    // Play sound using stored ref (set by consuming components)
+    if (sessionType === 'focus' && notificationsRef.current?.playPomodoroStartSound) {
       try {
-        const notifications = useNotifications();
-        if (notifications) {
-          await notifications.playPomodoroStartSound();
-        }
+        notificationsRef.current.playPomodoroStartSound();
       } catch (err) {
         console.error('Failed to play focus start sound:', err);
       }
@@ -373,6 +372,7 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
         endFocus,
         resetTimer,
         updateLinkedEntity,
+        setNotificationsFunctions,
       }}
     >
       {children}

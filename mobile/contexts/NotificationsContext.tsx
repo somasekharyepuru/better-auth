@@ -92,6 +92,32 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         return granted;
     };
 
+    const playPomodoroCompleteSoundImpl = async () => {
+        if (preferences.soundEnabled && preferences.pomodoroComplete) {
+            try {
+                const soundObject = new Audio.Sound(require('../assets/sounds/notification.mp3'));
+                await soundObject.loadAsync();
+                await soundObject.playAsync();
+                await soundObject.unloadAsync();
+            } catch (error) {
+                console.error('Failed to play Pomodoro complete sound:', error);
+            }
+        }
+    };
+
+    const playPomodoroStartSoundImpl = async () => {
+        if (preferences.soundEnabled && preferences.pomodoroStart) {
+            try {
+                const soundObject = new Audio.Sound(require('../assets/sounds/notification.mp3'));
+                await soundObject.loadAsync();
+                await soundObject.playAsync();
+                await soundObject.unloadAsync();
+            } catch (error) {
+                console.error('Failed to play Pomodoro start sound:', error);
+            }
+        }
+    };
+
     const updatePreferences = async (updates: Partial<NotificationPreferences>) => {
         const newPrefs = { ...preferences, ...updates };
         setPreferences(newPrefs);
@@ -109,34 +135,6 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
                     shouldShowList: newPrefs.enabled,
                 }),
             });
-
-            // Play Pomodoro completion sound if enabled
-            const playPomodoroSound = async () => {
-                if (newPrefs.soundEnabled && newPrefs.pomodoroComplete) {
-                    try {
-                        const soundObject = new Audio.Sound(require('../assets/sounds/notification.mp3'));
-                        await soundObject.loadAsync();
-                        await soundObject.playAsync();
-                        await soundObject.unloadAsync();
-                    } catch (error) {
-                        console.error('Failed to play Pomodoro sound:', error);
-                    }
-                }
-            };
-
-            // Play Pomodoro start sound if enabled
-            const playPomodoroStartSound = async () => {
-                if (newPrefs.soundEnabled && newPrefs.pomodoroStart) {
-                    try {
-                        const soundObject = new Audio.Sound(require('../assets/sounds/notification.mp3'));
-                        await soundObject.loadAsync();
-                        await soundObject.playAsync();
-                        await soundObject.unloadAsync();
-                    } catch (error) {
-                        console.error('Failed to play Pomodoro start sound:', error);
-                    }
-                }
-            };
 
             // Reschedule daily review reminder if time changed
             if (updates.dailyReviewReminder !== undefined || updates.reviewReminderTime !== undefined) {
@@ -220,8 +218,8 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
                 scheduleDailyReviewReminder,
                 cancelDailyReviewReminder,
                 playNotificationSound,
-                playPomodoroCompleteSound,
-                playPomodoroStartSound,
+                playPomodoroCompleteSound: playPomodoroCompleteSoundImpl,
+                playPomodoroStartSound: playPomodoroStartSoundImpl,
             }}
         >
             {children}

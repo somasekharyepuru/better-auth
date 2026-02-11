@@ -15,6 +15,7 @@ import {
     Modal,
     Alert,
     Pressable,
+    RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
@@ -73,9 +74,6 @@ export default function MatrixScreen() {
     const [newItemText, setNewItemText] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [selectedTask, setSelectedTask] = useState<MatrixTask | null>(null);
-    const [showFocusModal, setShowFocusModal] = useState(false);
-
-    // Focus session modal state
     const [showFocusModal, setShowFocusModal] = useState(false);
 
     const handleStartFocusFromMatrix = () => {
@@ -157,16 +155,15 @@ export default function MatrixScreen() {
             Alert.alert('Success', 'Task promoted to today\'s priorities!');
             setSelectedTask(null);
             loadTasks(); // Reload to reflect changes
-        };
+        } catch (error) {
+            Alert.alert('Error', 'Failed to promote task');
+        }
+    };
 
     const handleStartFocus = (item: MatrixTask) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setSelectedTask(item);
         setShowFocusModal(true);
-    };
-        } catch (error) {
-            Alert.alert('Error', 'Failed to promote task');
-        }
     };
 
     const getItemsForQuadrant = (quadrant: Quadrant) =>
@@ -547,6 +544,14 @@ const styles = StyleSheet.create({
         ...typography.caption1,
         flex: 1,
     },
+    focusButton: {
+        width: 28,
+        height: 28,
+        borderRadius: radius.sm,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: spacing.xs,
+    },
     modalOverlay: {
         ...StyleSheet.absoluteFillObject,
         justifyContent: 'center',
@@ -651,5 +656,38 @@ const styles = StyleSheet.create({
     },
     deleteButtonText: {
         ...typography.headline,
+    },
+    modalIcon: {
+        width: 64,
+        height: 64,
+        borderRadius: radius.lg,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.accent + '15',
+        marginBottom: spacing.md,
+    },
+    modalSubtitle: {
+        ...typography.body,
+        textAlign: 'center',
+        color: colors.textSecondary,
+        marginBottom: spacing.sm,
+    },
+    modalDuration: {
+        ...typography.body,
+        textAlign: 'center',
+        marginBottom: spacing.lg,
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        gap: spacing.md,
+    },
+    cancelButton: {
+        flex: 1,
+        borderWidth: 1,
+    },
+    confirmButton: {
+        flex: 1,
+        flexDirection: 'row',
+        gap: spacing.sm,
     },
 });
