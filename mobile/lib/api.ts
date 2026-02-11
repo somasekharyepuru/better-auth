@@ -87,6 +87,67 @@ export interface DayProgress {
     completed: number;
 }
 
+// Time Block Types API
+export interface TimeBlockType {
+    id: string;
+    name: string;
+    color: string;
+    icon: string | null;
+    isDefault: boolean;
+    isActive: boolean;
+    order: number;
+}
+
+export interface CreateTimeBlockTypeDto {
+    name: string;
+    color?: string;
+    icon?: string;
+}
+
+export interface UpdateTimeBlockTypeDto {
+    name?: string;
+    color?: string;
+    icon?: string;
+    isActive?: boolean;
+    order?: number;
+}
+
+export const timeBlockTypesApi = {
+    async getAll(activeOnly: boolean = false): Promise<TimeBlockType[]> {
+        const url = activeOnly
+            ? `${API_BASE}/api/time-block-types?activeOnly=true`
+            : `${API_BASE}/api/time-block-types`;
+        return fetchWithAuth(url);
+    },
+
+    async create(data: CreateTimeBlockTypeDto): Promise<TimeBlockType> {
+        return fetchWithAuth(`${API_BASE}/api/time-block-types`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
+
+    async update(id: string, data: UpdateTimeBlockTypeDto): Promise<TimeBlockType> {
+        return fetchWithAuth(`${API_BASE}/api/time-block-types/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        });
+    },
+
+    async delete(id: string): Promise<void> {
+        await fetchWithAuth(`${API_BASE}/api/time-block-types/${id}`, {
+            method: 'DELETE',
+        });
+    },
+
+    async reorder(typeIds: string[]): Promise<TimeBlockType[]> {
+        return fetchWithAuth(`${API_BASE}/api/time-block-types/reorder`, {
+            method: 'POST',
+            body: JSON.stringify({ typeIds }),
+        });
+    },
+};
+
 export interface UserSettings {
     id?: string;
     userId?: string;
@@ -107,6 +168,7 @@ export interface UserSettings {
     pomodoroShortBreak?: number;
     pomodoroLongBreak?: number;
     pomodoroSoundEnabled?: boolean;
+    focusBlocksCalendar?: boolean;
     theme: 'light' | 'dark' | 'system';
 }
 
@@ -189,6 +251,15 @@ export const lifeAreasApi = {
             method: 'POST',
             body: JSON.stringify({ orderedIds }),
         });
+    },
+
+    async getPendingItemsCount(id: string): Promise<{
+        incompletePriorities: number;
+        upcomingTimeBlocks: number;
+        discussionItems: number;
+        eisenhowerTasks: number;
+    }> {
+        return fetchWithAuth(`${API_BASE}/api/life-areas/${id}/pending-items`);
     },
 };
 

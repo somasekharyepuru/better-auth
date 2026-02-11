@@ -12,7 +12,6 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     RefreshControl,
-    Alert,
     Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,6 +21,8 @@ import * as Haptics from 'expo-haptics';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { useAuth } from '@/contexts/AuthContext';
+import { CreateEventModal } from '@/components/calendar/CreateEventModal';
+import { EditEventModal } from '@/components/calendar/EditEventModal';
 import Colors from '@/constants/Colors';
 import { typography, spacing, radius, shadows } from '@/constants/Theme';
 import {
@@ -50,6 +51,11 @@ export default function CalendarScreen() {
     const [connections, setConnections] = useState<CalendarConnection[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+
+    // Modal states
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
     // Calculate date range based on view mode
     const dateRange = useMemo(() => {
@@ -107,6 +113,24 @@ export default function CalendarScreen() {
         await fetchCalendarData();
         setIsRefreshing(false);
     }, [fetchCalendarData]);
+
+    // Open create event modal
+    const handleOpenCreateModal = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setShowCreateModal(true);
+    };
+
+    // Open edit event modal
+    const handleEventPress = (event: CalendarEvent) => {
+        Haptics.light();
+        setSelectedEvent(event);
+        setShowEditModal(true);
+    };
+
+    // Handle event created/updated/deleted
+    const handleEventChange = () => {
+        fetchCalendarData();
+    };
 
     const navigateDate = (direction: -1 | 1) => {
         Haptics.selectionAsync();
@@ -193,10 +217,7 @@ export default function CalendarScreen() {
                 { backgroundColor: colors.cardSolid },
                 shadows.sm,
             ]}
-            onPress={() => {
-                Haptics.selectionAsync();
-                Alert.alert(event.title, event.description || 'No description');
-            }}
+            onPress={() => handleEventPress(event)}
         >
             <View
                 style={[
@@ -327,10 +348,7 @@ export default function CalendarScreen() {
                                             right: 8,
                                         },
                                     ]}
-                                    onPress={() => {
-                                        Haptics.selectionAsync();
-                                        Alert.alert(event.title, event.description || 'No description');
-                                    }}
+                                    onPress={() => handleEventPress(event)}
                                 >
                                     <Text
                                         style={styles.timedEventTitle}
@@ -360,6 +378,7 @@ export default function CalendarScreen() {
     }
 
     return (
+        <>
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
             {/* Header */}
             <View style={[styles.header, { borderBottomColor: colors.border }]}>
@@ -452,15 +471,33 @@ export default function CalendarScreen() {
             {connections.length > 0 && (
                 <TouchableOpacity
                     style={[styles.fab, { backgroundColor: colors.accent }]}
-                    onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                        Alert.alert('Create Event', 'Event creation coming soon!');
-                    }}
+                    onPress={handleOpenCreateModal}
                 >
                     <Ionicons name="add" size={28} color="#fff" />
                 </TouchableOpacity>
             )}
         </SafeAreaView>
+
+        {/* Create Event Modal */}
+        <CreateEventModal
+            visible={showCreateModal}
+            onClose={() => setShowCreateModal(false)}
+            onEventCreated={handleEventChange}
+            initialDate={selectedDate}
+        />
+
+        {/* Edit Event Modal */}
+        <EditEventModal
+            visible={showEditModal}
+            event={selectedEvent}
+            onClose={() => {
+                setShowEditModal(false);
+                setSelectedEvent(null);
+            }}
+            onEventUpdated={handleEventChange}
+            onEventDeleted={handleEventChange}
+        />
+    </>
     );
 }
 

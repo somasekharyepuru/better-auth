@@ -21,8 +21,10 @@ import * as Haptics from 'expo-haptics';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useLifeAreas } from '@/contexts/LifeAreasContext';
 import Colors from '@/constants/Colors';
 import { typography, spacing, radius, shadows, sizing } from '@/constants/Theme';
+import { LifeAreaManagementModal } from '@/components/dashboard/LifeAreaManagementModal';
 
 interface SectionItem {
     key: string;
@@ -78,7 +80,25 @@ export default function SettingsScreen() {
     const colorScheme = useColorScheme() ?? 'light';
     const colors = Colors[colorScheme];
     const { settings, updateSettings, isLoading } = useSettings();
+    const { lifeAreas } = useLifeAreas();
     const [isSaving, setIsSaving] = useState(false);
+    const [showLifeAreasModal, setShowLifeAreasModal] = useState(false);
+
+    // Local state for Pomodoro settings
+    const [focusDuration, setFocusDuration] = useState(settings.pomodoroFocusDuration || 25);
+    const [shortBreak, setShortBreak] = useState(settings.pomodoroShortBreak || 5);
+    const [longBreak, setLongBreak] = useState(settings.pomodoroLongBreak || 15);
+    const [pomodoroSoundEnabled, setPomodoroSoundEnabled] = useState(settings.pomodoroSoundEnabled ?? true);
+    const [focusBlocksCalendar, setFocusBlocksCalendar] = useState(settings.focusBlocksCalendar ?? true);
+
+    // Sync local state when settings change
+    React.useEffect(() => {
+        setFocusDuration(settings.pomodoroFocusDuration || 25);
+        setShortBreak(settings.pomodoroShortBreak || 5);
+        setLongBreak(settings.pomodoroLongBreak || 15);
+        setPomodoroSoundEnabled(settings.pomodoroSoundEnabled ?? true);
+        setFocusBlocksCalendar(settings.focusBlocksCalendar ?? true);
+    }, [settings]);
 
     const handleToggle = async (key: SectionItem['settingsKey'], value: boolean) => {
         Haptics.selectionAsync();
@@ -115,6 +135,47 @@ export default function SettingsScreen() {
         }
         setHapticEnabled(value);
         // In a future update, this can be persisted to AsyncStorage
+    };
+
+    const handlePlanningToggle = async (key: 'autoCarryForward' | 'autoCreateNextDay', value: boolean) => {
+        Haptics.selectionAsync();
+        setIsSaving(true);
+        try {
+            await updateSettings({ [key]: value });
+        } catch (error) {
+            Alert.alert('Error', 'Failed to update settings');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleLimitChange = async (key: 'maxTopPriorities' | 'maxDiscussionItems', value: number) => {
+        Haptics.selectionAsync();
+        setIsSaving(true);
+        try {
+            await updateSettings({ [key]: value });
+        } catch (error) {
+            Alert.alert('Error', 'Failed to update settings');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handlePomodoroSettingChange = async (updates: {
+        pomodoroFocusDuration?: number;
+        pomodoroShortBreak?: number;
+        pomodoroLongBreak?: number;
+        pomodoroSoundEnabled?: boolean;
+        focusBlocksCalendar?: boolean;
+    }) => {
+        setIsSaving(true);
+        try {
+            await updateSettings(updates);
+        } catch (error) {
+            Alert.alert('Error', 'Failed to update Pomodoro settings');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     if (isLoading) {
@@ -181,6 +242,192 @@ export default function SettingsScreen() {
                     </View>
                 </View>
 
+                {/* Pomodoro Settings Section */}
+                {settings.pomodoroEnabled && (
+                    <View style={styles.section}>
+                        <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+                            POMODORO SETTINGS
+                        </Text>
+                        <View style={[styles.sectionCard, { backgroundColor: colors.cardSolid }, shadows.sm]}>
+                            {/* Focus Duration */}
+                            <View style={styles.limitItem}>
+                                <View style={styles.limitContent}>
+                                    <Text style={[styles.itemLabel, { color: colors.text }]}>Focus Duration</Text>
+                                    <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
+                                        Length of focus sessions
+                                    </Text>
+                                </View>
+                                <View style={styles.stepperContainer}>
+                                    <TouchableOpacity
+                                        style={[styles.stepperButton, { backgroundColor: colors.backgroundSecondary }]}
+                                        onPress={() => {
+                                            const newValue = Math.max(15, focusDuration - 5);
+                                            setFocusDuration(newValue);
+                                            handlePomodoroSettingChange({ pomodoroFocusDuration: newValue });
+                                        }}
+                                    >
+                                        <Ionicons name="remove" size={18} color={colors.text} />
+                                    </TouchableOpacity>
+                                    <Text style={[styles.stepperValue, { color: colors.text }]}>{focusDuration} min</Text>
+                                    <TouchableOpacity
+                                        style={[styles.stepperButton, { backgroundColor: colors.backgroundSecondary }]}
+                                        onPress={() => {
+                                            const newValue = Math.min(120, focusDuration + 5);
+                                            setFocusDuration(newValue);
+                                            handlePomodoroSettingChange({ pomodoroFocusDuration: newValue });
+                                        }}
+                                    >
+                                        <Ionicons name="add" size={18} color={colors.text} />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                            <View style={[styles.separator, { backgroundColor: colors.border }]} />
+
+                            {/* Short Break */}
+                            <View style={styles.limitItem}>
+                                <View style={styles.limitContent}>
+                                    <Text style={[styles.itemLabel, { color: colors.text }]}>Short Break</Text>
+                                    <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
+                                        Break between focus sessions
+                                    </Text>
+                                </View>
+                                <View style={styles.stepperContainer}>
+                                    <TouchableOpacity
+                                        style={[styles.stepperButton, { backgroundColor: colors.backgroundSecondary }]}
+                                        onPress={() => {
+                                            const newValue = Math.max(1, shortBreak - 1);
+                                            setShortBreak(newValue);
+                                            handlePomodoroSettingChange({ pomodoroShortBreak: newValue });
+                                        }}
+                                    >
+                                        <Ionicons name="remove" size={18} color={colors.text} />
+                                    </TouchableOpacity>
+                                    <Text style={[styles.stepperValue, { color: colors.text }]}>{shortBreak} min</Text>
+                                    <TouchableOpacity
+                                        style={[styles.stepperButton, { backgroundColor: colors.backgroundSecondary }]}
+                                        onPress={() => {
+                                            const newValue = Math.min(30, shortBreak + 1);
+                                            setShortBreak(newValue);
+                                            handlePomodoroSettingChange({ pomodoroShortBreak: newValue });
+                                        }}
+                                    >
+                                        <Ionicons name="add" size={18} color={colors.text} />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                            <View style={[styles.separator, { backgroundColor: colors.border }]} />
+
+                            {/* Long Break */}
+                            <View style={styles.limitItem}>
+                                <View style={styles.limitContent}>
+                                    <Text style={[styles.itemLabel, { color: colors.text }]}>Long Break</Text>
+                                    <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
+                                        Break after 4 focus sessions
+                                    </Text>
+                                </View>
+                                <View style={styles.stepperContainer}>
+                                    <TouchableOpacity
+                                        style={[styles.stepperButton, { backgroundColor: colors.backgroundSecondary }]}
+                                        onPress={() => {
+                                            const newValue = Math.max(5, longBreak - 5);
+                                            setLongBreak(newValue);
+                                            handlePomodoroSettingChange({ pomodoroLongBreak: newValue });
+                                        }}
+                                    >
+                                        <Ionicons name="remove" size={18} color={colors.text} />
+                                    </TouchableOpacity>
+                                    <Text style={[styles.stepperValue, { color: colors.text }]}>{longBreak} min</Text>
+                                    <TouchableOpacity
+                                        style={[styles.stepperButton, { backgroundColor: colors.backgroundSecondary }]}
+                                        onPress={() => {
+                                            const newValue = Math.min(60, longBreak + 5);
+                                            setLongBreak(newValue);
+                                            handlePomodoroSettingChange({ pomodoroLongBreak: newValue });
+                                        }}
+                                    >
+                                        <Ionicons name="add" size={18} color={colors.text} />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                            <View style={[styles.separator, { backgroundColor: colors.border }]} />
+
+                            {/* Notification Sound */}
+                            <View style={styles.item}>
+                                <View style={[styles.itemIcon, { backgroundColor: '#FF3B3015' }]}>
+                                    <Ionicons name="notifications-outline" size={20} color="#FF3B30" />
+                                </View>
+                                <View style={styles.itemContent}>
+                                    <Text style={[styles.itemLabel, { color: colors.text }]}>Notification Sound</Text>
+                                    <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
+                                        Play sound when timer completes
+                                    </Text>
+                                </View>
+                                <Switch
+                                    value={pomodoroSoundEnabled}
+                                    onValueChange={(value) => {
+                                        setPomodoroSoundEnabled(value);
+                                        handlePomodoroSettingChange({ pomodoroSoundEnabled: value });
+                                    }}
+                                    trackColor={{ false: colors.border, true: colors.accent }}
+                                    thumbColor="#fff"
+                                    ios_backgroundColor={colors.border}
+                                />
+                            </View>
+                            <View style={[styles.separator, { backgroundColor: colors.border }]} />
+
+                            {/* Block External Calendars */}
+                            <View style={styles.item}>
+                                <View style={[styles.itemIcon, { backgroundColor: '#007AFF15' }]}>
+                                    <Ionicons name="calendar-outline" size={20} color="#007AFF" />
+                                </View>
+                                <View style={styles.itemContent}>
+                                    <Text style={[styles.itemLabel, { color: colors.text }]}>Block Calendars</Text>
+                                    <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
+                                        Block external calendars during focus
+                                    </Text>
+                                </View>
+                                <Switch
+                                    value={focusBlocksCalendar}
+                                    onValueChange={(value) => {
+                                        setFocusBlocksCalendar(value);
+                                        handlePomodoroSettingChange({ focusBlocksCalendar: value });
+                                    }}
+                                    trackColor={{ false: colors.border, true: colors.accent }}
+                                    thumbColor="#fff"
+                                    ios_backgroundColor={colors.border}
+                                />
+                            </View>
+                        </View>
+                    </View>
+                )}
+
+                {/* Life Areas Section */}
+                <View style={styles.section}>
+                    <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+                        PERSONALIZATION
+                    </Text>
+                    <View style={[styles.sectionCard, { backgroundColor: colors.cardSolid }, shadows.sm]}>
+                        <TouchableOpacity
+                            style={styles.themeItem}
+                            onPress={() => {
+                                Haptics.selectionAsync();
+                                setShowLifeAreasModal(true);
+                            }}
+                        >
+                            <View style={[styles.itemIcon, { backgroundColor: '#8B5CF615' }]}>
+                                <Ionicons name="layers-outline" size={20} color="#8B5CF6" />
+                            </View>
+                            <View style={styles.itemContent}>
+                                <Text style={[styles.itemLabel, { color: colors.text }]}>Life Areas</Text>
+                                <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
+                                    {lifeAreas.length} active • Manage your life areas
+                                </Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
                 {/* Features Section */}
                 <View style={styles.section}>
                     <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
@@ -188,6 +435,112 @@ export default function SettingsScreen() {
                     </Text>
                     <View style={[styles.sectionCard, { backgroundColor: colors.cardSolid }, shadows.sm]}>
                         {FEATURE_SECTIONS.map((item) => renderSectionItem(item))}
+                    </View>
+                </View>
+
+                {/* Planning Section */}
+                <View style={styles.section}>
+                    <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+                        DAILY PLANNING
+                    </Text>
+                    <View style={[styles.sectionCard, { backgroundColor: colors.cardSolid }, shadows.sm]}>
+                        <View style={styles.item}>
+                            <View style={[styles.itemIcon, { backgroundColor: '#34C75915' }]}>
+                                <Ionicons name="arrow-forward-circle-outline" size={20} color="#34C759" />
+                            </View>
+                            <View style={styles.itemContent}>
+                                <Text style={[styles.itemLabel, { color: colors.text }]}>Auto-carry unfinished</Text>
+                                <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
+                                    Move incomplete priorities to next day
+                                </Text>
+                            </View>
+                            <Switch
+                                value={settings.autoCarryForward ?? true}
+                                onValueChange={(value) => handlePlanningToggle('autoCarryForward', value)}
+                                trackColor={{ false: colors.border, true: colors.accent }}
+                                thumbColor="#fff"
+                                ios_backgroundColor={colors.border}
+                            />
+                        </View>
+                        <View style={[styles.separator, { backgroundColor: colors.border }]} />
+                        <View style={styles.item}>
+                            <View style={[styles.itemIcon, { backgroundColor: '#FF950015' }]}>
+                                <Ionicons name="calendar-outline" size={20} color="#FF9500" />
+                            </View>
+                            <View style={styles.itemContent}>
+                                <Text style={[styles.itemLabel, { color: colors.text }]}>Auto-create tomorrow</Text>
+                                <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
+                                    Automatically prepare tomorrow's dashboard
+                                </Text>
+                            </View>
+                            <Switch
+                                value={settings.autoCreateNextDay ?? true}
+                                onValueChange={(value) => handlePlanningToggle('autoCreateNextDay', value)}
+                                trackColor={{ false: colors.border, true: colors.accent }}
+                                thumbColor="#fff"
+                                ios_backgroundColor={colors.border}
+                            />
+                        </View>
+                        <View style={[styles.separator, { backgroundColor: colors.border }]} />
+                        <View style={styles.limitItem}>
+                            <View style={styles.limitContent}>
+                                <Text style={[styles.itemLabel, { color: colors.text }]}>Max Priorities</Text>
+                                <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
+                                    Maximum daily priorities: {settings.maxTopPriorities || 3}
+                                </Text>
+                            </View>
+                            <View style={styles.stepperContainer}>
+                                <TouchableOpacity
+                                    style={[styles.stepperButton, { backgroundColor: colors.backgroundSecondary }]}
+                                    onPress={() => {
+                                        const newValue = Math.max(3, (settings.maxTopPriorities || 3) - 1);
+                                        handleLimitChange('maxTopPriorities', newValue);
+                                    }}
+                                >
+                                    <Ionicons name="remove" size={18} color={colors.text} />
+                                </TouchableOpacity>
+                                <Text style={[styles.stepperValue, { color: colors.text }]}>{settings.maxTopPriorities || 3}</Text>
+                                <TouchableOpacity
+                                    style={[styles.stepperButton, { backgroundColor: colors.backgroundSecondary }]}
+                                    onPress={() => {
+                                        const newValue = Math.min(10, (settings.maxTopPriorities || 3) + 1);
+                                        handleLimitChange('maxTopPriorities', newValue);
+                                    }}
+                                >
+                                    <Ionicons name="add" size={18} color={colors.text} />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                        <View style={[styles.separator, { backgroundColor: colors.border }]} />
+                        <View style={styles.limitItem}>
+                            <View style={styles.limitContent}>
+                                <Text style={[styles.itemLabel, { color: colors.text }]}>Max Discussion Items</Text>
+                                <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
+                                    Maximum discussion topics: {settings.maxDiscussionItems || 5}
+                                </Text>
+                            </View>
+                            <View style={styles.stepperContainer}>
+                                <TouchableOpacity
+                                    style={[styles.stepperButton, { backgroundColor: colors.backgroundSecondary }]}
+                                    onPress={() => {
+                                        const newValue = Math.max(3, (settings.maxDiscussionItems || 5) - 1);
+                                        handleLimitChange('maxDiscussionItems', newValue);
+                                    }}
+                                >
+                                    <Ionicons name="remove" size={18} color={colors.text} />
+                                </TouchableOpacity>
+                                <Text style={[styles.stepperValue, { color: colors.text }]}>{settings.maxDiscussionItems || 5}</Text>
+                                <TouchableOpacity
+                                    style={[styles.stepperButton, { backgroundColor: colors.backgroundSecondary }]}
+                                    onPress={() => {
+                                        const newValue = Math.min(10, (settings.maxDiscussionItems || 5) + 1);
+                                        handleLimitChange('maxDiscussionItems', newValue);
+                                    }}
+                                >
+                                    <Ionicons name="add" size={18} color={colors.text} />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
                     </View>
                 </View>
 
@@ -259,6 +612,33 @@ export default function SettingsScreen() {
                 </View>
 
 
+
+                {/* Notifications Section */}
+                <View style={styles.section}>
+                    <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+                        NOTIFICATIONS
+                    </Text>
+                    <View style={[styles.sectionCard, { backgroundColor: colors.cardSolid }, shadows.sm]}>
+                        <TouchableOpacity
+                            style={styles.themeItem}
+                            onPress={() => {
+                                Haptics.selectionAsync();
+                                router.push('/settings/notifications' as any);
+                            }}
+                        >
+                            <View style={[styles.itemIcon, { backgroundColor: '#FF3B3015' }]}>
+                                <Ionicons name="notifications-outline" size={20} color="#FF3B30" />
+                            </View>
+                            <View style={styles.itemContent}>
+                                <Text style={[styles.itemLabel, { color: colors.text }]}>Notification Settings</Text>
+                                <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
+                                    Manage reminders and alerts
+                                </Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
 
                 {/* Mobile Settings Section */}
                 <View style={styles.section}>
@@ -358,6 +738,12 @@ export default function SettingsScreen() {
                 </View>
 
             </ScrollView>
+
+            {/* Life Area Management Modal */}
+            <LifeAreaManagementModal
+                visible={showLifeAreasModal}
+                onClose={() => setShowLifeAreasModal(false)}
+            />
 
             {isSaving && (
                 <View style={[styles.savingOverlay, { backgroundColor: colors.modalBackground }]}>

@@ -1,9 +1,9 @@
 /**
  * Pomodoro Timer screen
- * Focus timer with start/pause/reset controls and notifications
+ * Uses global FocusContext for timer state management and backend sync
  */
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -11,42 +11,21 @@ import {
   TouchableOpacity,
   Animated,
   Easing,
-  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import * as Notifications from "expo-notifications";
 
+import { useFocus } from "@/contexts/FocusContext";
+import { useSettings } from "@/contexts/SettingsContext";
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
 import { typography, spacing, radius, shadows } from "@/constants/Theme";
+import { requestNotificationPermissions, showTimerCompleteNotification, haptics } from "@/lib/notifications";
 
-// Configure notifications
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+type SessionType = "focus" | "shortBreak" | "longBreak";
 
-const POMODORO_DURATION = 25 * 60; // 25 minutes
-const SHORT_BREAK = 5 * 60; // 5 minutes
-const LONG_BREAK = 15 * 60; // 15 minutes
-
-type TimerMode = "focus" | "shortBreak" | "longBreak";
-
-const modeDurations: Record<TimerMode, number> = {
-  focus: POMODORO_DURATION,
-  shortBreak: SHORT_BREAK,
-  longBreak: LONG_BREAK,
-};
-
-const modeLabels: Record<TimerMode, string> = {
+const modeLabels: Record<SessionType, string> = {
   focus: "Focus",
   shortBreak: "Short Break",
   longBreak: "Long Break",
@@ -56,29 +35,27 @@ export default function PomodoroScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
+  const focus = useFocus();
+  const settings = useSettings();
 
-  const [mode, setMode] = useState<TimerMode>("focus");
-  const [timeLeft, setTimeLeft] = useState(POMODORO_DURATION);
-  const [isRunning, setIsRunning] = useState(false);
-  const [completedPomodoros, setCompletedPomodoros] = useState(0);
-
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [mode, setMode] = React.useState<SessionType>("focus");
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  // Request notification permissions
+  // Request notification permissions on mount
   useEffect(() => {
-    const requestPermissions = async () => {
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status !== "granted") {
-        console.log("Notification permissions not granted");
-      }
-    };
-    requestPermissions();
+    requestNotificationPermissions();
   }, []);
+
+  // Update local mode when focus session type changes
+  useEffect(() => {
+    if (focus.isActive) {
+      setMode(focus.sessionType);
+    }
+  }, [focus.sessionType, focus.isActive]);
 
   // Pulse animation when running
   useEffect(() => {
-    if (isRunning) {
+    if (focus.isActive && !focus.isPaused) {
       Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
@@ -93,97 +70,74 @@ export default function PomodoroScreen() {
             easing: Easing.inOut(Easing.ease),
             useNativeDriver: true,
           }),
-        ]),
+        ])
       ).start();
     } else {
       pulseAnim.setValue(1);
     }
-  }, [isRunning, pulseAnim]);
+  }, [focus.isActive, focus.isPaused, pulseAnim]);
 
-  // Timer tick
+  // Show notification when timer completes
   useEffect(() => {
-    if (isRunning) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            handleTimerComplete();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+    if (!focus.isActive && focus.timeRemaining === 0 && focus.completedSessions > 0) {
+      showTimerCompleteNotification(mode, true);
     }
+  }, [focus.isActive, focus.timeRemaining, focus.completedSessions, mode]);
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+  const getDurationForMode = (sessionMode: SessionType): number => {
+    // Use custom durations from settings if available
+    const durations = {
+      focus: settings.settings.pomodoroFocusDuration * 60 || 25 * 60,
+      shortBreak: settings.settings.pomodoroShortBreak * 60 || 5 * 60,
+      longBreak: settings.settings.pomodoroLongBreak * 60 || 15 * 60,
     };
-  }, [isRunning]);
-
-  const handleTimerComplete = async () => {
-    setIsRunning(false);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-    // Send notification
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: mode === "focus" ? "🎉 Focus Complete!" : "☕ Break Over!",
-        body:
-          mode === "focus"
-            ? "Great work! Time for a break."
-            : "Ready to focus again?",
-        sound: "default",
-      },
-      trigger: null,
-    });
-
-    if (mode === "focus") {
-      setCompletedPomodoros((prev) => prev + 1);
-      // Every 4 pomodoros, suggest a long break
-      if ((completedPomodoros + 1) % 4 === 0) {
-        setMode("longBreak");
-        setTimeLeft(LONG_BREAK);
-      } else {
-        setMode("shortBreak");
-        setTimeLeft(SHORT_BREAK);
-      }
-    } else {
-      setMode("focus");
-      setTimeLeft(POMODORO_DURATION);
-    }
+    return durations[sessionMode];
   };
 
   const handleStartPause = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setIsRunning(!isRunning);
+    haptics.medium();
+
+    if (!focus.isActive) {
+      // Start new session
+      const duration = getDurationForMode(mode);
+      focus.startFocus(mode, duration, { type: 'standalone', id: crypto.randomUUID?.() ?? '' });
+    } else if (focus.isPaused) {
+      // Resume
+      focus.resumeFocus();
+    } else {
+      // Pause
+      focus.pauseFocus();
+    }
   };
 
   const handleReset = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setIsRunning(false);
-    setTimeLeft(modeDurations[mode]);
+    haptics.light();
+    focus.resetTimer();
   };
 
-  const handleModeChange = (newMode: TimerMode) => {
-    Haptics.selectionAsync();
-    setMode(newMode);
-    setTimeLeft(modeDurations[newMode]);
-    setIsRunning(false);
+  const handleModeChange = (newMode: SessionType) => {
+    haptics.selection();
+
+    // If a session is active, end it first
+    if (focus.isActive) {
+      focus.endFocus(false).then(() => {
+        setMode(newMode);
+      });
+    } else {
+      setMode(newMode);
+    }
   };
 
   // Format time display
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
+  const minutes = Math.floor(focus.timeRemaining / 60);
+  const seconds = focus.timeRemaining % 60;
   const timeDisplay = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
   // Progress for circular indicator
-  const progress = 1 - timeLeft / modeDurations[mode];
+  const currentDuration = focus.isActive ? focus.totalTime : getDurationForMode(mode);
+  const progress = 1 - focus.timeRemaining / currentDuration;
+
+  const isRunning = focus.isActive && !focus.isPaused;
 
   return (
     <SafeAreaView
@@ -215,19 +169,27 @@ export default function PomodoroScreen() {
           { backgroundColor: colors.backgroundSecondary },
         ]}
       >
-        {(["focus", "shortBreak", "longBreak"] as TimerMode[]).map((m) => (
+        {(["focus", "shortBreak", "longBreak"] as SessionType[]).map((m) => (
           <TouchableOpacity
             key={m}
             style={[
               styles.modeButton,
-              mode === m && { backgroundColor: colors.cardSolid },
+              (mode === m || (focus.isActive && focus.sessionType === m)) && {
+                backgroundColor: colors.cardSolid,
+              },
             ]}
             onPress={() => handleModeChange(m)}
+            disabled={focus.isActive}
           >
             <Text
               style={[
                 styles.modeButtonText,
-                { color: mode === m ? colors.text : colors.textSecondary },
+                {
+                  color:
+                    mode === m || (focus.isActive && focus.sessionType === m)
+                      ? colors.text
+                      : colors.textSecondary,
+                },
               ]}
             >
               {modeLabels[m]}
@@ -243,7 +205,13 @@ export default function PomodoroScreen() {
             styles.timerCircle,
             {
               backgroundColor: colors.cardSolid,
-              borderColor: mode === "focus" ? colors.error : colors.success,
+              borderColor:
+                mode === "focus"
+                  ? colors.error
+                  : mode === "shortBreak"
+                  ? colors.success
+                  : colors.accent,
+              borderWidth: 6,
               transform: [{ scale: pulseAnim }],
             },
             shadows.lg,
@@ -253,8 +221,25 @@ export default function PomodoroScreen() {
             {timeDisplay}
           </Text>
           <Text style={[styles.timerLabel, { color: colors.textSecondary }]}>
-            {modeLabels[mode]}
+            {modeLabels[focus.isActive ? focus.sessionType : mode]}
           </Text>
+
+          {/* Paused indicator */}
+          {focus.isActive && focus.isPaused && (
+            <View
+              style={[
+                styles.pausedIndicator,
+                { backgroundColor: colors.backgroundSecondary },
+              ]}
+            >
+              <Ionicons name="pause" size={16} color={colors.textSecondary} />
+              <Text
+                style={[styles.pausedText, { color: colors.textSecondary }]}
+              >
+                Paused
+              </Text>
+            </View>
+          )}
         </Animated.View>
       </View>
 
@@ -266,8 +251,14 @@ export default function PomodoroScreen() {
             { backgroundColor: colors.backgroundSecondary },
           ]}
           onPress={handleReset}
+          disabled={!focus.isActive && focus.timeRemaining === getDurationForMode(mode)}
         >
-          <Ionicons name="refresh" size={28} color={colors.textSecondary} />
+          <Ionicons
+            name="refresh"
+            size={28}
+            color={colors.textSecondary}
+            style={{ opacity: focus.isActive || focus.timeRemaining < getDurationForMode(mode) ? 1 : 0.5 }}
+          />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -289,12 +280,16 @@ export default function PomodoroScreen() {
             styles.controlButton,
             { backgroundColor: colors.backgroundSecondary },
           ]}
-          onPress={() =>
-            handleModeChange(mode === "focus" ? "shortBreak" : "focus")
-          }
+          onPress={() => {
+            if (focus.isActive) {
+              focus.endFocus(false);
+            } else {
+              handleModeChange(mode === "focus" ? "shortBreak" : "focus");
+            }
+          }}
         >
           <Ionicons
-            name="arrow-forward"
+            name={focus.isActive ? "stop" : "arrow-forward"}
             size={28}
             color={colors.textSecondary}
           />
@@ -311,7 +306,7 @@ export default function PomodoroScreen() {
       >
         <View style={styles.stat}>
           <Text style={[styles.statValue, { color: colors.text }]}>
-            {completedPomodoros}
+            {focus.completedSessions}
           </Text>
           <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
             Completed
@@ -322,8 +317,8 @@ export default function PomodoroScreen() {
         />
         <View style={styles.stat}>
           <Text style={[styles.statValue, { color: colors.text }]}>
-            {Math.floor((completedPomodoros * 25) / 60)}h{" "}
-            {(completedPomodoros * 25) % 60}m
+            {Math.floor((focus.completedSessions * 25) / 60)}h{" "}
+            {(focus.completedSessions * 25) % 60}m
           </Text>
           <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
             Focus Time
@@ -337,6 +332,23 @@ export default function PomodoroScreen() {
           💡 Tip: After 4 focus sessions, take a longer 15-minute break
         </Text>
       </View>
+
+      {/* End Session Button (only when active) */}
+      {focus.isActive && (
+        <View style={styles.endSessionContainer}>
+          <TouchableOpacity
+            style={[
+              styles.endSessionButton,
+              { backgroundColor: colors.backgroundSecondary },
+            ]}
+            onPress={() => focus.endFocus(false)}
+          >
+            <Text style={[styles.endSessionText, { color: colors.error }]}>
+              End Session Early
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -371,7 +383,6 @@ const styles = StyleSheet.create({
     width: 280,
     height: 280,
     borderRadius: 140,
-    borderWidth: 6,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -384,6 +395,20 @@ const styles = StyleSheet.create({
   timerLabel: {
     ...typography.subheadline,
     marginTop: spacing.sm,
+  },
+  pausedIndicator: {
+    position: "absolute",
+    bottom: 60,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
+    gap: spacing.xs,
+  },
+  pausedText: {
+    ...typography.caption2,
+    fontWeight: "500",
   },
   controls: {
     flexDirection: "row",
@@ -431,11 +456,24 @@ const styles = StyleSheet.create({
   },
   tipsContainer: {
     paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xxxl,
+    paddingBottom: spacing.lg,
     alignItems: "center",
   },
   tipsText: {
     ...typography.subheadline,
     textAlign: "center",
+  },
+  endSessionContainer: {
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xxxl,
+  },
+  endSessionButton: {
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    alignItems: "center",
+  },
+  endSessionText: {
+    ...typography.subheadline,
+    fontWeight: "600",
   },
 });

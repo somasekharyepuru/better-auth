@@ -1,6 +1,6 @@
 /**
  * Discussion Items Card component
- * Shows list of items to discuss
+ * Shows list of items to discuss with drag-drop reordering
  */
 
 import React, { useState } from 'react';
@@ -14,6 +14,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import DraggableFlatList, {
+    RenderItemParams,
+    ScaleDecorator,
+} from 'react-native-draggable-flatlist';
 
 import { typography, spacing, radius, shadows, sizing } from '@/constants/Theme';
 import { ThemeColors } from '@/constants/Colors';
@@ -63,6 +67,72 @@ export function DiscussionItemsCard({
         }
     };
 
+    const handleDragEnd = async ({ data, from, to }: { data: DiscussionItem[], from: number; to: number }) => {
+        if (from === to) return;
+
+        try {
+            // Reorder array
+            const reordered = [...data];
+            const [movedItem] = reordered.splice(from, 1);
+            reordered.splice(to, 0, movedItem);
+
+            // Call reorder API
+            const itemIds = reordered.map((item) => item.id);
+            await discussionItemsApi.reorder(itemIds);
+
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onUpdate(reordered);
+        } catch (error) {
+            console.error('Failed to reorder discussion items:', error);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        }
+    };
+
+    const renderItem = ({ item, drag, isActive }: RenderItemParams<DiscussionItem>) => {
+        return (
+            <ScaleDecorator>
+                <View
+                    style={[
+                        styles.item,
+                        {
+                            backgroundColor: isActive ? colors.backgroundSecondary : 'transparent',
+                            opacity: isActive ? 0.8 : 1,
+                        },
+                    ]}
+                >
+                    <TouchableOpacity
+                        onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+                        onPressOut={() => drag()}
+                        onLongPress={drag}
+                        delayLongPress={200}
+                        style={[
+                            styles.dragHandle,
+                            { backgroundColor: colors.backgroundSecondary },
+                        ]}
+                    >
+                        <Ionicons name="reorder-four" size={18} color={colors.textSecondary} />
+                    </TouchableOpacity>
+
+                    <View style={[styles.bullet, { backgroundColor: colors.warning }]} />
+
+                    <Text
+                        style={[styles.itemText, { color: colors.text }]}
+                        numberOfLines={2}
+                    >
+                        {item.content}
+                    </Text>
+
+                    <TouchableOpacity
+                        onPress={() => handleDelete(item.id)}
+                        style={styles.deleteButton}
+                    >
+                        <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
+                    </TouchableOpacity>
+                </View>
+            </ScaleDecorator>
+        );
+    };
+
     return (
         <View style={[styles.card, { backgroundColor: colors.cardSolid }]}>
             {isLoading ? (
@@ -76,25 +146,14 @@ export function DiscussionItemsCard({
                             No discussion items yet
                         </Text>
                     ) : (
-                        <View style={styles.list}>
-                            {items.map((item) => (
-                                <View key={item.id} style={styles.item}>
-                                    <View style={[styles.bullet, { backgroundColor: colors.warning }]} />
-                                    <Text
-                                        style={[styles.itemText, { color: colors.text }]}
-                                        numberOfLines={2}
-                                    >
-                                        {item.content}
-                                    </Text>
-                                    <TouchableOpacity
-                                        onPress={() => handleDelete(item.id)}
-                                        style={styles.deleteButton}
-                                    >
-                                        <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
-                                    </TouchableOpacity>
-                                </View>
-                            ))}
-                        </View>
+                        <DraggableFlatList
+                            data={items}
+                            renderItem={renderItem}
+                            keyExtractor={(item) => item.id}
+                            onDragEnd={handleDragEnd}
+                            containerStyle={styles.list}
+                            activationDistance={10}
+                        />
                     )}
 
                     <View style={styles.addContainer}>
@@ -154,13 +213,23 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.lg,
     },
     list: {
-        gap: spacing.sm,
+        flexGrow: 0,
     },
     item: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.md,
         paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.sm,
+        borderRadius: radius.sm,
+        marginVertical: 1,
+    },
+    dragHandle: {
+        width: 28,
+        height: 28,
+        borderRadius: radius.sm,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     bullet: {
         width: 8,

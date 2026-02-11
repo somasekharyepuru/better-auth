@@ -21,10 +21,12 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { authClient } from '@/lib/auth-client';
+import { googleOAuth, appleOAuth, handleOAuthError, platformSupport } from '@/lib/oauth';
 import Colors from '@/constants/Colors';
 import { typography, spacing, radius, sizing } from '@/constants/Theme';
 import { useColorScheme } from '@/components/useColorScheme';
 import { Logo } from '@/components/ui/Logo';
+import { Platform } from 'react-native';
 
 export default function LoginScreen() {
     const [email, setEmail] = useState('');
@@ -32,6 +34,7 @@ export default function LoginScreen() {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isOAuthLoading, setIsOAuthLoading] = useState('');
 
     const { signIn } = useAuth();
     const router = useRouter();
@@ -82,6 +85,46 @@ export default function LoginScreen() {
             setError('An unexpected error occurred');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleGoogleSignIn = async () => {
+        setError('');
+        setIsOAuthLoading('google');
+
+        try {
+            const result = await googleOAuth.signIn();
+            if (result.success) {
+                // Refresh auth state and navigate to tabs
+                await signIn('', '', true);
+                router.replace('/(tabs)');
+            } else {
+                setError(handleOAuthError(result.error || 'Failed to sign in with Google'));
+            }
+        } catch (err) {
+            setError('An unexpected error occurred with Google Sign In');
+        } finally {
+            setIsOAuthLoading('');
+        }
+    };
+
+    const handleAppleSignIn = async () => {
+        setError('');
+        setIsOAuthLoading('apple');
+
+        try {
+            const result = await appleOAuth.signIn();
+            if (result.success) {
+                // Refresh auth state and navigate to tabs
+                await signIn('', '', true);
+                router.replace('/(tabs)');
+            } else {
+                setError(handleOAuthError(result.error || 'Failed to sign in with Apple'));
+            }
+        } catch (err) {
+            setError('An unexpected error occurred with Apple Sign In');
+        } finally {
+            setIsOAuthLoading('');
         }
     };
 
@@ -192,20 +235,38 @@ export default function LoginScreen() {
                     </View>
 
                     {/* Social Login Buttons */}
-                    <TouchableOpacity
-                        style={[styles.socialButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-                        activeOpacity={0.8}
-                    >
-                        <Ionicons name="logo-apple" size={20} color={colors.text} />
-                        <Text style={[styles.socialButtonText, { color: colors.text }]}>Continue with Apple</Text>
-                    </TouchableOpacity>
+                    {Platform.OS === 'ios' && (
+                        <TouchableOpacity
+                            style={[styles.socialButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
+                            onPress={handleAppleSignIn}
+                            disabled={isOAuthLoading !== '' || isLoading}
+                            activeOpacity={0.8}
+                        >
+                            {isOAuthLoading === 'apple' ? (
+                                <ActivityIndicator size="small" color={colors.text} />
+                            ) : (
+                                <>
+                                    <Ionicons name="logo-apple" size={20} color={colors.text} />
+                                    <Text style={[styles.socialButtonText, { color: colors.text }]}>Continue with Apple</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    )}
 
                     <TouchableOpacity
                         style={[styles.socialButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
+                        onPress={handleGoogleSignIn}
+                        disabled={isOAuthLoading !== '' || isLoading}
                         activeOpacity={0.8}
                     >
-                        <Ionicons name="logo-google" size={20} color={colors.text} />
-                        <Text style={[styles.socialButtonText, { color: colors.text }]}>Continue with Google</Text>
+                        {isOAuthLoading === 'google' ? (
+                            <ActivityIndicator size="small" color={colors.text} />
+                        ) : (
+                            <>
+                                <Ionicons name="logo-google" size={20} color={colors.text} />
+                                <Text style={[styles.socialButtonText, { color: colors.text }]}>Continue with Google</Text>
+                            </>
+                        )}
                     </TouchableOpacity>
                 </View>
 

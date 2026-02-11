@@ -22,7 +22,10 @@ import dayjs from 'dayjs';
 
 import { typography, spacing, radius, shadows, sizing } from '@/constants/Theme';
 import { ThemeColors } from '@/constants/Colors';
-import { TimeBlock, timeBlocksApi } from '@/lib/api';
+import { TimeBlock, timeBlocksApi, TimeBlockConflict, TopPriority, prioritiesApi } from '@/lib/api';
+import { useFocus } from '@/contexts/FocusContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { ConflictResolutionModal } from '@/components/calendar/ConflictResolutionModal';
 
 interface TimeBlocksCardProps {
     date: string;
@@ -30,6 +33,7 @@ interface TimeBlocksCardProps {
     onUpdate: (blocks: TimeBlock[]) => void;
     colors: ThemeColors;
     isLoading: boolean;
+    priorities?: TopPriority[];
 }
 
 const TIME_BLOCK_TYPES = ['Deep Work', 'Meeting', 'Personal', 'Break', 'Admin'];
@@ -91,6 +95,7 @@ export function TimeBlocksCard({
     onUpdate,
     colors,
     isLoading,
+    priorities = [],
 }: TimeBlocksCardProps) {
     const [showModal, setShowModal] = useState(false);
     const [editingBlock, setEditingBlock] = useState<TimeBlock | null>(null);
@@ -101,6 +106,21 @@ export function TimeBlocksCard({
     const [isSaving, setIsSaving] = useState(false);
     const [showStartPicker, setShowStartPicker] = useState(false);
     const [showEndPicker, setShowEndPicker] = useState(false);
+    const [conflictInfo, setConflictInfo] = useState<TimeBlockConflict | null>(null);
+    const [selectedPriorityId, setSelectedPriorityId] = useState<string | null>(null);
+
+    const [showFocusModal, setShowFocusModal] = useState(false);
+    const [selectedBlockForFocus, setSelectedBlockForFocus] = useState<TimeBlock | null>(null);
+    const [showConflictModal, setShowConflictModal] = useState(false);
+    const [pendingBlockData, setPendingBlockData] = useState<{
+        title: string;
+        startTime: string;
+        endTime: string;
+        type: string;
+    } | null>(null);
+
+    const { startSession } = useFocus();
+    const { settings } = useSettings();
 
     // Sort blocks by start time
     const sortedBlocks = [...blocks].sort((a, b) =>
@@ -117,6 +137,7 @@ export function TimeBlocksCard({
         end.setHours(end.getHours() + 1);
         setEndTime(end);
         setBlockType('Deep Work');
+        setSelectedPriorityId(null);
         setShowModal(true);
     };
 
@@ -126,12 +147,44 @@ export function TimeBlocksCard({
         setStartTime(timeToDate(block.startTime));
         setEndTime(timeToDate(block.endTime));
         setBlockType(block.type);
+        // Check if block has an associated priority (for EnhancedTimeBlock)
+        const enhanced = block as any;
+        setSelectedPriorityId(enhanced.priorityId || null);
         setShowModal(true);
     };
 
     const closeModal = () => {
         setShowModal(false);
         setEditingBlock(null);
+        setConflictInfo(null);
+        setSelectedPriorityId(null);
+    };
+
+    const checkForConflicts = async (startTimeISO: string, endTimeISO: string): Promise<boolean> => {
+        try {
+            const conflict = await timeBlocksApi.checkConflicts(
+                startTimeISO,
+                endTimeISO,
+                editingBlock?.id,
+            );
+            setConflictInfo(conflict);
+
+            // If there's a conflict, show the resolution modal
+            if (conflict.hasConflict) {
+                setPendingBlockData({
+                    title: title.trim(),
+                    startTime: startTimeISO,
+                    endTime: endTimeISO,
+                    type: blockType,
+                });
+                setShowConflictModal(true);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Failed to check conflicts:', error);
+            return false;
+        }
     };
 
     const handleSave = async () => {
@@ -153,25 +206,53 @@ export function TimeBlocksCard({
         const startTimeISO = dateToISOTime(startTime, date);
         const endTimeISO = dateToISOTime(endTime, date);
 
+        // Check for conflicts
+        const hasConflicts = await checkForConflicts(startTimeISO, endTimeISO);
+        if (hasConflicts && conflictInfo) {
+            const conflictTitles = conflictInfo.conflictingBlocks
+                .map(b => b.title)
+                .join(', ');
+            Alert.alert(
+                'Scheduling Conflict',
+                `This time block conflicts with:\n\n${conflictTitles}\n\nDo you want to save anyway?`,
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                        text: 'Save Anyway',
+                        style: 'destructive',
+                        onPress: () => saveTimeBlock(startTimeISO, endTimeISO),
+                    },
+                ],
+            );
+            return;
+        }
+
+        // No conflicts, proceed to save
+        saveTimeBlock(startTimeISO, endTimeISO);
+    };
+
+    const saveTimeBlock = async (startTimeISO: string, endTimeISO: string) => {
         setIsSaving(true);
         try {
             if (editingBlock) {
-                // Update existing block
+                // Update existing block - also update priority link if changed
                 const updated = await timeBlocksApi.update(editingBlock.id, {
                     title: title.trim(),
                     startTime: startTimeISO,
                     endTime: endTimeISO,
                     type: blockType,
+                    priorityId: selectedPriorityId,
                 });
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 onUpdate(blocks.map(b => b.id === updated.id ? updated : b));
             } else {
-                // Create new block
+                // Create new block with priority link if selected
                 const created = await timeBlocksApi.create(date, {
                     title: title.trim(),
                     startTime: startTimeISO,
                     endTime: endTimeISO,
                     type: blockType,
+                    priorityId: selectedPriorityId || undefined,
                 });
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 onUpdate([...blocks, created]);
@@ -209,6 +290,65 @@ export function TimeBlocksCard({
         );
     };
 
+    const handleStartFocus = (block: TimeBlock) => {
+        setSelectedBlockForFocus(block);
+        setShowFocusModal(true);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    };
+
+    const confirmStartFocus = async () => {
+        if (!selectedBlockForFocus) return;
+
+        try {
+            await startSession({
+                linkedEntity: {
+                    type: 'timeBlock',
+                    id: selectedBlockForFocus.id,
+                    title: selectedBlockForFocus.title,
+                },
+                sessionType: 'focus',
+                duration: settings.pomodoroFocusDuration || 25,
+            });
+            setShowFocusModal(false);
+            setSelectedBlockForFocus(null);
+        } catch (error) {
+            console.error('Failed to start focus session:', error);
+            Alert.alert('Error', 'Failed to start focus session');
+        }
+    };
+
+    const handleConflictResolution = async (resolution: 'keep-both' | 'remove-existing' | 'reschedule' | 'cancel') => {
+        setShowConflictModal(false);
+
+        if (resolution === 'cancel' || !pendingBlockData) {
+            setPendingBlockData(null);
+            return;
+        }
+
+        try {
+            if (resolution === 'keep-both') {
+                // Save with conflicts allowed
+                await saveTimeBlock(pendingBlockData.startTime, pendingBlockData.endTime, true);
+            } else if (resolution === 'remove-existing') {
+                // Remove conflicting block and save new one
+                const conflictingBlock = conflictInfo?.conflictingBlocks[0];
+                if (conflictingBlock) {
+                    await timeBlocksApi.delete(conflictingBlock.id);
+                    onUpdate(blocks.filter(b => b.id !== conflictingBlock.id));
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                }
+                await saveTimeBlock(pendingBlockData.startTime, pendingBlockData.endTime);
+            } else if (resolution === 'reschedule' && onRescheduleTo) {
+                // Will be handled by the reschedule flow
+                onRescheduleTo(pendingBlockData.startTime);
+            }
+            setPendingBlockData(null);
+        } catch (error) {
+            console.error('Failed to resolve conflict:', error);
+            Alert.alert('Error', 'Failed to resolve conflict');
+        }
+    };
+
     return (
         <View style={[styles.card, { backgroundColor: colors.cardSolid }]}>
             <View style={styles.header}>
@@ -234,30 +374,53 @@ export function TimeBlocksCard({
                 </TouchableOpacity>
             ) : (
                 <View style={styles.list}>
-                    {sortedBlocks.map((block) => (
-                        <TouchableOpacity
-                            key={block.id}
-                            style={styles.item}
-                            onPress={() => openEditModal(block)}
-                            onLongPress={() => handleDelete(block)}
-                        >
-                            <View
-                                style={[
-                                    styles.typeIndicator,
-                                    { backgroundColor: getTypeColor(block.type, colors) },
-                                ]}
-                            />
-                            <View style={styles.itemContent}>
-                                <Text style={[styles.itemTitle, { color: colors.text }]} numberOfLines={1}>
-                                    {block.title}
-                                </Text>
-                                <Text style={[styles.itemTime, { color: colors.textSecondary }]}>
-                                    {formatTime(block.startTime)} - {formatTime(block.endTime)}
-                                </Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
-                        </TouchableOpacity>
-                    ))}
+                    {sortedBlocks.map((block) => {
+                        const enhanced = block as any;
+                        const linkedPriority = enhanced.priority || (enhanced.priorityId && priorities?.find(p => p.id === enhanced.priorityId));
+                        return (
+                            <TouchableOpacity
+                                key={block.id}
+                                style={styles.item}
+                                onPress={() => openEditModal(block)}
+                                onLongPress={() => handleDelete(block)}
+                            >
+                                <View
+                                    style={[
+                                        styles.typeIndicator,
+                                        { backgroundColor: getTypeColor(block.type, colors) },
+                                    ]}
+                                />
+                                <View style={styles.itemContent}>
+                                    <Text style={[styles.itemTitle, { color: colors.text }]} numberOfLines={1}>
+                                        {block.title}
+                                    </Text>
+                                    <View style={styles.itemMeta}>
+                                        <Text style={[styles.itemTime, { color: colors.textSecondary }]}>
+                                            {formatTime(block.startTime)} - {formatTime(block.endTime)}
+                                        </Text>
+                                        {linkedPriority && (
+                                            <View style={[styles.priorityBadge, { backgroundColor: colors.warning + '20' }]}>
+                                                <Ionicons name="link" size={12} color={colors.warning} />
+                                                <Text style={[styles.priorityBadgeText, { color: colors.warning }]} numberOfLines={1}>
+                                                    {linkedPriority.title}
+                                                </Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                </View>
+                                <TouchableOpacity
+                                    onPress={(e) => {
+                                        e.stopPropagation();
+                                        handleStartFocus(block);
+                                    }}
+                                    style={[styles.focusButton, { backgroundColor: colors.accent + '20' }]}
+                                >
+                                    <Ionicons name="play" size={14} color={colors.accent} />
+                                </TouchableOpacity>
+                                <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+                            </TouchableOpacity>
+                        );
+                    })}
                 </View>
             )}
 
@@ -278,6 +441,21 @@ export function TimeBlocksCard({
                                 <Ionicons name="close" size={24} color={colors.textSecondary} />
                             </TouchableOpacity>
                         </View>
+
+                        {/* Conflict Warning Banner */}
+                        {conflictInfo?.hasConflict && (
+                            <View style={[styles.conflictBanner, { backgroundColor: colors.errorLight }]}>
+                                <Ionicons name="warning" size={20} color={colors.error} />
+                                <View style={styles.conflictContent}>
+                                    <Text style={[styles.conflictTitle, { color: colors.error }]}>
+                                        Scheduling Conflict
+                                    </Text>
+                                    <Text style={[styles.conflictText, { color: colors.error }]}>
+                                        Conflicts with: {conflictInfo.conflictingBlocks.map(b => b.title).join(', ')}
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
 
                         <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
                             {/* Title */}
@@ -317,6 +495,52 @@ export function TimeBlocksCard({
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
+
+                            {/* Priority Link */}
+                            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>LINK TO PRIORITY (OPTIONAL)</Text>
+                            {selectedPriorityId ? (
+                                <View style={[styles.priorityLink, { backgroundColor: colors.backgroundSecondary, borderColor: colors.accent }]}>
+                                    <Ionicons name="link" size={16} color={colors.accent} />
+                                    <Text style={[styles.priorityLinkText, { color: colors.text }]}>
+                                        {priorities.find(p => p.id === selectedPriorityId)?.title || 'Unknown Priority'}
+                                    </Text>
+                                    <TouchableOpacity onPress={() => setSelectedPriorityId(null)}>
+                                        <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
+                                    </TouchableOpacity>
+                                </View>
+                            ) : priorities.length > 0 ? (
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.prioritySelector}>
+                                    {priorities.slice(0, 5).map((priority) => (
+                                        <TouchableOpacity
+                                            key={priority.id}
+                                            onPress={() => setSelectedPriorityId(priority.id)}
+                                            style={[
+                                                styles.priorityOption,
+                                                {
+                                                    backgroundColor: priority.completed
+                                                        ? colors.backgroundSecondary
+                                                        : colors.warning + '20',
+                                                    borderColor: priority.completed ? colors.border : colors.warning,
+                                                },
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.priorityOptionText,
+                                                    { color: priority.completed ? colors.textTertiary : colors.text },
+                                                ]}
+                                                numberOfLines={1}
+                                            >
+                                                {priority.title}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                            ) : (
+                                <Text style={[styles.noPrioritiesText, { color: colors.textTertiary }]}>
+                                    No priorities available to link
+                                </Text>
+                            )}
 
                             {/* Time Selection */}
                             <View style={styles.timeRow}>
@@ -399,6 +623,56 @@ export function TimeBlocksCard({
                     </View>
                 </View>
             </Modal>
+
+            {/* Focus Session Confirmation Modal */}
+            <Modal
+                visible={showFocusModal}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowFocusModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modal, { backgroundColor: colors.cardSolid }]}>
+                        <View style={[styles.modalIcon, { backgroundColor: colors.accent + '20' }]}>
+                            <Ionicons name="timer-outline" size={32} color={colors.accent} />
+                        </View>
+                        <Text style={[styles.modalTitle, { color: colors.text }]}>Start Focus Session</Text>
+                        <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+                            Focus on: {selectedBlockForFocus?.title}
+                        </Text>
+                        <Text style={[styles.modalDuration, { color: colors.text }]}>
+                            Duration: {settings.pomodoroFocusDuration || 25} minutes
+                        </Text>
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.cancelButton, { borderColor: colors.border }]}
+                                onPress={() => {
+                                    setShowFocusModal(false);
+                                    setSelectedBlockForFocus(null);
+                                }}
+                            >
+                                <Text style={[styles.modalButtonText, { color: colors.textSecondary }]}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.confirmButton, { backgroundColor: colors.accent }]}
+                                onPress={confirmStartFocus}
+                            >
+                                <Ionicons name="play" size={18} color="#fff" />
+                                <Text style={[styles.modalButtonText, { color: '#fff' }]}>Start Focus</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Conflict Resolution Modal */}
+            <ConflictResolutionModal
+                visible={showConflictModal}
+                conflict={conflictInfo}
+                newBlock={pendingBlockData || undefined}
+                colors={colors}
+                onResolve={handleConflictResolution}
+            />
         </View>
     );
 }
@@ -557,5 +831,128 @@ const styles = StyleSheet.create({
     saveButtonText: {
         ...typography.headline,
         color: '#fff',
+    },
+    conflictBanner: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: spacing.md,
+        padding: spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(239, 68, 68, 0.3)',
+    },
+    conflictContent: {
+        flex: 1,
+    },
+    conflictTitle: {
+        ...typography.body,
+        fontWeight: '600',
+        marginBottom: spacing.xs,
+    },
+    conflictText: {
+        ...typography.caption1,
+    },
+    prioritySelector: {
+        marginBottom: spacing.lg,
+    },
+    priorityOption: {
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        borderRadius: radius.md,
+        borderWidth: 1,
+        marginRight: spacing.sm,
+    },
+    priorityOptionText: {
+        ...typography.caption1,
+        fontWeight: '500',
+        maxWidth: 120,
+    },
+    priorityLink: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        padding: spacing.md,
+        borderRadius: radius.md,
+        borderWidth: 2,
+    },
+    priorityLinkText: {
+        ...typography.body,
+        flex: 1,
+    },
+    noPrioritiesText: {
+        ...typography.caption1,
+        fontStyle: 'italic',
+        marginBottom: spacing.lg,
+    },
+    itemMeta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    priorityBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: radius.sm,
+    },
+    priorityBadgeText: {
+        ...typography.caption2,
+        fontWeight: '500',
+        maxWidth: 80,
+    },
+    focusButton: {
+        width: 28,
+        height: 28,
+        borderRadius: radius.sm,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: spacing.sm,
+    },
+    modalIcon: {
+        width: 64,
+        height: 64,
+        borderRadius: radius.xl,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: spacing.lg,
+    },
+    modalTitle: {
+        ...typography.title2,
+        fontWeight: '700',
+        marginBottom: spacing.sm,
+        textAlign: 'center',
+    },
+    modalSubtitle: {
+        ...typography.body,
+        marginBottom: spacing.xs,
+        textAlign: 'center',
+    },
+    modalDuration: {
+        ...typography.subheadline,
+        marginBottom: spacing.lg,
+        textAlign: 'center',
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        gap: spacing.md,
+        width: '100%',
+    },
+    modalButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: spacing.md,
+        borderRadius: radius.md,
+        gap: spacing.xs,
+    },
+    cancelButton: {
+        borderWidth: 1,
+    },
+    confirmButton: {},
+    modalButtonText: {
+        ...typography.body,
+        fontWeight: '600',
     },
 });

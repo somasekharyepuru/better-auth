@@ -16,6 +16,10 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { LifeAreasProvider } from '@/contexts/LifeAreasContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
+import { FocusProvider } from '@/contexts/FocusContext';
+import { TimeBlockTypesProvider } from '@/contexts/TimeBlockTypesContext';
+import { NotificationsProvider } from '@/contexts/NotificationsContext';
+import { FloatingTimer } from '@/components/focus/FloatingTimer';
 import Colors from '@/constants/Colors';
 
 export { ErrorBoundary } from 'expo-router';
@@ -110,7 +114,14 @@ export default function RootLayout() {
       <AuthProvider>
         <SettingsProvider>
           <LifeAreasProvider>
-            <RootLayoutNav />
+            <TimeBlockTypesProvider>
+              <FocusProvider>
+                <NotificationsProvider>
+                  <RootLayoutNav />
+                  <FloatingTimer />
+                </NotificationsProvider>
+              </FocusProvider>
+            </TimeBlockTypesProvider>
           </LifeAreasProvider>
         </SettingsProvider>
       </AuthProvider>

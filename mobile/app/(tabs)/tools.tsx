@@ -147,6 +147,21 @@ export default function ToolsScreen() {
                     ))}
                 </View>
             )}
+
+            {/* Analytics Card - Always available */}
+            <TouchableOpacity
+                style={[styles.toolCard, { backgroundColor: colors.cardSolid }, shadows.sm]}
+                onPress={() => router.push('/tools/analytics' as any)}
+                activeOpacity={0.7}
+            >
+                <View style={[styles.iconContainer, { backgroundColor: `${colors.success}15` }]}>
+                    <Ionicons name="stats-chart" size={28} color={colors.success} />
+                </View>
+                <Text style={[styles.toolName, { color: colors.text }]}>Focus Analytics</Text>
+                <Text style={[styles.toolDescription, { color: colors.textSecondary }]}>
+                    View your productivity insights and time distribution
+                </Text>
+            </TouchableOpacity>
         </ScrollView>
     );
 }
