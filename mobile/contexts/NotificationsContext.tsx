@@ -6,6 +6,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Audio } from 'expo-av';
 import { requestNotificationPermissions } from '@/lib/notifications';
 
 export interface NotificationPreferences {
@@ -37,9 +38,24 @@ interface NotificationsContextType {
     requestPermissions: () => Promise<boolean>;
     scheduleDailyReviewReminder: () => Promise<void>;
     cancelDailyReviewReminder: () => Promise<void>;
+    playNotificationSound: () => void;
+    playPomodoroCompleteSound: () => void;
+    playPomodoroStartSound: () => void;
 }
 
 const NotificationsContext = createContext<NotificationsContextType | null>(null);
+
+// Simple notification sound playback
+const playNotificationSound = async () => {
+    try {
+        const soundObject = new Audio.Sound(require('../assets/sounds/notification.mp3'));
+        await soundObject.loadAsync();
+        await soundObject.playAsync();
+        await soundObject.unloadAsync();
+    } catch (error) {
+        console.error('Failed to play notification sound:', error);
+    }
+};
 
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
     const [permissionsGranted, setPermissionsGranted] = useState(false);
@@ -93,6 +109,34 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
                     shouldShowList: newPrefs.enabled,
                 }),
             });
+
+            // Play Pomodoro completion sound if enabled
+            const playPomodoroSound = async () => {
+                if (newPrefs.soundEnabled && newPrefs.pomodoroComplete) {
+                    try {
+                        const soundObject = new Audio.Sound(require('../assets/sounds/notification.mp3'));
+                        await soundObject.loadAsync();
+                        await soundObject.playAsync();
+                        await soundObject.unloadAsync();
+                    } catch (error) {
+                        console.error('Failed to play Pomodoro sound:', error);
+                    }
+                }
+            };
+
+            // Play Pomodoro start sound if enabled
+            const playPomodoroStartSound = async () => {
+                if (newPrefs.soundEnabled && newPrefs.pomodoroStart) {
+                    try {
+                        const soundObject = new Audio.Sound(require('../assets/sounds/notification.mp3'));
+                        await soundObject.loadAsync();
+                        await soundObject.playAsync();
+                        await soundObject.unloadAsync();
+                    } catch (error) {
+                        console.error('Failed to play Pomodoro start sound:', error);
+                    }
+                }
+            };
 
             // Reschedule daily review reminder if time changed
             if (updates.dailyReviewReminder !== undefined || updates.reviewReminderTime !== undefined) {
@@ -148,6 +192,10 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         }
     };
 
+    const playNotificationSound = () => {
+        playNotificationSound();
+    };
+
     // Request permissions on mount if not granted
     useEffect(() => {
         if (!isLoading && !permissionsGranted && preferences.enabled) {
@@ -171,6 +219,9 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
                 requestPermissions,
                 scheduleDailyReviewReminder,
                 cancelDailyReviewReminder,
+                playNotificationSound,
+                playPomodoroCompleteSound,
+                playPomodoroStartSound,
             }}
         >
             {children}

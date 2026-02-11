@@ -15,6 +15,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import AppState, { AppStateStatus } from 'react-native';
 import { focusSessionsApi, FocusSession } from '@/lib/api';
+import { useNotifications } from '@/contexts/NotificationsContext';
+import { useNotifications } from '@/contexts/NotificationsContext';
 
 const FOCUS_STATE_KEY = 'daymark_focus_state';
 
@@ -197,6 +199,18 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
 
     const wasFocus = state.sessionType === 'focus';
 
+    // Play sound on focus session completion
+    if (wasFocus) {
+      try {
+        const notifications = useNotifications();
+        if (notifications) {
+          await notifications.playPomodoroCompleteSound();
+        }
+      } catch (err) {
+        console.error('Failed to play focus complete sound:', err);
+      }
+    }
+
     // End session in backend if we have one
     if (state.currentSessionId) {
       try {
@@ -241,6 +255,18 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
     linkedEntity?: LinkedEntity
   ) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // Play sound on focus session start
+    if (sessionType === 'focus') {
+      try {
+        const notifications = useNotifications();
+        if (notifications) {
+          await notifications.playPomodoroStartSound();
+        }
+      } catch (err) {
+        console.error('Failed to play focus start sound:', err);
+      }
+    }
 
     const actualDuration = duration ?? customDurations[sessionType];
     const sessionId = crypto.randomUUID?.() ?? Math.random().toString(36);

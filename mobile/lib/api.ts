@@ -168,6 +168,14 @@ export interface UserSettings {
     pomodoroShortBreak?: number;
     pomodoroLongBreak?: number;
     pomodoroSoundEnabled?: boolean;
+    // Notification preferences
+    notificationsEnabled?: boolean;
+    pomodoroCompleteSound?: boolean;
+    pomodoroStartSound?: boolean;
+    dailyReviewReminder?: boolean;
+    dailyReviewTime?: string;
+    eventReminders?: boolean;
+    eventReminderMinutes?: number;
     focusBlocksCalendar?: boolean;
     theme: 'light' | 'dark' | 'system';
 }

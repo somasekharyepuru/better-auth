@@ -16,6 +16,15 @@ const DEFAULT_SETTINGS: UserSettings = {
     eisenhowerEnabled: true,
     decisionLogEnabled: true,
     theme: 'system',
+    // Notification preferences
+    notificationsEnabled: true,
+    pomodoroCompleteSound: true,
+    pomodoroStartSound: true,
+    dailyReviewReminder: true,
+    dailyReviewTime: '20:00',
+    eventReminders: true,
+    eventReminderMinutes: 15,
+    pomodoroSoundEnabled: true,
 };
 
 interface SettingsContextType {
