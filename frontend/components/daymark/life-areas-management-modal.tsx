@@ -15,6 +15,23 @@ import {
   Check,
   Loader2,
 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface LifeAreasManagementModalProps {
   isOpen: boolean;
@@ -47,13 +64,180 @@ interface DeleteConfirmationState {
   isLoading: boolean;
 }
 
+interface SortableLifeAreaItemProps {
+  area: LifeArea;
+  editingId: string | null;
+  editName: string;
+  setEditName: (v: string) => void;
+  editColor: string | null;
+  setEditColor: (v: string) => void;
+  saveEdit: () => void;
+  cancelEditing: () => void;
+  startEditing: (area: LifeArea) => void;
+  initiateDelete: (area: LifeArea) => void;
+  canDelete: boolean;
+  isSubmitting: boolean;
+  editInputRef: React.RefObject<HTMLInputElement | null>;
+}
+
+function SortableItem({ area, editingId, editName, setEditName, editColor, setEditColor, saveEdit, cancelEditing, startEditing, initiateDelete, canDelete, isSubmitting, editInputRef }: SortableLifeAreaItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: area.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    boxShadow: isDragging ? '0 5px 15px rgba(0,0,0,0.1)' : 'none',
+    zIndex: isDragging ? 1 : 0,
+    position: isDragging ? 'relative' as const : 'static' as const,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group flex items-center gap-2 p-3 rounded-xl transition-colors ${isDragging
+          ? 'bg-white dark:bg-gray-800 border-2 border-blue-500'
+          : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800'
+        }`}
+    >
+      {editingId === area.id ? (
+        // Edit Mode
+        <div className="flex-1 flex flex-col gap-2">
+          <input
+            ref={editInputRef}
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") saveEdit();
+              if (e.key === "Escape") cancelEditing();
+            }}
+            className="flex-1 px-3 py-1.5 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Life area name"
+          />
+          <div className="flex items-center justify-between">
+            <div className="flex gap-1">
+              {COLOR_OPTIONS.map((color) => (
+                <button
+                  key={color.value}
+                  onClick={() => setEditColor(color.value)}
+                  className={`w-5 h-5 rounded-full transition-all ${editColor === color.value
+                      ? "ring-2 ring-offset-1 ring-gray-400 scale-110"
+                      : "hover:scale-110"
+                    }`}
+                  style={{ backgroundColor: color.value }}
+                  title={color.name}
+                  type="button"
+                />
+              ))}
+            </div>
+            <div className="flex gap-1">
+              <button
+                onClick={cancelEditing}
+                className="px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors"
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveEdit}
+                disabled={!editName.trim() || isSubmitting}
+                className="px-2 py-1 text-xs text-white bg-blue-500 hover:bg-blue-600 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+                type="button"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Check className="w-3 h-3" />
+                )}
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        // View Mode
+        <>
+          <div
+            {...attributes}
+            {...listeners}
+            className="text-gray-400 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none focus:opacity-100"
+          >
+            <GripVertical className="w-4 h-4" />
+          </div>
+          {area.color && (
+            <span
+              className="w-3 h-3 rounded-full flex-shrink-0"
+              style={{ backgroundColor: area.color }}
+            />
+          )}
+          <span className="flex-1 text-sm font-medium text-gray-900 dark:text-white">
+            {area.name}
+          </span>
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Tooltip content="Edit">
+              <button
+                onClick={() => startEditing(area)}
+                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white dark:hover:bg-gray-700 rounded-md transition-colors"
+                type="button"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            </Tooltip>
+            <Tooltip content="Archive">
+              <button
+                onClick={() => initiateDelete(area)}
+                disabled={!canDelete}
+                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-white dark:hover:bg-gray-700 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                type="button"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </Tooltip>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function LifeAreasManagementModal({
   isOpen,
   onClose,
 }: LifeAreasManagementModalProps) {
-  const { lifeAreas, createLifeArea, updateLifeArea, archiveLifeArea } =
+  const { lifeAreas, createLifeArea, updateLifeArea, archiveLifeArea, reorderLifeAreas } =
     useLifeAreas();
   const { addToast } = useToast();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = lifeAreas.findIndex((a) => a.id === active.id);
+      const newIndex = lifeAreas.findIndex((a) => a.id === over.id);
+      const newOrderIds = arrayMove(lifeAreas, oldIndex, newIndex).map(a => a.id);
+
+      try {
+        await reorderLifeAreas(newOrderIds);
+      } catch (error) {
+        addToast({
+          type: "error",
+          title: "Failed to update order",
+        });
+      }
+    }
+  };
 
   // State for editing
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -303,104 +487,37 @@ export function LifeAreasManagementModal({
             </p>
 
             {/* Life Areas List */}
-            <div className="space-y-2">
-              {lifeAreas.map((area) => (
-                <div
-                  key={area.id}
-                  className="group flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                >
-                  {editingId === area.id ? (
-                    // Edit Mode
-                    <div className="flex-1 flex flex-col gap-2">
-                      <input
-                        ref={editInputRef}
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") saveEdit();
-                          if (e.key === "Escape") cancelEditing();
-                        }}
-                        className="flex-1 px-3 py-1.5 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Life area name"
-                      />
-                      <div className="flex items-center justify-between">
-                        <div className="flex gap-1">
-                          {COLOR_OPTIONS.map((color) => (
-                            <button
-                              key={color.value}
-                              onClick={() => setEditColor(color.value)}
-                              className={`w-5 h-5 rounded-full transition-all ${
-                                editColor === color.value
-                                  ? "ring-2 ring-offset-1 ring-gray-400 scale-110"
-                                  : "hover:scale-110"
-                              }`}
-                              style={{ backgroundColor: color.value }}
-                              title={color.name}
-                            />
-                          ))}
-                        </div>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={cancelEditing}
-                            className="px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={saveEdit}
-                            disabled={!editName.trim() || isSubmitting}
-                            className="px-2 py-1 text-xs text-white bg-blue-500 hover:bg-blue-600 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
-                          >
-                            {isSubmitting ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <Check className="w-3 h-3" />
-                            )}
-                            Save
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    // View Mode
-                    <>
-                      <div className="text-gray-400 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity">
-                        <GripVertical className="w-4 h-4" />
-                      </div>
-                      {area.color && (
-                        <span
-                          className="w-3 h-3 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: area.color }}
-                        />
-                      )}
-                      <span className="flex-1 text-sm font-medium text-gray-900 dark:text-white">
-                        {area.name}
-                      </span>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Tooltip content="Edit">
-                          <button
-                            onClick={() => startEditing(area)}
-                            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white dark:hover:bg-gray-700 rounded-md transition-colors"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                        </Tooltip>
-                        <Tooltip content="Archive">
-                          <button
-                            onClick={() => initiateDelete(area)}
-                            disabled={lifeAreas.length <= 1}
-                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-white dark:hover:bg-gray-700 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </Tooltip>
-                      </div>
-                    </>
-                  )}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={lifeAreas.map((a) => a.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2">
+                  {lifeAreas.map((area) => (
+                    <SortableItem
+                      key={area.id}
+                      area={area}
+                      editingId={editingId}
+                      editName={editName}
+                      setEditName={setEditName}
+                      editColor={editColor}
+                      setEditColor={setEditColor}
+                      saveEdit={saveEdit}
+                      cancelEditing={cancelEditing}
+                      startEditing={startEditing}
+                      initiateDelete={initiateDelete}
+                      canDelete={lifeAreas.length > 1}
+                      isSubmitting={isSubmitting}
+                      editInputRef={editInputRef}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
 
             {/* Add New Area */}
             {isCreating ? (
@@ -426,11 +543,10 @@ export function LifeAreasManagementModal({
                       <button
                         key={color.value}
                         onClick={() => setNewColor(color.value)}
-                        className={`w-5 h-5 rounded-full transition-all ${
-                          newColor === color.value
+                        className={`w-5 h-5 rounded-full transition-all ${newColor === color.value
                             ? "ring-2 ring-offset-1 ring-blue-400 scale-110"
                             : "hover:scale-110"
-                        }`}
+                          }`}
                         style={{ backgroundColor: color.value }}
                         title={color.name}
                       />
@@ -537,38 +653,38 @@ export function LifeAreasManagementModal({
                     <ul className="space-y-1 text-sm text-amber-700 dark:text-amber-400">
                       {deleteConfirmation.pendingItems!.incompletePriorities >
                         0 && (
-                        <li>
-                          •{" "}
-                          {
-                            deleteConfirmation.pendingItems!
-                              .incompletePriorities
-                          }{" "}
-                          incomplete{" "}
-                          {deleteConfirmation.pendingItems!
-                            .incompletePriorities === 1
-                            ? "priority"
-                            : "priorities"}{" "}
-                          today
-                        </li>
-                      )}
+                          <li>
+                            •{" "}
+                            {
+                              deleteConfirmation.pendingItems!
+                                .incompletePriorities
+                            }{" "}
+                            incomplete{" "}
+                            {deleteConfirmation.pendingItems!
+                              .incompletePriorities === 1
+                              ? "priority"
+                              : "priorities"}{" "}
+                            today
+                          </li>
+                        )}
                       {deleteConfirmation.pendingItems!.upcomingTimeBlocks >
                         0 && (
-                        <li>
-                          •{" "}
-                          {deleteConfirmation.pendingItems!.upcomingTimeBlocks}{" "}
-                          upcoming time{" "}
-                          {deleteConfirmation.pendingItems!
-                            .upcomingTimeBlocks === 1
-                            ? "block"
-                            : "blocks"}
-                        </li>
-                      )}
+                          <li>
+                            •{" "}
+                            {deleteConfirmation.pendingItems!.upcomingTimeBlocks}{" "}
+                            upcoming time{" "}
+                            {deleteConfirmation.pendingItems!
+                              .upcomingTimeBlocks === 1
+                              ? "block"
+                              : "blocks"}
+                          </li>
+                        )}
                       {deleteConfirmation.pendingItems!.discussionItems > 0 && (
                         <li>
                           • {deleteConfirmation.pendingItems!.discussionItems}{" "}
                           discussion{" "}
                           {deleteConfirmation.pendingItems!.discussionItems ===
-                          1
+                            1
                             ? "item"
                             : "items"}
                         </li>
@@ -578,7 +694,7 @@ export function LifeAreasManagementModal({
                           • {deleteConfirmation.pendingItems!.eisenhowerTasks}{" "}
                           Eisenhower{" "}
                           {deleteConfirmation.pendingItems!.eisenhowerTasks ===
-                          1
+                            1
                             ? "task"
                             : "tasks"}
                         </li>

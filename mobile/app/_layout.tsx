@@ -16,6 +16,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { LifeAreasProvider } from '@/contexts/LifeAreasContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
+import { TimeBlockTypesProvider } from '@/contexts/TimeBlockTypesContext';
 import Colors from '@/constants/Colors';
 
 export { ErrorBoundary } from 'expo-router';
@@ -109,9 +110,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
         <SettingsProvider>
-          <LifeAreasProvider>
-            <RootLayoutNav />
-          </LifeAreasProvider>
+          <TimeBlockTypesProvider>
+            <LifeAreasProvider>
+              <RootLayoutNav />
+            </LifeAreasProvider>
+          </TimeBlockTypesProvider>
         </SettingsProvider>
       </AuthProvider>
     </GestureHandlerRootView>

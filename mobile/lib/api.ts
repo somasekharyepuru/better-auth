@@ -107,6 +107,7 @@ export interface UserSettings {
     pomodoroShortBreak?: number;
     pomodoroLongBreak?: number;
     pomodoroSoundEnabled?: boolean;
+    focusBlocksCalendar?: boolean;
     theme: 'light' | 'dark' | 'system';
 }
 
@@ -1084,3 +1085,51 @@ export const eventsApi = {
     },
 };
 
+
+// ==========================================
+// Time Block Types API
+// ==========================================
+
+export interface TimeBlockType {
+    id: string;
+    userId: string;
+    name: string;
+    color: string;
+    order: number;
+    isDefault: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export const timeBlockTypesApi = {
+    async getAll(): Promise<TimeBlockType[]> {
+        return fetchWithAuth(`${API_BASE}/api/time-block-types`);
+    },
+
+    async create(data: { name: string; color: string }): Promise<TimeBlockType> {
+        return fetchWithAuth(`${API_BASE}/api/time-block-types`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
+
+    async update(id: string, data: { name?: string; color?: string; order?: number; isDefault?: boolean }): Promise<TimeBlockType> {
+        return fetchWithAuth(`${API_BASE}/api/time-block-types/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    },
+
+    async delete(id: string): Promise<void> {
+        return fetchWithAuth(`${API_BASE}/api/time-block-types/${id}`, {
+            method: 'DELETE',
+        });
+    },
+
+    async reorder(types: Array<{ id: string; order: number }>): Promise<TimeBlockType[]> {
+        return fetchWithAuth(`${API_BASE}/api/time-block-types/reorder`, {
+            method: 'PATCH',
+            body: JSON.stringify({ types }),
+        });
+    },
+};

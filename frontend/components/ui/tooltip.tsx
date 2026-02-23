@@ -20,6 +20,7 @@ export function Tooltip({
     const [coords, setCoords] = useState({ top: 0, left: 0 });
     const [mounted, setMounted] = useState(false);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const childRef = useRef<HTMLElement | null>(null);
 
     // Handle client-side mounting for portal
@@ -62,6 +63,10 @@ export function Tooltip({
     }, [position]);
 
     const showTooltip = useCallback(() => {
+        if (hideTimeoutRef.current) {
+            clearTimeout(hideTimeoutRef.current);
+            hideTimeoutRef.current = null;
+        }
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
         }
@@ -76,7 +81,9 @@ export function Tooltip({
             clearTimeout(timeoutRef.current);
             timeoutRef.current = null;
         }
-        setIsVisible(false);
+        hideTimeoutRef.current = setTimeout(() => {
+            setIsVisible(false);
+        }, 200); // Small delay to allow moving mouse to tooltip
     }, []);
 
     // Cleanup timeout on unmount
@@ -84,6 +91,9 @@ export function Tooltip({
         return () => {
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
+            }
+            if (hideTimeoutRef.current) {
+                clearTimeout(hideTimeoutRef.current);
             }
         };
     }, []);
@@ -149,6 +159,8 @@ export function Tooltip({
     const tooltipElement = isVisible ? (
         <div
             role="tooltip"
+            onMouseEnter={showTooltip}
+            onMouseLeave={hideTooltip}
             style={{
                 position: "fixed",
                 top: coords.top,
@@ -156,7 +168,7 @@ export function Tooltip({
                 transform: getTransform(),
                 zIndex: 9999,
             }}
-            className="px-3 py-1.5 text-xs font-medium text-white dark:text-gray-900 bg-gray-900 dark:bg-gray-100 rounded-lg shadow-lg whitespace-nowrap max-w-xs pointer-events-none animate-in fade-in zoom-in-95 duration-150"
+            className="px-3 py-1.5 text-xs font-medium text-white dark:text-gray-900 bg-gray-900 dark:bg-gray-100 rounded-lg shadow-lg whitespace-pre-wrap break-words max-w-xs animate-in fade-in zoom-in-95 duration-150"
         >
             {/* Arrow */}
             <div
@@ -166,7 +178,7 @@ export function Tooltip({
                     }${position === "right" ? "right-full top-1/2 -translate-y-1/2 border-r-gray-900 dark:border-r-gray-100 border-y-transparent border-l-transparent" : ""
                     }`}
             />
-            <span className="line-clamp-3">{content}</span>
+            <span>{content}</span>
         </div>
     ) : null;
 

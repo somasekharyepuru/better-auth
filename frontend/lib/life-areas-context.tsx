@@ -13,6 +13,7 @@ interface LifeAreasContextValue {
     createLifeArea: (name: string, color?: string) => Promise<LifeArea>;
     updateLifeArea: (id: string, data: { name?: string; color?: string }) => Promise<LifeArea>;
     archiveLifeArea: (id: string) => Promise<void>;
+    reorderLifeAreas: (orderedIds: string[]) => Promise<void>;
 }
 
 const LifeAreasContext = createContext<LifeAreasContextValue | undefined>(undefined);
@@ -97,6 +98,29 @@ export function LifeAreasProvider({ children }: { children: React.ReactNode }) {
         [selectedLifeArea, lifeAreas]
     );
 
+    // Reorder life areas
+    const reorderLifeAreas = useCallback(
+        async (orderedIds: string[]) => {
+            // Optimistic update
+            setLifeAreas((prev) => {
+                const map = new Map(prev.map((a) => [a.id, a]));
+                return orderedIds.map((id, index) => {
+                    const area = map.get(id);
+                    return area ? { ...area, order: index + 1 } : null;
+                }).filter((a): a is LifeArea => a !== null);
+            });
+
+            try {
+                const ordered = await lifeAreasApi.reorder(orderedIds);
+                setLifeAreas(ordered);
+            } catch (err) {
+                loadLifeAreas();
+                throw err;
+            }
+        },
+        [loadLifeAreas]
+    );
+
     return (
         <LifeAreasContext.Provider
             value={{
@@ -109,6 +133,7 @@ export function LifeAreasProvider({ children }: { children: React.ReactNode }) {
                 createLifeArea,
                 updateLifeArea,
                 archiveLifeArea,
+                reorderLifeAreas,
             }}
         >
             {children}

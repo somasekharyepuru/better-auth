@@ -128,7 +128,7 @@ function SortablePriorityItem({
                 <Tooltip content={priority.title}>
                     <span
                         onClick={() => onEdit(priority.id)}
-                        className={`flex-1 cursor-text truncate transition-colors ${priority.completed ? "text-gray-400 dark:text-gray-500 line-through" : "text-gray-900 dark:text-gray-100"
+                        className={`flex-1 cursor-text line-clamp-2 transition-colors ${priority.completed ? "text-gray-400 dark:text-gray-500 line-through" : "text-gray-900 dark:text-gray-100"
                             }`}
                     >
                         {priority.title}
@@ -383,14 +383,16 @@ export function TopPriorities({ date, priorities, onUpdate, lifeAreaId, readOnly
                                 )}
 
                                 {/* Title */}
-                                <span
-                                    className={`flex-1 ${priority.completed
-                                        ? "text-gray-500 dark:text-gray-400 line-through"
-                                        : "text-gray-900 dark:text-gray-100"
-                                        }`}
-                                >
-                                    {priority.title}
-                                </span>
+                                <Tooltip content={priority.title}>
+                                    <span
+                                        className={`flex-1 line-clamp-2 ${priority.completed
+                                            ? "text-gray-500 dark:text-gray-400 line-through"
+                                            : "text-gray-900 dark:text-gray-100"
+                                            }`}
+                                    >
+                                        {priority.title}
+                                    </span>
+                                </Tooltip>
 
                                 {/* Status badge */}
                                 <span

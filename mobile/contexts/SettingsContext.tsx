@@ -12,9 +12,17 @@ const DEFAULT_SETTINGS: UserSettings = {
     defaultTimeBlockDuration: 60,
     defaultTimeBlockType: 'Deep Work',
     endOfDayReviewEnabled: true,
+    autoCarryForward: true,
+    autoCreateNextDay: true,
+    toolsTabEnabled: true,
     pomodoroEnabled: true,
     eisenhowerEnabled: true,
     decisionLogEnabled: true,
+    pomodoroFocusDuration: 25,
+    pomodoroShortBreak: 5,
+    pomodoroLongBreak: 15,
+    pomodoroSoundEnabled: true,
+    focusBlocksCalendar: true,
     theme: 'system',
 };
 
@@ -69,21 +77,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     }, [loadSettings]);
 
     const isSectionEnabled = useCallback((section: string) => {
-        switch (section) {
-            case 'progress':
-                return true; // Always enabled
-            case 'priorities':
-                return true; // Always enabled
-            case 'discussion':
-                return true; // Always enabled
-            case 'schedule':
-                return true; // Always enabled
-            case 'notes':
-                return true; // Always enabled
-            default:
-                return true;
-        }
-    }, []);
+        return settings.enabledSections?.includes(section) ?? true;
+    }, [settings.enabledSections]);
 
     return (
         <SettingsContext.Provider

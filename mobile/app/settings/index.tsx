@@ -24,14 +24,35 @@ import { useSettings } from '@/contexts/SettingsContext';
 import Colors from '@/constants/Colors';
 import { typography, spacing, radius, shadows, sizing } from '@/constants/Theme';
 
+// We'll need a way to launch the Time Block Types management modal later
 interface SectionItem {
     key: string;
     label: string;
     description: string;
-    settingsKey: 'pomodoroEnabled' | 'eisenhowerEnabled' | 'decisionLogEnabled' | 'endOfDayReviewEnabled';
+    settingsKey: string;
     icon: keyof typeof Ionicons.glyphMap;
     iconColor: string;
 }
+
+const DASHBOARD_SECTIONS: SectionItem[] = [
+    {
+        key: 'priorities',
+        label: 'Top Priorities',
+        description: 'Your main focus items for the day',
+        settingsKey: 'enabledSections' as any, // Special handling for array
+        icon: 'list-outline',
+        iconColor: '#FF9500',
+    },
+    {
+        key: 'schedule',
+        label: 'Today\'s Schedule',
+        description: 'Time blocks for your day',
+        settingsKey: 'enabledSections' as any,
+        icon: 'calendar-outline',
+        iconColor: '#007AFF',
+    },
+];
+
 
 const TOOL_SECTIONS: SectionItem[] = [
     {
@@ -80,7 +101,7 @@ export default function SettingsScreen() {
     const { settings, updateSettings, isLoading } = useSettings();
     const [isSaving, setIsSaving] = useState(false);
 
-    const handleToggle = async (key: SectionItem['settingsKey'], value: boolean) => {
+    const handleToggle = async (key: string, value: boolean) => {
         Haptics.selectionAsync();
         setIsSaving(true);
         try {
@@ -89,6 +110,43 @@ export default function SettingsScreen() {
             Alert.alert('Error', 'Failed to update settings');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleSectionToggle = async (sectionKey: string, isEnabled: boolean) => {
+        Haptics.selectionAsync();
+        setIsSaving(true);
+        try {
+            const currentSections = settings.enabledSections || [];
+            let newSections;
+            if (isEnabled) {
+                newSections = [...currentSections, sectionKey];
+            } else {
+                newSections = currentSections.filter(s => s !== sectionKey);
+                // Ensure at least one section remains enabled if required by logic
+            }
+            await updateSettings({ enabledSections: newSections });
+        } catch (error) {
+            Alert.alert('Error', 'Failed to update dashboard preferences');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleNumberChange = async (key: string, change: number, min: number, max: number) => {
+        Haptics.selectionAsync();
+        const currentValue = settings[key as keyof typeof settings] as number || 0;
+        const newValue = Math.min(Math.max(currentValue + change, min), max);
+
+        if (newValue !== currentValue) {
+            setIsSaving(true);
+            try {
+                await updateSettings({ [key]: newValue });
+            } catch (error) {
+                Alert.alert('Error', 'Failed to update setting');
+            } finally {
+                setIsSaving(false);
+            }
         }
     };
 
@@ -137,12 +195,45 @@ export default function SettingsScreen() {
                 </Text>
             </View>
             <Switch
-                value={settings[item.settingsKey]}
-                onValueChange={(value) => handleToggle(item.settingsKey, value)}
+                value={
+                    item.settingsKey === 'enabledSections' as any
+                        ? (settings.enabledSections || []).includes(item.key)
+                        : !!settings[item.settingsKey as keyof typeof settings]
+                }
+                onValueChange={(value) => {
+                    if (item.settingsKey === 'enabledSections' as any) {
+                        handleSectionToggle(item.key, value);
+                    } else {
+                        handleToggle(item.settingsKey as string, value);
+                    }
+                }}
                 trackColor={{ false: colors.border, true: colors.accent }}
                 thumbColor="#fff"
                 ios_backgroundColor={colors.border}
             />
+        </View>
+    );
+
+    const renderStepperItem = (label: string, value: number, onDecrement: () => void, onIncrement: () => void) => (
+        <View style={styles.limitItem}>
+            <View style={styles.limitContent}>
+                <Text style={[styles.itemLabel, { color: colors.text }]}>{label}</Text>
+            </View>
+            <View style={styles.stepperContainer}>
+                <TouchableOpacity
+                    style={[styles.stepperButton, { backgroundColor: colors.backgroundSecondary }]}
+                    onPress={onDecrement}
+                >
+                    <Ionicons name="remove" size={20} color={colors.text} />
+                </TouchableOpacity>
+                <Text style={[styles.stepperValue, { color: colors.text }]}>{value}</Text>
+                <TouchableOpacity
+                    style={[styles.stepperButton, { backgroundColor: colors.backgroundSecondary }]}
+                    onPress={onIncrement}
+                >
+                    <Ionicons name="add" size={20} color={colors.text} />
+                </TouchableOpacity>
+            </View>
         </View>
     );
 
@@ -164,29 +255,136 @@ export default function SettingsScreen() {
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Tools Section */}
+                {/* Dashboard Sections */}
                 <View style={styles.section}>
                     <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-                        PRODUCTIVITY TOOLS
+                        DASHBOARD PREFERENCES
                     </Text>
                     <View style={[styles.sectionCard, { backgroundColor: colors.cardSolid }, shadows.sm]}>
-                        {TOOL_SECTIONS.map((item, index) => (
+                        {DASHBOARD_SECTIONS.map((item, index) => (
                             <React.Fragment key={item.key}>
                                 {renderSectionItem(item)}
-                                {index < TOOL_SECTIONS.length - 1 && (
+                                {index < DASHBOARD_SECTIONS.length - 1 && (
                                     <View style={[styles.separator, { backgroundColor: colors.border }]} />
                                 )}
                             </React.Fragment>
                         ))}
+                        <View style={[styles.separator, { backgroundColor: colors.border }]} />
+                        <TouchableOpacity
+                            style={styles.themeItem}
+                            onPress={() => {
+                                Haptics.selectionAsync();
+                                router.push('/settings/time-blocks' as any);
+                            }}
+                        >
+                            <View style={[styles.itemIcon, { backgroundColor: '#34C75915' }]}>
+                                <Ionicons name="time-outline" size={20} color="#34C759" />
+                            </View>
+                            <View style={styles.itemContent}>
+                                <Text style={[styles.itemLabel, { color: colors.text }]}>Time Block Types</Text>
+                                <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
+                                    Custom categories for your schedule
+                                </Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+                        </TouchableOpacity>
                     </View>
                 </View>
+                {/* Tools Section */}
+                {TOOL_SECTIONS.map((item, index) => (
+                    <React.Fragment key={item.key}>
+                        {renderSectionItem(item)}
+                        {index < TOOL_SECTIONS.length - 1 && (
+                            <View style={[styles.separator, { backgroundColor: colors.border }]} />
+                        )}
+                    </React.Fragment>
+                ))}
 
+                {/* Pomodoro Settings (Nested) */}
+                {settings.pomodoroEnabled && (
+                    <View style={{ backgroundColor: colors.backgroundSecondary, paddingBottom: spacing.md }}>
+                        <View style={[styles.separator, { backgroundColor: colors.border, marginLeft: 0 }]} />
+                        <Text style={[styles.hint, { color: colors.textTertiary, marginVertical: spacing.sm, marginLeft: spacing.lg }]}>
+                            Pomodoro Configuration
+                        </Text>
+                        <View style={[styles.item, { paddingTop: spacing.xs, paddingBottom: spacing.xs }]}>
+                            <View style={styles.itemContent}>
+                                <Text style={[styles.itemLabel, { color: colors.text }]}>Notification Sound</Text>
+                            </View>
+                            <Switch
+                                value={!!settings.pomodoroSoundEnabled}
+                                onValueChange={(value) => handleToggle('pomodoroSoundEnabled', value)}
+                                trackColor={{ false: colors.border, true: colors.accent }}
+                                thumbColor="#fff"
+                            />
+                        </View>
+                        <View style={[styles.item, { paddingTop: spacing.xs, paddingBottom: spacing.xs }]}>
+                            <View style={styles.itemContent}>
+                                <Text style={[styles.itemLabel, { color: colors.text }]}>Block Calendar</Text>
+                            </View>
+                            <Switch
+                                value={!!settings.focusBlocksCalendar}
+                                onValueChange={(value) => handleToggle('focusBlocksCalendar', value)}
+                                trackColor={{ false: colors.border, true: colors.accent }}
+                                thumbColor="#fff"
+                            />
+                        </View>
+                        {renderStepperItem('Focus Duration (min)', settings.pomodoroFocusDuration || 25,
+                            () => handleNumberChange('pomodoroFocusDuration', -5, 5, 120),
+                            () => handleNumberChange('pomodoroFocusDuration', 5, 5, 120)
+                        )}
+                        {renderStepperItem('Short Break (min)', settings.pomodoroShortBreak || 5,
+                            () => handleNumberChange('pomodoroShortBreak', -1, 1, 30),
+                            () => handleNumberChange('pomodoroShortBreak', 1, 1, 30)
+                        )}
+                        {renderStepperItem('Long Break (min)', settings.pomodoroLongBreak || 15,
+                            () => handleNumberChange('pomodoroLongBreak', -5, 5, 60),
+                            () => handleNumberChange('pomodoroLongBreak', 5, 5, 60)
+                        )}
+                    </View>
+                )}
                 {/* Features Section */}
                 <View style={styles.section}>
                     <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-                        DASHBOARD FEATURES
+                        DAILY BEHAVIOR
                     </Text>
                     <View style={[styles.sectionCard, { backgroundColor: colors.cardSolid }, shadows.sm]}>
+                        <View style={styles.item}>
+                            <View style={[styles.itemIcon, { backgroundColor: '#34C75915' }]}>
+                                <Ionicons name="arrow-forward-circle-outline" size={20} color="#34C759" />
+                            </View>
+                            <View style={styles.itemContent}>
+                                <Text style={[styles.itemLabel, { color: colors.text }]}>Auto-carry unfinished</Text>
+                                <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
+                                    Move incomplete priorities to next day
+                                </Text>
+                            </View>
+                            <Switch
+                                value={!!settings.autoCarryForward}
+                                onValueChange={(value) => handleToggle('autoCarryForward', value)}
+                                trackColor={{ false: colors.border, true: colors.accent }}
+                                thumbColor="#fff"
+                            />
+                        </View>
+                        <View style={[styles.separator, { backgroundColor: colors.border }]} />
+                        <View style={styles.item}>
+                            <View style={[styles.itemIcon, { backgroundColor: '#5856D615' }]}>
+                                <Ionicons name="calendar-outline" size={20} color="#5856D6" />
+                            </View>
+                            <View style={styles.itemContent}>
+                                <Text style={[styles.itemLabel, { color: colors.text }]}>Auto-create next day</Text>
+                                <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
+                                    Automatically prepare tomorrow's dashboard
+                                </Text>
+                            </View>
+                            <Switch
+                                value={!!settings.autoCreateNextDay}
+                                onValueChange={(value) => handleToggle('autoCreateNextDay', value)}
+                                trackColor={{ false: colors.border, true: colors.accent }}
+                                thumbColor="#fff"
+                            />
+                        </View>
+                        <View style={[styles.separator, { backgroundColor: colors.border }]} />
                         {FEATURE_SECTIONS.map((item) => renderSectionItem(item))}
                     </View>
                 </View>

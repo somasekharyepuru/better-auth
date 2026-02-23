@@ -162,9 +162,11 @@ export function ToDiscuss({
                 </span>
 
                 {/* Content */}
-                <span className="flex-1 text-gray-900 dark:text-gray-100">
-                  {item.content}
-                </span>
+                <Tooltip content={item.content}>
+                  <span className="flex-1 text-gray-900 dark:text-gray-100 line-clamp-2">
+                    {item.content}
+                  </span>
+                </Tooltip>
               </div>
             ))
           )}
@@ -227,7 +229,7 @@ export function ToDiscuss({
                       setEditingId(item.id);
                       setEditContent(item.content);
                     }}
-                    className="flex-1 text-gray-900 dark:text-gray-100 cursor-text truncate"
+                    className="flex-1 text-gray-900 dark:text-gray-100 cursor-text line-clamp-2"
                   >
                     {item.content}
                   </span>

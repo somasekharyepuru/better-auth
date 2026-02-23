@@ -244,16 +244,25 @@ export function HeaderCalendarWidget({
 
   const hasCalendarConnected = connections.some((c) => c.status === "ACTIVE");
 
+  if (!hasCalendarConnected && !isLoading) {
+    return null;
+  }
+
+  if (isLoading && connections.length === 0) {
+    return (
+      <div className={`animate-pulse bg-gray-100 dark:bg-gray-800 rounded-xl ${variant === "full" ? "w-40 h-9" : "w-9 h-9"}`} />
+    );
+  }
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`relative flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 ${
-          isOpen
-            ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-            : "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300"
-        } ${currentEvent ? "ring-2 ring-green-500/50" : nextEventSoon ? "ring-2 ring-amber-500/50" : ""}`}
+        className={`relative flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 ${isOpen
+          ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+          : "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300"
+          } ${currentEvent ? "ring-2 ring-green-500/50" : nextEventSoon ? "ring-2 ring-amber-500/50" : ""}`}
       >
         <div className="relative">
           <Calendar className="w-5 h-5" />
@@ -449,18 +458,18 @@ export function HeaderCalendarWidget({
                 {/* Past Events (completed) */}
                 {events.filter((e) => new Date(e.endTime) <= now).length >
                   0 && (
-                  <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-                    <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 py-1">
-                      Completed
+                    <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                      <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 py-1">
+                        Completed
+                      </div>
+                      {events
+                        .filter((e) => new Date(e.endTime) <= now)
+                        .slice(-2)
+                        .map((event) => (
+                          <EventCard key={event.id} event={event} isPast />
+                        ))}
                     </div>
-                    {events
-                      .filter((e) => new Date(e.endTime) <= now)
-                      .slice(-2)
-                      .map((event) => (
-                        <EventCard key={event.id} event={event} isPast />
-                      ))}
-                  </div>
-                )}
+                  )}
               </div>
             )}
           </div>
@@ -569,15 +578,14 @@ function EventCard({
 
   return (
     <div
-      className={`group px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
-        isActive
-          ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
-          : isNext
-            ? "bg-amber-50 dark:bg-amber-900/10 hover:bg-amber-100 dark:hover:bg-amber-900/20"
-            : isPast
-              ? "opacity-50 hover:opacity-70"
-              : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
-      }`}
+      className={`group px-3 py-2.5 rounded-xl transition-all cursor-pointer ${isActive
+        ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+        : isNext
+          ? "bg-amber-50 dark:bg-amber-900/10 hover:bg-amber-100 dark:hover:bg-amber-900/20"
+          : isPast
+            ? "opacity-50 hover:opacity-70"
+            : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+        }`}
     >
       <div className="flex items-start gap-3">
         {/* Color indicator */}
@@ -618,7 +626,7 @@ function EventCard({
           {event.location && (
             <div className="flex items-center gap-1 mt-1.5 text-xs text-gray-500">
               {event.location.includes("meet.google") ||
-              event.location.includes("zoom") ? (
+                event.location.includes("zoom") ? (
                 <>
                   <Video className="w-3 h-3 text-blue-500" />
                   <a
