@@ -50,7 +50,7 @@ export class PasswordPolicyController {
         }
 
         logger.info('Updating global password policy', { updatedBy: session.user.id, data });
-        const result = this.passwordPolicyService.updateGlobalPolicy(data);
+        const result = await this.passwordPolicyService.updateGlobalPolicy(data);
 
         const ipAddress = req.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
             req.headers?.['x-real-ip'] || 'unknown';
@@ -131,7 +131,7 @@ export class PasswordPolicyController {
             data
         });
 
-        const result = this.passwordPolicyService.updateOrganizationPolicy(organizationId, data);
+        const result = await this.passwordPolicyService.updateOrganizationPolicy(organizationId, data);
 
         const ipAddress = req.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
             req.headers?.['x-real-ip'] || 'unknown';

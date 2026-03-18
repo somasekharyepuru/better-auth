@@ -7,7 +7,14 @@ import { createHash } from 'crypto';
 import { createChildLogger } from '../common/logger.service';
 
 const logger = createChildLogger('password-policy');
-const prisma = new PrismaClient();
+
+let _prisma: PrismaClient | undefined;
+function getPrisma(): PrismaClient {
+    if (!_prisma) {
+        _prisma = new PrismaClient();
+    }
+    return _prisma;
+}
 
 interface PasswordPolicy {
     id: string;
@@ -43,7 +50,7 @@ function hashPassword(password: string, userId: string): string {
 async function getEffectivePolicy(organizationId?: string): Promise<PasswordPolicy> {
     // First, try to get organization-specific policy
     if (organizationId) {
-        const orgPolicy = await prisma.passwordPolicy.findUnique({
+        const orgPolicy = await getPrisma().passwordPolicy.findUnique({
             where: { organizationId },
         });
         if (orgPolicy) {
@@ -52,7 +59,7 @@ async function getEffectivePolicy(organizationId?: string): Promise<PasswordPoli
     }
 
     // Fall back to global policy (organizationId = null)
-    const globalPolicy = await prisma.passwordPolicy.findFirst({
+    const globalPolicy = await getPrisma().passwordPolicy.findFirst({
         where: { organizationId: null },
     });
 
@@ -81,8 +88,9 @@ async function getEffectivePolicy(organizationId?: string): Promise<PasswordPoli
 export async function validatePasswordPolicy(
     password: string,
     userId?: string,
+    organizationId?: string,
 ): Promise<void> {
-    const policy = await getEffectivePolicy();
+    const policy = await getEffectivePolicy(organizationId);
     const errors: string[] = [];
 
     // Check minimum length
@@ -113,7 +121,7 @@ export async function validatePasswordPolicy(
     // Check password history for reuse
     if (userId && policy.preventReuse > 0) {
         const newHash = hashPassword(password, userId);
-        const recentPasswords = await prisma.passwordHistory.findMany({
+        const recentPasswords = await getPrisma().passwordHistory.findMany({
             where: { userId },
             orderBy: { createdAt: 'desc' },
             take: policy.preventReuse,
@@ -137,7 +145,7 @@ export async function recordPasswordInHistory(userId: string, password: string):
     const hash = hashPassword(password, userId);
 
     try {
-        await prisma.passwordHistory.create({
+        await getPrisma().passwordHistory.create({
             data: {
                 userId,
                 hash,
@@ -166,7 +174,7 @@ export async function checkPasswordExpiration(userId: string): Promise<{
     lastPasswordChange: Date | null;
 }> {
     // Get the most recent password history entry
-    const lastPassword = await prisma.passwordHistory.findFirst({
+    const lastPassword = await getPrisma().passwordHistory.findFirst({
         where: { userId },
         orderBy: { createdAt: 'desc' },
     });

@@ -149,8 +149,15 @@ describe('password-policy.util', () => {
 
     it('should not check history when preventReuse is 0', async () => {
       prismaInstance.passwordPolicy.findFirst.mockResolvedValue({
-        ...prismaInstance.passwordPolicy.findFirst.mock.results[0],
+        id: 'default',
+        organizationId: null,
+        minLength: 8,
+        requireUppercase: true,
+        requireLowercase: true,
+        requireNumbers: true,
+        requireSpecialChars: false,
         preventReuse: 0,
+        expirationDays: null,
       });
 
       const password = 'AnyPassword123!';

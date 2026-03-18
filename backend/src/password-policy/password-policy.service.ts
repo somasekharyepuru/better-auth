@@ -32,8 +32,12 @@ export class PasswordPolicyService {
      */
     hashPassword(password: string, userId: string): string {
         const crypto = require('crypto');
-        const hmac = crypto.createHmac('sha256', userId);
-        hmac.update(password);
+        const secret = process.env.BETTER_AUTH_SECRET;
+        if (!secret) {
+            throw new Error('BETTER_AUTH_SECRET environment variable is required for password hashing');
+        }
+        const hmac = crypto.createHmac('sha256', secret);
+        hmac.update(`${userId}:${password}`);
         return hmac.digest('hex');
     }
 
