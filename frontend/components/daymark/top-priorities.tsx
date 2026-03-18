@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Check, Plus, X, Trash2, CheckCircle, Circle, GripVertical, Play } from "lucide-react";
 import { ContextMenu } from "@/components/ui/context-menu";
 import { LifeArea, TopPriority, prioritiesApi } from "@/lib/daymark-api";
-import { Tooltip } from "@/components/ui/tooltip";
+import { SimpleTooltip as Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { useFocusOptional } from "@/lib/focus-context";
 import {

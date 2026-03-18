@@ -1,327 +1,261 @@
-/**
- * Register screen for Daymark mobile app
- * Premium Apple-style design with clean typography
- */
-
 import React, { useState } from 'react';
 import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    StyleSheet,
-    KeyboardAvoidingView,
-    Platform,
-    ActivityIndicator,
-    ScrollView,
-    Pressable,
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
 } from 'react-native';
-import { Link, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-
-import { useAuth } from '@/contexts/AuthContext';
-import { authClient } from '@/lib/auth-client';
-import Colors from '@/constants/Colors';
-import { typography, spacing, radius, sizing } from '@/constants/Theme';
-import { useColorScheme } from '@/components/useColorScheme';
-import { Logo } from '@/components/ui/Logo';
+import { useRouter, Link } from 'expo-router';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { useTheme } from '../../src/contexts/ThemeContext';
+import { Typography, Spacing, Radius } from '../../src/constants/Theme';
+import { Button } from '../../components/ui';
+import { TextInput } from '../../components/ui';
+import { PasswordStrengthIndicator } from '../../components/form';
+import { Separator } from '../../components/ui';
+import { AuthLayout, AuthError } from '../../components/auth';
 
 export default function RegisterScreen() {
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
-    const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-    const { signUp } = useAuth();
-    const router = useRouter();
-    const colorScheme = useColorScheme() ?? 'light';
-    const colors = Colors[colorScheme];
+  const router = useRouter();
+  const { colors, isDark } = useTheme();
+  const { signUp, signInSocial } = useAuth();
 
-    const handleRegister = async () => {
-        if (!name.trim() || !email.trim() || !password) {
-            setError('Please fill in all fields');
-            return;
-        }
+  const handleRegister = async () => {
+    setError('');
 
-        // Basic email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email.trim())) {
-            setError('Please enter a valid email address');
-            return;
-        }
+    if (!name.trim()) {
+      setError('Name is required');
+      return;
+    }
 
-        if (password.length < 8) {
-            setError('Password must be at least 8 characters');
-            return;
-        }
+    if (!email.trim()) {
+      setError('Email is required');
+      return;
+    }
 
-        if (password !== confirmPassword) {
-            setError('Passwords do not match');
-            return;
-        }
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Email is invalid');
+      return;
+    }
 
-        setError('');
-        setIsLoading(true);
+    if (!password) {
+      setError('Password is required');
+      return;
+    }
 
-        try {
-            // Use authClient directly for signup
-            const result = await authClient.signUp.email({
-                name: name.trim(),
-                email: email.trim(),
-                password,
-            });
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
 
-            if (result.error) {
-                setError(result.error.message || 'Registration failed');
-                return;
-            }
+    setIsLoading(true);
 
-            // Redirect to verify email screen
-            router.push({
-                pathname: '/(auth)/verify-email',
-                params: { email: email.trim() },
-            } as any);
-        } catch (err) {
-            setError('An unexpected error occurred');
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    try {
+      const result = await signUp(name, email, password);
 
-    const styles = createStyles(colors);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        router.push({
+          pathname: '/(auth)/verify-email',
+          params: { email },
+        });
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={[styles.container, { backgroundColor: colors.background }]}
-        >
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-            >
-                {/* Header */}
-                <View style={styles.header}>
-                    <View style={styles.logoContainer}>
-                        <Logo size="lg" showText={false} colors={colors} />
-                    </View>
-                    <Text style={[styles.appName, { color: colors.text }]}>Daymark</Text>
-                    <Text style={[styles.title, { color: colors.text }]}>Create account</Text>
-                    <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                        Start your productivity journey
-                    </Text>
-                </View>
+  const handleSocialSignIn = async (provider: 'google' | 'apple') => {
+    setError('');
+    setIsLoading(true);
 
-                {/* Form */}
-                <View style={styles.form}>
-                    {error ? (
-                        <View style={[styles.errorContainer, { backgroundColor: colors.errorLight }]}>
-                            <Ionicons name="alert-circle" size={20} color={colors.error} />
-                            <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
-                        </View>
-                    ) : null}
+    try {
+      const result = await signInSocial(provider);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        router.push('/(app)');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-                    <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: colors.textSecondary }]}>NAME</Text>
-                        <View style={[styles.inputContainer, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}>
-                            <TextInput
-                                style={[styles.input, { color: colors.text }]}
-                                placeholder="Enter your name"
-                                placeholderTextColor={colors.textTertiary}
-                                value={name}
-                                onChangeText={setName}
-                                autoCapitalize="words"
-                                autoComplete="name"
-                            />
-                        </View>
-                    </View>
+  const isFormValid = name.trim() && email.trim() && password && confirmPassword;
 
-                    <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: colors.textSecondary }]}>EMAIL</Text>
-                        <View style={[styles.inputContainer, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}>
-                            <TextInput
-                                style={[styles.input, { color: colors.text }]}
-                                placeholder="Enter your email"
-                                placeholderTextColor={colors.textTertiary}
-                                value={email}
-                                onChangeText={setEmail}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                autoComplete="email"
-                                autoCorrect={false}
-                            />
-                        </View>
-                    </View>
+  return (
+    <AuthLayout scrollEnabled={true}>
+      {/* Header - left aligned */}
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: colors.foreground }]}>
+          Create your{'\n'}account
+        </Text>
+        <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+          Join us and get started today
+        </Text>
+      </View>
 
-                    <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: colors.textSecondary }]}>PASSWORD</Text>
-                        <View style={[styles.inputContainer, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}>
-                            <TextInput
-                                style={[styles.input, { color: colors.text }]}
-                                placeholder="At least 8 characters"
-                                placeholderTextColor={colors.textTertiary}
-                                value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry={!showPassword}
-                                autoComplete="off"
-                            />
-                            <Pressable
-                                onPress={() => setShowPassword(!showPassword)}
-                                style={styles.eyeButton}
-                            >
-                                <Ionicons
-                                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                                    size={22}
-                                    color={colors.textSecondary}
-                                />
-                            </Pressable>
-                        </View>
-                    </View>
+      <AuthError error={error} colors={colors} />
 
-                    <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: colors.textSecondary }]}>CONFIRM PASSWORD</Text>
-                        <View style={[styles.inputContainer, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}>
-                            <TextInput
-                                style={[styles.input, { color: colors.text }]}
-                                placeholder="Re-enter password"
-                                placeholderTextColor={colors.textTertiary}
-                                value={confirmPassword}
-                                onChangeText={setConfirmPassword}
-                                secureTextEntry={!showPassword}
-                                autoComplete="off"
-                            />
-                        </View>
-                    </View>
+      {/* Social button first */}
+      <Pressable
+        onPress={() => handleSocialSignIn('apple')}
+        disabled={isLoading}
+        style={({ pressed }) => [
+          styles.appleButton,
+          { backgroundColor: isDark ? '#F5F1EC' : '#1A1A2E' },
+          pressed && { transform: [{ scale: 0.97 }] },
+        ]}
+      >
+        <Text style={[styles.appleButtonText, { color: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
+          Sign up with Apple
+        </Text>
+      </Pressable>
 
-                    <TouchableOpacity
-                        style={[styles.button, { backgroundColor: colors.accent }]}
-                        onPress={handleRegister}
-                        disabled={isLoading}
-                        activeOpacity={0.8}
-                    >
-                        {isLoading ? (
-                            <ActivityIndicator color="#fff" />
-                        ) : (
-                            <Text style={styles.buttonText}>Create Account</Text>
-                        )}
-                    </TouchableOpacity>
-                </View>
+      <Separator label="Sign up with Apple or Email" style={styles.separator} />
 
-                {/* Footer */}
-                <View style={styles.footer}>
-                    <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-                        Already have an account?{' '}
-                    </Text>
-                    <Link href="/(auth)/login" asChild>
-                        <Pressable>
-                            <Text style={[styles.footerLink, { color: colors.accent }]}>
-                                Sign In
-                            </Text>
-                        </Pressable>
-                    </Link>
-                </View>
-            </ScrollView>
-        </KeyboardAvoidingView>
-    );
+      {/* Form fields */}
+      <View style={styles.form}>
+        <TextInput
+          label="FULL NAME"
+          placeholder="e.g. Jane Doe"
+          value={name}
+          onChangeText={setName}
+          autoCapitalize="words"
+          autoComplete="name"
+        />
+
+        <TextInput
+          label="EMAIL"
+          placeholder="e.g. hello@example.com"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoComplete="email"
+          autoCorrect={false}
+        />
+
+        <TextInput
+          label="PASSWORD"
+          placeholder="Strong password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          showPasswordToggle
+          autoComplete="password"
+        />
+        {password ? <PasswordStrengthIndicator password={password} /> : null}
+
+        <TextInput
+          label="CONFIRM PASSWORD"
+          placeholder="Confirm your password"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry
+          autoComplete="password"
+        />
+      </View>
+
+      {/* Submit - muted style */}
+      <Button
+        onPress={handleRegister}
+        disabled={isLoading || !isFormValid}
+        loading={isLoading}
+        style={[styles.submitButton, { backgroundColor: colors.secondary }]}
+      >
+        <Text style={[styles.submitButtonText, { color: colors.foreground }]}>Create Account</Text>
+      </Button>
+
+      <Button
+        variant="outline"
+        onPress={() => handleSocialSignIn('google')}
+        disabled={isLoading}
+        style={styles.googleButton}
+      >
+        Sign up with Google
+      </Button>
+
+      {/* Footer */}
+      <View style={styles.footer}>
+        <Link href="/(auth)/login" asChild>
+          <Pressable>
+            <Text style={[styles.footerLink, { color: colors.foreground }]}>
+              Already have an account? Sign in
+            </Text>
+          </Pressable>
+        </Link>
+      </View>
+    </AuthLayout>
+  );
 }
 
-const createStyles = (colors: typeof Colors.light) =>
-    StyleSheet.create({
-        container: {
-            flex: 1,
-        },
-        scrollContent: {
-            flexGrow: 1,
-            paddingHorizontal: spacing.xl,
-            paddingTop: 60,
-            paddingBottom: spacing.xxxl,
-        },
-        header: {
-            alignItems: 'center',
-            marginBottom: spacing.xxl,
-        },
-        logoContainer: {
-            width: 80,
-            height: 80,
-            borderRadius: radius.xl,
-            backgroundColor: colors.accentLight,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: spacing.xl,
-        },
-        appName: {
-            ...typography.title2,
-            fontWeight: '700',
-            marginBottom: spacing.sm,
-        },
-        title: {
-            ...typography.title1,
-            marginBottom: spacing.sm,
-        },
-        subtitle: {
-            ...typography.body,
-        },
-        form: {
-            marginBottom: spacing.xxl,
-        },
-        errorContainer: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            padding: spacing.md,
-            borderRadius: radius.md,
-            marginBottom: spacing.lg,
-            gap: spacing.sm,
-        },
-        errorText: {
-            ...typography.subheadline,
-            flex: 1,
-        },
-        inputGroup: {
-            marginBottom: spacing.md,
-        },
-        label: {
-            ...typography.label,
-            marginBottom: spacing.sm,
-            marginLeft: spacing.xs,
-        },
-        inputContainer: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            borderRadius: radius.md,
-            borderWidth: 1,
-        },
-        input: {
-            flex: 1,
-            height: sizing.inputHeight,
-            paddingHorizontal: spacing.lg,
-            ...typography.body,
-        },
-        eyeButton: {
-            padding: spacing.md,
-        },
-        button: {
-            height: sizing.buttonHeight,
-            borderRadius: radius.md,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginTop: spacing.lg,
-        },
-        buttonText: {
-            ...typography.headline,
-            color: '#fff',
-        },
-        footer: {
-            flexDirection: 'row',
-            justifyContent: 'center',
-            alignItems: 'center',
-        },
-        footerText: {
-            ...typography.body,
-        },
-        footerLink: {
-            ...typography.headline,
-        },
-    });
+const styles = StyleSheet.create({
+  header: {
+    alignItems: 'flex-start',
+    marginBottom: Spacing['2xl'],
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '700',
+    lineHeight: 40,
+    marginBottom: Spacing.sm,
+  },
+  subtitle: {
+    ...Typography.body,
+  },
+  appleButton: {
+    width: '100%',
+    paddingVertical: 18,
+    borderRadius: Radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.lg,
+  },
+  appleButtonText: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  separator: {
+    marginVertical: Spacing.md,
+  },
+  form: {
+    marginBottom: Spacing.xl,
+  },
+  submitButton: {
+    width: '100%',
+    borderRadius: Radius.full,
+    paddingVertical: 16,
+    marginBottom: Spacing.md,
+  },
+  submitButtonText: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  googleButton: {
+    width: '100%',
+    borderRadius: Radius.full,
+    marginBottom: Spacing['2xl'],
+  },
+  footer: {
+    alignItems: 'center',
+    marginTop: Spacing.md,
+  },
+  footerLink: {
+    ...Typography.body,
+    fontWeight: '500',
+    textDecorationLine: 'underline',
+  },
+});

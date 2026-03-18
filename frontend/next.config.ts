@@ -1,6 +1,9 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  // Enable standalone output for Docker deployments
+  output: 'standalone',
+
   // Enable React strict mode for development
   reactStrictMode: true,
 
@@ -35,12 +38,20 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Image optimization
+  // Image optimization - allowlist specific domains
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: 'lh3.googleusercontent.com', // Google profile images
+      },
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com', // GitHub avatars
+      },
+      {
+        protocol: 'https',
+        hostname: 'graph.microsoft.com', // Microsoft profile images
       },
     ],
   },

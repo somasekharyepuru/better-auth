@@ -226,3 +226,14 @@ local/
 .nx/cache
 # Local Netlify folder
 .netlify
+
+# Migration backup folders
+backend-old/
+frontend-old/
+mobile-old/
+
+# Playwright
+playwright-report/
+test-results/
+Daymark_Monetization_Strategy.docx
+backend/64

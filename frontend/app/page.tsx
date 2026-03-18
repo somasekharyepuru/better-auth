@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { authClient } from "@/lib/auth-client";
 import { LandingPage } from "@/components/landing/landing-page";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
-import { AppHeader } from "@/components/app-header";
+import { UnifiedHeader } from "@/components/unified-header";
 import { SettingsProvider } from "@/lib/settings-context";
 import { LifeAreasProvider } from "@/lib/life-areas-context";
 import { FocusProvider } from "@/lib/focus-context";
@@ -89,7 +89,7 @@ export default function HomePage() {
         <ThemeSyncer />
         <LifeAreasProvider>
           <FocusProvider>
-            <AppHeader />
+            <UnifiedHeader />
             <div className="pt-16">
               <DashboardContent user={user} />
             </div>

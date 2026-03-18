@@ -38,7 +38,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
     setToasts((prev) => [...prev, newToast]);
 
-    // Auto remove after duration (default 5 seconds)
     const duration = toast.duration ?? 5000;
     if (duration > 0) {
       setTimeout(() => {
@@ -87,7 +86,6 @@ function ToastItem({ toast }: { toast: Toast }) {
   const [isLeaving, setIsLeaving] = useState(false);
 
   useEffect(() => {
-    // Trigger entrance animation
     requestAnimationFrame(() => {
       setIsVisible(true);
     });
@@ -110,41 +108,35 @@ function ToastItem({ toast }: { toast: Toast }) {
   const Icon = icons[toast.type];
 
   const iconColors = {
-    success: "text-green-500",
-    error: "text-red-500",
-    info: "text-gray-500",
-    warning: "text-amber-500",
+    success: "text-success",
+    error: "text-destructive",
+    info: "text-muted-foreground",
+    warning: "text-warning",
   };
 
   return (
     <div
       className={clsx(
-        "flex items-center gap-3 px-4 py-3 bg-white rounded-2xl shadow-lg border border-gray-200/60 backdrop-blur-xl transition-all duration-200 ease-out",
+        "flex items-center gap-3 px-4 py-3 bg-popover rounded-2xl shadow-lg border border-border/60 backdrop-blur-xl transition-all duration-200 ease-out",
         isVisible && !isLeaving
           ? "opacity-100 translate-y-0 scale-100"
           : "opacity-0 translate-y-4 scale-95"
       )}
-      style={{
-        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)",
-      }}
     >
-      {/* Icon */}
       <div className={clsx("shrink-0", iconColors[toast.type])}>
         <Icon className="w-5 h-5" />
       </div>
 
-      {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900">{toast.title}</p>
+        <p className="text-sm font-medium text-foreground">{toast.title}</p>
         {toast.description && (
-          <p className="text-sm text-gray-500 mt-0.5">{toast.description}</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{toast.description}</p>
         )}
       </div>
 
-      {/* Close button */}
       <button
         onClick={handleRemove}
-        className="shrink-0 p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+        className="shrink-0 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
       >
         <X className="w-4 h-4" />
       </button>

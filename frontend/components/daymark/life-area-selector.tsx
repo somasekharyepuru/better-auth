@@ -1,7 +1,7 @@
 "use client";
 
 import { useLifeAreas } from "@/lib/life-areas-context";
-import { Tooltip } from "@/components/ui/tooltip";
+import { SimpleTooltip as Tooltip } from "@/components/ui/tooltip";
 import { LifeAreasManagementModal } from "./life-areas-management-modal";
 import { Plus, Settings2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";

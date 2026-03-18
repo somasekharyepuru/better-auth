@@ -1,171 +1,142 @@
-# Daymark Backend
+# Auth Backend (NestJS)
 
-NestJS API for the Daymark personal productivity platform.
+A standalone authentication service built with **NestJS** and **Better Auth**.
 
 ## Features
 
-### Core Daymark API
-- **Days** - Daily planning entity with priorities, discussions, time blocks
-- **Priorities** - Top 3-5 daily goals with completion tracking
-- **Time Blocks** - Schedule management (Deep Work, Meetings, Personal)
-- **Quick Notes** - Daily scratchpad
-- **Daily Review** - End-of-day reflection
+- 🔐 **Better Auth Integration** - Full-featured authentication with email/password, social providers, 2FA
+- 🏢 **Organization Management** - Multi-tenant support with roles and permissions
+- 📧 **Email Queue** - BullMQ-powered email processing with Redis
+- 📝 **Audit Logging** - Comprehensive security event tracking
+- 🔒 **Rate Limiting** - Built-in protection against brute force attacks
+- 📱 **Mobile Support** - Expo mobile app integration with @better-auth/expo
+- 🐳 **Docker Ready** - Multi-stage Dockerfile with development and production targets
 
-### Productivity Tools
-- **Eisenhower Matrix** - Task prioritization by urgency/importance
-- **Decision Log** - Track decisions with context and outcomes
+## Tech Stack
 
-### Authentication (Better Auth)
-- Email/Password with OTP verification
-- Two-Factor Authentication (TOTP)
-- OAuth (Google, Microsoft)
-- Organization & member management
-- Role-based access control (Owner, Admin, Manager, Member, Viewer)
+- **Framework**: NestJS 10
+- **Authentication**: Better Auth with @thallesp/nestjs-better-auth
+- **Database**: PostgreSQL with Prisma ORM
+- **Queue**: BullMQ with Redis
+- **Logging**: Winston with daily rotation
 
-### Security
-- `helmet` - HTTP security headers
-- `@nestjs/throttler` - Rate limiting (60 req/min)
-- `compression` - Response compression
+## Project Structure
+
+\`\`\`
+src/
+├── main.ts                      # NestJS bootstrap
+├── app.module.ts                # Root module
+├── auth/
+│   └── auth.config.ts           # Better Auth configuration
+├── audit/
+│   ├── audit.module.ts
+│   ├── audit.service.ts
+│   ├── audit.controller.ts
+│   └── audit.middleware.ts
+├── email-queue/
+│   ├── email-queue.module.ts
+│   └── email-queue.service.ts
+├── health/
+│   ├── health.module.ts
+│   └── health.controller.ts
+├── common/
+│   ├── logger.service.ts
+│   ├── mobile-auth.middleware.ts
+│   └── request-context.middleware.ts
+└── prisma/
+    └── schema.prisma
+\`\`\`
 
 ## Quick Start
 
-### With Docker (Recommended)
+### Development (Docker)
 
-```bash
-# Start database and backend
-docker-compose up -d
+\`\`\`bash
+# Start all services
+docker compose up
 
-# Run migrations
-docker-compose exec backend npx prisma migrate dev
-```
+# Or rebuild
+docker compose up --build
+\`\`\`
 
-### Manual Setup
+### Development (Local)
 
-```bash
+\`\`\`bash
 # Install dependencies
 npm install
 
-# Configure environment
-cp env.example .env
-# Edit .env with your settings
-
 # Generate Prisma client
-npm run db:generate
+npm run prisma:generate
 
 # Run migrations
 npm run db:migrate
 
 # Start development server
 npm run start:dev
-```
+\`\`\`
 
-**Server URL**: `http://localhost:3002`
+### Production
 
-## API Endpoints
+\`\`\`bash
+# Build
+npm run build
 
-### Health
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Application health |
-| GET | `/health/ready` | Readiness check (DB + email) |
-
-### Days & Planning
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/days/:date` | Get day with all data |
-| GET | `/api/days/:date/progress` | Get completion progress |
-| POST | `/api/days/:date/priorities` | Create priority |
-| POST | `/api/days/:date/discussion-items` | Create discussion item |
-| POST | `/api/days/:date/time-blocks` | Create time block |
-| PUT | `/api/days/:date/quick-note` | Upsert quick note |
-| PUT | `/api/days/:date/review` | Upsert daily review |
-| POST | `/api/days/:date/review/carry-forward` | Carry forward incomplete priorities |
-
-### Priorities
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| PUT | `/api/priorities/:id` | Update priority |
-| PATCH | `/api/priorities/:id/complete` | Toggle completion |
-| DELETE | `/api/priorities/:id` | Delete priority |
-
-### Eisenhower Matrix
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/eisenhower` | Get all tasks |
-| POST | `/api/eisenhower` | Create task |
-| PUT | `/api/eisenhower/:id` | Update task |
-| DELETE | `/api/eisenhower/:id` | Delete task |
-| POST | `/api/eisenhower/:id/promote` | Promote to priority |
-
-### Decision Log
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/decisions` | Get all decisions |
-| GET | `/api/decisions/:id` | Get single decision |
-| POST | `/api/decisions` | Create decision |
-| PUT | `/api/decisions/:id` | Update decision |
-| DELETE | `/api/decisions/:id` | Delete decision |
-
-### Settings
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/settings` | Get user settings |
-| PUT | `/api/settings` | Update user settings |
+# Start
+npm run start:prod
+\`\`\`
 
 ## Environment Variables
 
-```bash
-# Database
-DATABASE_URL=postgresql://postgres:password@db:5432/auth_service
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=password  # Use strong password in production!
-POSTGRES_DB=auth_service
+Copy \`.env.example\` to \`.env\` and configure:
 
-# Application
-NODE_ENV=development
-PORT=3002
+\`\`\`env
+# Required
+BETTER_AUTH_SECRET=your-32-char-secret
+DATABASE_URL=postgresql://user:pass@localhost:5432/auth
 
-# Auth (CRITICAL: generate with `openssl rand -base64 32`)
-BETTER_AUTH_SECRET=your-secret-key
-BETTER_AUTH_URL=http://localhost:3002
+# Optional
+REDIS_URL=redis://localhost:6379
+N8N_WEBHOOK_URL=https://your-n8n/webhook/email
+MOBILE_API_KEY=your-mobile-api-key
+\`\`\`
 
-# CORS (production: your domain only)
-CORS_ORIGIN=http://localhost:3000
+## API Endpoints
 
-# Email Service
-N8N_WEBHOOK_URL=https://your-n8n-instance/webhook/email
+### Authentication (via Better Auth)
+- \`POST /api/auth/sign-up/email\` - Register with email
+- \`POST /api/auth/sign-in/email\` - Login with email
+- \`POST /api/auth/sign-out\` - Logout
+- \`GET /api/auth/session\` - Get current session
+- \`POST /api/auth/verify-otp\` - Verify OTP
+- \`POST /api/auth/forgot-password\` - Request password reset
 
-# OAuth (Optional)
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-```
+### Audit (Admin only)
+- \`GET /api/audit/logs\` - Query audit logs
+- \`GET /api/audit/logs/:id\` - Get specific log
+- \`GET /api/audit/logs/user/:userId\` - Get user's logs
+- \`GET /api/audit/logs/org/:orgId\` - Get organization's logs
 
-## Database Schema
+### Health
+- \`GET /health\` - Health check
+- \`GET /ready\` - Readiness check
+- \`GET /queue-stats\` - Email queue statistics
 
-### Daymark Tables
-- `day` - Core daily entity
-- `top_priority` - Daily priorities
-- `discussion_item` - Discussion topics
-- `time_block` - Scheduled blocks
-- `quick_note` - Daily notes
-- `daily_review` - End-of-day reflection
-- `user_settings` - User preferences
-- `eisenhower_task` - Matrix tasks
-- `decision_entry` - Decision log
+## Docker Commands
 
-### Auth Tables (Better Auth)
-- `user`, `session`, `account`, `verification`, `twoFactor`
-- `organization`, `member`, `invitation`
+\`\`\`bash
+# Development
+npm run docker:up
 
-## Production Deployment
+# Production
+npm run docker:prod
 
-```bash
-# Build and start with production Docker
-docker-compose -f docker-compose.prod.yml up -d --build
-```
+# View logs
+npm run docker:logs
 
-See [PRODUCTION_CHECKLIST.md](./PRODUCTION_CHECKLIST.md) for complete setup guide.
+# Stop
+npm run docker:down
+\`\`\`
 
----
+## License
 
-**Built with NestJS, Prisma, and Better Auth**
+MIT

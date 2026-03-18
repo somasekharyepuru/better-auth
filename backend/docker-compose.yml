@@ -1,7 +1,22 @@
+# ============================================================
+# AUTH BACKEND DOCKER COMPOSE (NestJS)
+# ============================================================
+# Services:
+#   - PostgreSQL: Database
+#   - Redis: Email queue + caching
+#   - Mailhog: Email testing (dev only)
+#   - Backend: Auth service (NestJS)
+#
+# Usage:
+#   Development: docker compose up
+#   Production: NODE_ENV=production docker compose up
+# ============================================================
+
 services:
-  db:
+  # PostgreSQL Database
+  postgres:
     image: postgres:15-alpine
-    container_name: auth-backend-db
+    container_name: daymark-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -10,101 +25,132 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - daymark-postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - auth-network
+      - daymark-network
 
+  # Redis for email queue and caching
   redis:
     image: redis:7-alpine
     container_name: daymark-redis
     restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_dev_password}
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes
+      - daymark-redis-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     networks:
-      - auth-network
+      - daymark-network
 
-  # DEV ONLY: Cloudflare tunnel for webhook testing
-  # Start with: docker compose --profile dev up -d
-  tunnel:
-    image: cloudflare/cloudflared:latest
-    container_name: daymark-tunnel
-    profiles: ["dev"]
+  # Mailhog for email testing (development only)
+  mailhog:
+    image: mailhog/mailhog
+    container_name: daymark-mailhog
     restart: unless-stopped
-    command: tunnel --no-autoupdate --url http://backend:3002
-    depends_on:
-      - backend
+    ports:
+      - "${MAILHOG_SMTP_PORT:-1025}:1025"   # SMTP server
+      - "${MAILHOG_UI_PORT:-8025}:8025"      # Web UI
     networks:
-      - auth-network
+      - daymark-network
 
+  # Backend Service (NestJS)
   backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: auth-backend
+      target: ${NODE_ENV:-development}
+    container_name: daymark-backend
     restart: unless-stopped
     ports:
-      - "${PORT:-3000}:${PORT:-3000}"
+      - "${PORT:-3002}:3000"
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     env_file:
       - .env
     environment:
-      - NODE_ENV=${NODE_ENV:-development}
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-auth_service}?schema=public
-      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
-      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-http://localhost:3000}
-      - AUTH_BASE_URL=${AUTH_BASE_URL:-http://localhost:3000}
-      - APP_NAME=${APP_NAME:-Auth Service}
-      - PORT=${PORT:-3000}
-      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3001,http://localhost:5173}
-      - MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID:-}
-      - MICROSOFT_CLIENT_SECRET=${MICROSOFT_CLIENT_SECRET:-}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      # Calendar OAuth (separate from auth OAuth)
-      - GOOGLE_CALENDAR_CLIENT_ID=${GOOGLE_CALENDAR_CLIENT_ID:-}
-      - GOOGLE_CALENDAR_CLIENT_SECRET=${GOOGLE_CALENDAR_CLIENT_SECRET:-}
-      - MICROSOFT_CALENDAR_CLIENT_ID=${MICROSOFT_CALENDAR_CLIENT_ID:-}
-      - MICROSOFT_CALENDAR_CLIENT_SECRET=${MICROSOFT_CALENDAR_CLIENT_SECRET:-}
-      - CALENDAR_TOKEN_SECRET=${CALENDAR_TOKEN_SECRET:-}
-      - WEBHOOK_BASE_URL=${WEBHOOK_BASE_URL:-http://localhost:3002}
-      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL:-}
-      - MAIL_TIMEOUT_MS=${MAIL_TIMEOUT_MS:-10000}
-      - MAIL_MAX_RETRIES=${MAIL_MAX_RETRIES:-3}
-      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3001}
-      - REDIS_URL=redis://redis:6379
+      # Database
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-auth_service}?schema=public
+
+      # Redis
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_dev_password}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_dev_password}@redis:6379
+
+      # Better Auth
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-http://localhost:3002}
+      - APP_NAME=${APP_NAME:-Daymark}
+
+      # CORS
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000,http://localhost:3001,http://localhost:5173}
+
+      # Mobile
+      - MOBILE_API_KEY=${MOBILE_API_KEY}
+
+      # Email (SMTP)
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-noreply@daymark.app}
+      - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Daymark}
+      - MAIL_MAX_RETRIES=${MAIL_MAX_RETRIES:-3}
+
+      # Social Providers
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID:-}
+      - MICROSOFT_CLIENT_SECRET=${MICROSOFT_CLIENT_SECRET:-}
+
+      # Node
+      - NODE_ENV=${NODE_ENV:-development}
+      - NODE_OPTIONS=--max-old-space-size=4096
+      - PORT=3000
     volumes:
-      - .:/app
-      - /app/node_modules
-      - /app/dist
+      # Mount source code for hot reload, but exclude node_modules and dist
+      - ./src:/app/src:delegated
+      - ./prisma:/app/prisma:delegated
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./nest-cli.json:/app/nest-cli.json:ro
+      - ./.env:/app/.env:ro
+      - ./wait-for-db.sh:/app/wait-for-db.sh:ro
     networks:
-      - auth-network
-    command: ["./wait-for-db.sh", "npm", "run", "start:dev"]
+      - daymark-network
+    # Help with external DNS resolution (Cloudflare-protected endpoints)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
 
 volumes:
-  postgres_data:
+  daymark-postgres-data:
     driver: local
-  redis_data:
+  daymark-redis-data:
     driver: local
 
 networks:
-  auth-network:
+  daymark-network:
     driver: bridge

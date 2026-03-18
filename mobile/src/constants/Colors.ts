@@ -1,0 +1,61 @@
+export const Colors = {
+  light: {
+    background: '#FBF8F4',
+    foreground: '#1A1A2E',
+    card: '#FFFFFF',
+    cardForeground: '#1A1A2E',
+
+    primary: '#6C63FF',
+    primaryForeground: '#FFFFFF',
+    secondary: '#F0EDE8',
+    secondaryForeground: '#1A1A2E',
+
+    destructive: '#E8636F',
+    destructiveForeground: '#FFFFFF',
+    success: '#5CB87A',
+    warning: '#F2B05E',
+
+    muted: '#F5F1EC',
+    mutedForeground: '#8E8E9A',
+    accent: '#EDE7FE',
+    accentForeground: '#1A1A2E',
+    border: '#E8E2DA',
+    input: '#E8E2DA',
+    ring: '#6C63FF',
+
+    roleOwner: '#F2B05E',
+    roleAdmin: '#6C63FF',
+    roleManager: '#C084FC',
+    roleMember: '#8E8E9A',
+    roleViewer: '#B4B4BE',
+  },
+  dark: {
+    background: '#16162A',
+    foreground: '#F5F1EC',
+    card: '#1E1E38',
+    cardForeground: '#F5F1EC',
+    primary: '#8B83FF',
+    primaryForeground: '#FFFFFF',
+    secondary: '#252540',
+    secondaryForeground: '#F5F1EC',
+    destructive: '#F07B85',
+    destructiveForeground: '#FFFFFF',
+    success: '#6FCF8E',
+    warning: '#F5C474',
+    muted: '#252540',
+    mutedForeground: '#9E9EB0',
+    accent: '#2A2650',
+    accentForeground: '#F5F1EC',
+    border: '#2E2E4A',
+    input: '#2E2E4A',
+    ring: '#8B83FF',
+    roleOwner: '#F5C474',
+    roleAdmin: '#8B83FF',
+    roleManager: '#D4A8FF',
+    roleMember: '#9E9EB0',
+    roleViewer: '#7A7A8C',
+  },
+} as const;
+
+export type ColorScheme = keyof typeof Colors;
+export type Colors = typeof Colors.light;

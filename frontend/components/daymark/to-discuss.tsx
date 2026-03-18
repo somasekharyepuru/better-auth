@@ -6,7 +6,7 @@ import {
   LifeArea,
   discussionItemsApi,
 } from "@/lib/daymark-api";
-import { Tooltip } from "@/components/ui/tooltip";
+import { SimpleTooltip as Tooltip } from "@/components/ui/tooltip";
 import { Plus, X, Check, Trash2, MessageCircle } from "lucide-react";
 import { ContextMenu } from "@/components/ui/context-menu";
 

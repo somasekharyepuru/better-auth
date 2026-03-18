@@ -1,20 +1,25 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Eye, EyeOff } from "lucide-react";
+import { useState, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { AlertCircle, Eye, EyeOff, Mail, Lock, User, ArrowRight } from "lucide-react"
+import { toast } from "sonner"
 
-import { AuthLayout } from "@/components/auth-layout";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { SocialAuthButtons } from "@/components/social-auth-buttons";
-import { authClient } from "@/lib/auth-client";
-import { useToast } from "@/components/ui/toast";
-import { Spinner } from "@/components/ui/spinner";
+import { AuthLayout } from "@/components/auth-layout"
+import { LoadingButton } from "@/components/ui/loading-button"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Spinner } from "@/components/ui/spinner"
+import { SocialAuthButtons } from "@/components/social-auth-buttons"
+import { PasswordStrengthMeter } from "@/components/password-strength-meter"
+import { authClient } from "@/lib/auth-client"
+import { useAuthCheck } from "@/hooks/use-auth-check"
+import { cn } from "@/lib/utils"
 
 const signUpSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -23,188 +28,247 @@ const signUpSchema = z.object({
     .string()
     .min(8, "Password must be at least 8 characters")
     .max(128, "Password must be less than 128 characters"),
-});
+})
 
-type SignUpForm = z.infer<typeof signUpSchema>;
+type SignUpForm = z.infer<typeof signUpSchema>
 
-export default function SignUpPage() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [error, setError] = useState("");
-  const router = useRouter();
-  const { addToast } = useToast();
+function SignUpPageContent() {
+  const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [password, setPassword] = useState("")
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectUrl = searchParams.get("redirect")
 
-  // Check if user is already authenticated
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const session = await authClient.getSession();
-        if (session?.data?.user) {
-          router.replace("/");
-          return;
-        }
-      } catch (error) {
-        // User is not authenticated, stay on signup page
-      } finally {
-        setIsCheckingAuth(false);
-      }
-    };
-    checkAuth();
-  }, [router]);
+  const { isChecking } = useAuthCheck({ redirectIfAuthenticated: true, redirectTo: redirectUrl ?? "/dashboard" })
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<SignUpForm>({
+  const form = useForm<SignUpForm>({
     resolver: zodResolver(signUpSchema),
-  });
+    defaultValues: { name: "", email: "", password: "" },
+  })
 
   const onSubmit = async (data: SignUpForm) => {
-    setIsLoading(true);
-    setError("");
+    setIsLoading(true)
+    setError("")
 
     try {
       const result = await authClient.signUp.email({
         email: data.email,
         password: data.password,
         name: data.name,
-      });
+      })
 
       if (result.error) {
-        setError(result.error.message || "An error occurred during sign up");
-        return;
+        setError(result.error.message || "An error occurred during sign up")
+        return
       }
 
-      // Success - toast for navigation confirmation
-      addToast({
-        type: "success",
-        title: "Check your email",
+      toast.success("Check your email", {
         description: "We sent you a verification code.",
         duration: 4000,
-      });
+      })
 
-      router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+      const verifyUrl = `/verify-email?email=${encodeURIComponent(data.email)}${redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : ""}`
+      router.push(verifyUrl)
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
-      console.error("Sign up error:", err);
+      setError("An unexpected error occurred. Please try again.")
+      console.error("Sign up error:", err)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
-  // Show loading state while checking auth
-  if (isCheckingAuth) {
+  if (isChecking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Spinner size="lg" />
       </div>
-    );
+    )
   }
+
+
 
   return (
     <AuthLayout
-      title="Create your account"
-      subtitle="Start your journey to focused productivity."
+      title="Create an account"
+      subtitle="Enter your details below to get started"
     >
-      <div className="space-y-6">
+      <div className="space-y-5">
         <SocialAuthButtons />
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-gray-200 dark:border-gray-700" />
+            <span className="w-full border-t border-border/60" />
           </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="bg-white dark:bg-gray-900 px-4 text-gray-400 dark:text-gray-500">or</span>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-3 text-muted-foreground">
+              Or continue with email
+            </span>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {error && (
-            <div className="p-4 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl">
-              {error}
-            </div>
-          )}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+            {error && (
+              <Alert variant="destructive" className="animate-shake border-destructive/50 bg-destructive/10">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-          <div className="space-y-4">
-            <div>
-              <Input
-                {...register("name")}
-                placeholder="Full name"
-                disabled={isLoading}
-              />
-              {errors.name && (
-                <p className="mt-2 text-sm text-red-500">{errors.name.message}</p>
-              )}
-            </div>
-
-            <div>
-              <Input
-                {...register("email")}
-                type="email"
-                placeholder="Email"
-                disabled={isLoading}
-              />
-              {errors.email && (
-                <p className="mt-2 text-sm text-red-500">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
-
-            <div className="relative">
-              <Input
-                {...register("password")}
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                disabled={isLoading}
-              />
-              <button
-                type="button"
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-5 w-5" />
-                ) : (
-                  <Eye className="h-5 w-5" />
+            <div className="space-y-3">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium">Full Name</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        <Input
+                          {...field}
+                          placeholder="John Doe"
+                          disabled={isLoading}
+                          autoComplete="name"
+                          className={cn(
+                            "pl-10 h-11 transition-all duration-200",
+                            "border-border/60 hover:border-border focus:border-primary/50",
+                            "bg-background/50 dark:bg-background/30"
+                          )}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </button>
-              {errors.password && (
-                <p className="mt-2 text-sm text-red-500">
-                  {errors.password.message}
-                </p>
-              )}
+              />
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium">Email</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        <Input
+                          {...field}
+                          type="email"
+                          placeholder="name@example.com"
+                          disabled={isLoading}
+                          autoComplete="email"
+                          className={cn(
+                            "pl-10 h-11 transition-all duration-200",
+                            "border-border/60 hover:border-border focus:border-primary/50",
+                            "bg-background/50 dark:bg-background/30"
+                          )}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium">Password</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        <Input
+                          {...field}
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Create a strong password"
+                          disabled={isLoading}
+                          autoComplete="new-password"
+                          className={cn(
+                            "pl-10 pr-10 h-11 transition-all duration-200",
+                            "border-border/60 hover:border-border focus:border-primary/50",
+                            "bg-background/50 dark:bg-background/30"
+                          )}
+                          onChange={(e) => {
+                            field.onChange(e)
+                            setPassword(e.target.value)
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted/50"
+                          onClick={() => setShowPassword(!showPassword)}
+                          tabIndex={-1}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                    <PasswordStrengthMeter password={password} />
+                  </FormItem>
+                )}
+              />
             </div>
-          </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Creating account..." : "Create account"}
-          </Button>
-        </form>
+            <LoadingButton
+              type="submit"
+              className="w-full h-11 font-medium shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200 mt-2"
+              size="lg"
+              isLoading={isLoading}
+              loadingText="Creating account..."
+            >
+              <span className="flex items-center gap-2">
+                Create account
+                <ArrowRight className="h-4 w-4" />
+              </span>
+            </LoadingButton>
+          </form>
+        </Form>
 
-        <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-          By signing up, you agree to our{" "}
-          <Link href="/terms" className="text-gray-900 dark:text-white hover:underline">
-            Terms
+        <p className="text-center text-xs text-muted-foreground leading-relaxed">
+          By creating an account, you agree to our{" "}
+          <Link href="/terms" className="underline underline-offset-4 hover:text-foreground transition-colors font-medium">
+            Terms of Service
           </Link>{" "}
           and{" "}
-          <Link href="/privacy" className="text-gray-900 dark:text-white hover:underline">
+          <Link href="/privacy" className="underline underline-offset-4 hover:text-foreground transition-colors font-medium">
             Privacy Policy
           </Link>
         </p>
 
-        <div className="text-center">
-          <span className="text-gray-500 dark:text-gray-400">Already have an account? </span>
+        <div className="text-center text-sm pt-1">
+          <span className="text-muted-foreground">Already have an account? </span>
           <Link
             href="/login"
-            className="text-gray-900 dark:text-white font-medium hover:underline"
+            className="text-primary font-semibold hover:text-primary/80 transition-colors hover:underline underline-offset-4"
           >
             Sign in
           </Link>
         </div>
       </div>
     </AuthLayout>
-  );
+  )
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <Spinner size="lg" />
+        </div>
+      }
+    >
+      <SignUpPageContent />
+    </Suspense>
+  )
 }

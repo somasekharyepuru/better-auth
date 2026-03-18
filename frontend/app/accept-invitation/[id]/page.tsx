@@ -4,27 +4,17 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
-
-interface Invitation {
-  id: string;
-  email: string;
-  role: string;
-  status: string;
-  organizationId: string;
-  organizationName?: string;
-  expiresAt: Date | string;
-  organization?: {
-    name: string;
-  };
-  [key: string]: unknown;
-}
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 export default function AcceptInvitationPage() {
   const router = useRouter();
   const params = useParams();
   const invitationId = params.id as string;
 
-  const [invitation, setInvitation] = useState<Invitation | null>(null);
+  const [invitation, setInvitation] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState("");
@@ -78,7 +68,7 @@ export default function AcceptInvitationPage() {
       } else {
         setMessage("Invitation accepted! Redirecting...");
         setTimeout(() => {
-          router.push("/");
+          router.push("/dashboard");
         }, 2000);
       }
     } catch (err) {
@@ -114,34 +104,17 @@ export default function AcceptInvitationPage() {
   };
 
   if (loading) {
-    return <div style={{ padding: "2rem" }}>Loading invitation...</div>;
+    return <div className="p-8">Loading invitation...</div>;
   }
 
   if (message) {
     return (
-      <div
-        style={{
-          padding: "2rem",
-          maxWidth: "500px",
-          margin: "0 auto",
-          textAlign: "center",
-        }}
-      >
+      <div className="max-w-md mx-auto p-8 text-center">
         <p>{message}</p>
         {message.includes("log in") && (
-          <Link
-            href="/login"
-            style={{
-              display: "inline-block",
-              marginTop: "1rem",
-              padding: "0.5rem 1rem",
-              background: "#0070f3",
-              color: "white",
-              borderRadius: "4px",
-            }}
-          >
-            Go to Login
-          </Link>
+          <Button asChild className="mt-4">
+            <Link href="/login">Go to Login</Link>
+          </Button>
         )}
       </div>
     );
@@ -149,19 +122,26 @@ export default function AcceptInvitationPage() {
 
   if (error && !invitation) {
     return (
-      <div style={{ padding: "2rem", maxWidth: "500px", margin: "0 auto" }}>
-        <h1>Invitation Error</h1>
-        <p style={{ color: "red" }}>{error}</p>
-        <Link href="/">Back to Dashboard</Link>
+      <div className="max-w-md mx-auto p-8">
+        <h1 className="text-2xl font-bold mb-4">Invitation Error</h1>
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <Button asChild variant="ghost">
+          <Link href="/dashboard">Back to Dashboard</Link>
+        </Button>
       </div>
     );
   }
 
   if (!invitation) {
     return (
-      <div style={{ padding: "2rem", maxWidth: "500px", margin: "0 auto" }}>
+      <div className="max-w-md mx-auto p-8">
         <p>Invitation not found</p>
-        <Link href="/">Back to Dashboard</Link>
+        <Button asChild variant="ghost" className="mt-4">
+          <Link href="/dashboard">Back to Dashboard</Link>
+        </Button>
       </div>
     );
   }
@@ -169,74 +149,55 @@ export default function AcceptInvitationPage() {
   const isExpired = new Date(invitation.expiresAt) < new Date();
 
   return (
-    <div style={{ padding: "2rem", maxWidth: "500px", margin: "0 auto" }}>
-      <h1>Organization Invitation</h1>
+    <div className="max-w-md mx-auto p-8">
+      <h1 className="text-2xl font-bold mb-6">Organization Invitation</h1>
 
       {error && (
-        <div style={{ color: "red", marginBottom: "1rem" }}>{error}</div>
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
       {message && (
-        <div style={{ color: "green", marginBottom: "1rem" }}>{message}</div>
+        <Alert className="mb-4 border-success/50 text-success">
+          <CheckCircle2 className="h-4 w-4" />
+          <AlertDescription>{message}</AlertDescription>
+        </Alert>
       )}
 
-      <div
-        style={{
-          marginBottom: "1rem",
-          padding: "1rem",
-          background: "#f5f5f5",
-          borderRadius: "4px",
-        }}
-      >
-        <p>
-          <strong>Organization:</strong>{" "}
-          {invitation.organization?.name || "Unknown"}
-        </p>
-        <p>
-          <strong>Role:</strong> {invitation.role}
-        </p>
-        <p>
-          <strong>Status:</strong> {invitation.status}
-        </p>
-        {isExpired && (
-          <p style={{ color: "red" }}>This invitation has expired</p>
-        )}
-      </div>
+      <Card className="mb-6">
+        <CardContent className="pt-6 space-y-2">
+          <p>
+            <span className="font-medium">Organization:</span>{" "}
+            {invitation.organization?.name || "Unknown"}
+          </p>
+          <p>
+            <span className="font-medium">Role:</span> {invitation.role}
+          </p>
+          <p>
+            <span className="font-medium">Status:</span> {invitation.status}
+          </p>
+          {isExpired && (
+            <p className="text-destructive text-sm">This invitation has expired</p>
+          )}
+        </CardContent>
+      </Card>
 
       {!isExpired && invitation.status === "pending" && (
-        <div style={{ display: "flex", gap: "1rem" }}>
-          <button
-            onClick={handleAccept}
-            disabled={accepting}
-            style={{
-              padding: "0.5rem 1rem",
-              background: "#0070f3",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
+        <div className="flex gap-4">
+          <Button onClick={handleAccept} disabled={accepting}>
             {accepting ? "Processing..." : "Accept Invitation"}
-          </button>
-          <button
-            onClick={handleReject}
-            disabled={accepting}
-            style={{
-              padding: "0.5rem 1rem",
-              background: "#ccc",
-              color: "black",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
+          </Button>
+          <Button onClick={handleReject} disabled={accepting} variant="outline">
             Reject
-          </button>
+          </Button>
         </div>
       )}
 
-      <div style={{ marginTop: "1rem" }}>
-        <Link href="/">Back to Dashboard</Link>
+      <div className="mt-6">
+        <Button asChild variant="link" className="px-0">
+          <Link href="/dashboard">Back to Dashboard</Link>
+        </Button>
       </div>
     </div>
   );

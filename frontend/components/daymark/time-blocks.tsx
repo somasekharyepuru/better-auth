@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { TimeBlock, timeBlocksApi } from "@/lib/daymark-api";
 import { TimePickerInline } from "@/components/ui/time-picker";
-import { Tooltip } from "@/components/ui/tooltip";
+import { SimpleTooltip as Tooltip } from "@/components/ui/tooltip";
 import { Plus, X, Check, Trash2, Clock, Edit2 } from "lucide-react";
 import {
   useTimeBlockTypesOptional,

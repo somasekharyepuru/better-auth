@@ -22,10 +22,31 @@
     --accent-foreground: 240 5.9% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
     --radius: 0.5rem;
+
+    /* Chart colors */
+    --chart-1: 142 71% 45%;
+    --chart-2: 262 83% 58%;
+    --chart-3: 45 93% 47%;
+    --chart-4: 262 70% 50%;
+    --chart-5: 240 5% 65%;
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 240 5.9% 10%;
 
     /* Custom Apple-style vars */
     --bg-premium-start: #f8f9fa;
@@ -52,9 +73,30 @@
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
+    --success: 142 71% 35%;
+    --success-foreground: 0 0% 98%;
+    --warning: 38 92% 40%;
+    --warning-foreground: 0 0% 98%;
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
+
+    /* Chart colors dark */
+    --chart-1: 142 70% 50%;
+    --chart-2: 263 70% 50%;
+    --chart-3: 45 93% 40%;
+    --chart-4: 263 60% 45%;
+    --chart-5: 240 5% 65%;
+
+    /* Sidebar dark */
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 240 4.9% 83.9%;
 
     /* Custom Apple-style vars dark */
     --bg-premium-start: #1c1c1e;
@@ -98,39 +140,94 @@ a {
   text-decoration: none;
 }
 
-/* Apple-style animations */
+/* ================================================
+   Auth-service utility classes
+   ================================================ */
+
+@layer utilities {
+  .bg-gradient-primary {
+    @apply bg-gradient-to-r from-primary to-accent;
+  }
+
+  .bg-gradient-subtle {
+    @apply bg-gradient-to-br from-primary/5 via-transparent to-accent/5;
+  }
+
+  .bg-gradient-radial {
+    background: radial-gradient(
+      ellipse at top,
+      hsl(var(--primary) / 0.15) 0%,
+      transparent 50%
+    );
+  }
+
+  .glass {
+    @apply bg-background/80 backdrop-blur-xl border border-border/50;
+  }
+
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-xl border border-border/50 shadow-lg;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-primary bg-clip-text text-transparent;
+  }
+
+  .glow-primary {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 20px hsl(var(--accent) / 0.3);
+  }
+
+  .hover-lift {
+    @apply transition-all duration-300;
+  }
+
+  .hover-lift:hover {
+    @apply -translate-y-1 shadow-lg;
+  }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+}
+
+/* ================================================
+   Apple-style animations
+   ================================================ */
+
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
 
-/* Animation classes */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 .animate-fade-in {
   animation: fadeIn 1s ease-out forwards;
 }
@@ -139,12 +236,53 @@ a {
   animation: fadeInUp 1s ease-out forwards;
 }
 
+.animate-fade-in-down {
+  animation: fadeInDown 0.5s ease-out forwards;
+}
+
 .animate-fade-in-scale {
   animation: fadeInScale 1.2s ease-out forwards;
 }
 
+.animate-slide-in-right {
+  animation: slideInRight 0.5s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.5s ease-out forwards;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    hsl(var(--primary) / 0.1),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
 /* Animation delays */
+.delay-75 { animation-delay: 75ms; }
 .delay-100 { animation-delay: 100ms; }
+.delay-150 { animation-delay: 150ms; }
 .delay-200 { animation-delay: 200ms; }
 .delay-300 { animation-delay: 300ms; }
 .delay-400 { animation-delay: 400ms; }
@@ -152,6 +290,7 @@ a {
 .delay-600 { animation-delay: 600ms; }
 .delay-700 { animation-delay: 700ms; }
 .delay-800 { animation-delay: 800ms; }
+.delay-1000 { animation-delay: 1000ms; }
 
 /* Initial opacity for animations */
 .opacity-0-initial {
@@ -170,7 +309,20 @@ a {
   transform: translateY(0);
 }
 
-/* Button styles */
+/* Stagger children animations */
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 400ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 500ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 600ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 700ms; }
+
+/* ================================================
+   Button styles
+   ================================================ */
+
 .btn-primary {
   background-color: #0071e3;
   color: white;
@@ -205,13 +357,16 @@ a {
   text-decoration: underline;
 }
 
-/* Premium Card Styles - Apple-inspired */
+/* ================================================
+   Premium Card Styles - Apple-inspired
+   ================================================ */
+
 .card-premium {
   background: var(--card-premium-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: 20px;
-  box-shadow: 
+  box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.05),
     0 10px 20px -5px rgba(0, 0, 0, 0.05),
     0 0 0 1px rgba(0, 0, 0, 0.02);
@@ -220,7 +375,7 @@ a {
 }
 
 .dark .card-premium {
-  box-shadow: 
+  box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.5),
     0 10px 20px -5px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(255, 255, 255, 0.1);
@@ -228,14 +383,14 @@ a {
 
 .card-premium:hover {
   transform: translateY(-2px);
-  box-shadow: 
+  box-shadow:
     0 8px 12px -2px rgba(0, 0, 0, 0.08),
     0 16px 32px -8px rgba(0, 0, 0, 0.08),
     0 0 0 1px rgba(0, 0, 0, 0.02);
 }
 
 .dark .card-premium:hover {
-  box-shadow: 
+  box-shadow:
     0 8px 12px -2px rgba(0, 0, 0, 0.6),
     0 16px 32px -8px rgba(0, 0, 0, 0.6),
     0 0 0 1px rgba(255, 255, 255, 0.15);
@@ -247,7 +402,7 @@ a {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 20px;
-  box-shadow: 
+  box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.03),
     0 4px 12px rgba(0, 0, 0, 0.04),
     inset 0 0 0 1px rgba(255, 255, 255, 0.5);
@@ -256,7 +411,7 @@ a {
 
 .dark .card-subtle {
   background: rgba(30, 30, 30, 0.9);
-  box-shadow: 
+  box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.3),
     0 4px 12px rgba(0, 0, 0, 0.4),
     inset 0 0 0 1px rgba(255, 255, 255, 0.1);
@@ -279,7 +434,10 @@ a {
   background: linear-gradient(90deg, #e5e5e5 0%, #ffffff 100%);
 }
 
-/* Premium input styles */
+/* ================================================
+   Premium input & checkbox styles
+   ================================================ */
+
 .input-premium {
   background: var(--input-premium-bg);
   border: 1px solid rgba(0, 0, 0, 0.04);
@@ -305,7 +463,6 @@ a {
   box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
 }
 
-/* Premium checkbox */
 .checkbox-premium {
   width: 22px;
   height: 22px;
@@ -335,7 +492,10 @@ a {
   background: linear-gradient(135deg, #e5e5e5 0%, #ffffff 100%);
 }
 
-/* Typography refinements */
+/* ================================================
+   Typography refinements
+   ================================================ */
+
 .text-heading {
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -359,69 +519,6 @@ a {
   color: hsl(var(--muted-foreground));
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 3px;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25);
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-/* Date Picker Styles */
-.date-picker-calendar {
-  animation: datePickerFadeIn 0.1s ease-out;
-}
-
-@keyframes datePickerFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.date-picker-root {
-  position: relative;
-}
-
-/* Fix for react-day-picker button styling */
-.date-picker-calendar button[name="day"] {
-  all: unset;
-  cursor: pointer;
-}
-
-.date-picker-calendar .rdp-button_reset {
-  all: unset;
-  cursor: pointer;
-}
-
-/* ================================================
-   DESIGN TOKENS - Typography, Spacing, Colors
-   ================================================ */
-
-/* Typography Scale */
 .text-display-lg {
   font-size: 32px;
   font-weight: 700;
@@ -471,18 +568,99 @@ a {
   .text-display-lg {
     font-size: 28px;
   }
-  
+
   .text-display-md {
     font-size: 20px;
   }
-  
+
   .heading-section {
     font-size: 18px;
   }
-  
+
   .text-priority {
     font-size: 15px;
   }
+}
+
+/* ================================================
+   Custom scrollbar
+   ================================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Selection */
+::selection {
+  @apply bg-primary/20 text-foreground;
+}
+
+/* Decorative elements */
+.decorative-dots {
+  background-image: radial-gradient(hsl(var(--primary) / 0.2) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.decorative-grid {
+  background-image:
+    linear-gradient(to right, hsl(var(--border) / 0.5) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--border) / 0.5) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Page transition */
+.page-transition {
+  @apply animate-fade-in-up;
+  animation-duration: 0.4s;
+}
+
+/* ================================================
+   Date Picker Styles
+   ================================================ */
+
+.date-picker-calendar {
+  animation: datePickerFadeIn 0.1s ease-out;
+}
+
+@keyframes datePickerFadeIn {
+  from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.date-picker-root {
+  position: relative;
+}
+
+.date-picker-calendar button[name="day"] {
+  all: unset;
+  cursor: pointer;
+}
+
+.date-picker-calendar .rdp-button_reset {
+  all: unset;
+  cursor: pointer;
 }
 
 /* ================================================
@@ -613,7 +791,6 @@ a {
   flex-shrink: 0;
 }
 
-/* Mobile: Actions always visible */
 @media (max-width: 768px) {
   .priority-card {
     padding: 12px;
@@ -669,17 +846,9 @@ a {
 }
 
 @keyframes celebrate-pulse {
-  0%, 100% {
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-  }
-  50% {
-    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.5);
-  }
+  0%, 100% { box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); }
+  50% { box-shadow: 0 4px 16px rgba(16, 185, 129, 0.5); }
 }
-
-/* ================================================
-   Mobile Dashboard Layout
-   ================================================ */
 
 /* Mobile card padding adjustment */
 @media (max-width: 640px) {
@@ -698,7 +867,7 @@ a {
     align-items: center;
     justify-content: center;
   }
-  
+
   .checkbox-touch {
     width: 28px;
     height: 28px;
@@ -710,51 +879,23 @@ a {
    ================================================ */
 
 @keyframes draw-line {
-  0% {
-    stroke-dashoffset: 1000;
-    opacity: 0;
-  }
-  1% {
-    opacity: 1;
-  }
-  100% {
-    stroke-dashoffset: 0;
-    opacity: 1;
-  }
+  0% { stroke-dashoffset: 1000; opacity: 0; }
+  1% { opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 1; }
 }
 
 @keyframes comet {
-  0% {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  5% {
-    opacity: 1;
-  }
-  20% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(100vw);
-    opacity: 0;
-  }
+  0% { transform: translateX(-100%); opacity: 0; }
+  5% { opacity: 1; }
+  20% { opacity: 1; }
+  100% { transform: translateX(100vw); opacity: 0; }
 }
 
 @keyframes comet-vertical {
-  0% {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  5% {
-    opacity: 1;
-  }
-  20% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(100vh);
-    opacity: 0;
-  }
+  0% { transform: translateY(-100%); opacity: 0; }
+  5% { opacity: 1; }
+  20% { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
 }
 
 @keyframes spin-border {
@@ -768,14 +909,8 @@ a {
 }
 
 @keyframes pulse-slow {
-  0%, 100% {
-    opacity: 0.8;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.05);
-  }
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
 }
 
 .animate-draw-line {
