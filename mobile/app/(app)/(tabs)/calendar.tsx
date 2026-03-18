@@ -165,7 +165,7 @@ export default function CalendarScreen() {
             <Button
               variant="default"
               size="sm"
-              onPress={() => router.push('/(app)/profile/security')}
+              onPress={() => router.push('/(app)/settings' as any)}
               style={{ marginTop: Spacing.md }}
             >
               Go to Settings

@@ -10,13 +10,13 @@ datasource db {
 // Better Auth Core Tables
 
 model User {
-  id            String      @id
+  id            String      @id @default(cuid())
   name          String
   email         String
   emailVerified Boolean
   image         String?
-  createdAt     DateTime
-  updatedAt     DateTime
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
   sessions      Session[]
   accounts      Account[]
   twofactors    TwoFactor[]
@@ -34,6 +34,21 @@ model User {
   twoFactorEnabled Boolean?     @default(false)
   invitations      Invitation[]
 
+  // Force password change on next login (for admin-created users)
+  forcePasswordChange Boolean?  @default(false)
+
+  // Account deletion
+  deletionRequests DeletionRequest[]
+
+  // Productivity relations
+  lifeAreas           LifeArea[]
+  eisenhowerTasks     EisenhowerTask[]
+  decisionEntries     DecisionEntry[]
+  userSettings        UserSettings?
+  calendarConnections CalendarConnection[]
+  calendarSettings    UserCalendarSettings?
+  timeBlockTypes      TimeBlockType[]
+
   @@unique([email])
   @@map("user")
 }
@@ -46,6 +61,7 @@ model Session {
   updatedAt DateTime
   ipAddress String?
   userAgent String?
+  device    String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -60,7 +76,7 @@ model Session {
 }
 
 model Account {
-  id                    String    @id
+  id                    String    @id @default(cuid())
   accountId             String
   providerId            String
   userId                String
@@ -72,8 +88,8 @@ model Account {
   refreshTokenExpiresAt DateTime?
   scope                 String?
   password              String?
-  createdAt             DateTime
-  updatedAt             DateTime
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   @@index([userId])
   @@map("account")
@@ -98,7 +114,6 @@ model TwoFactor {
   userId      String
   user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([secret])
   @@index([userId])
   @@map("twoFactor")
 }
@@ -106,15 +121,22 @@ model TwoFactor {
 // Organization Plugin Tables
 
 model Organization {
-  id          String       @id
-  name        String
-  slug        String       @unique
-  logo        String?
-  metadata    String?
-  createdAt   DateTime
-  members     Member[]
-  invitations Invitation[]
+  id                 String              @id
+  name               String
+  slug               String              @unique
+  logo               String?
+  metadata           String?
+  createdAt          DateTime
+  banned             Boolean             @default(false)
+  banReason          String?
+  bannedAt           DateTime?
+  members            Member[]
+  invitations        Invitation[]
+  teams              Team[]
+  ownershipTransfers OwnershipTransfer[]
+  roles              OrganizationRole[]
 
+  @@index([banned])
   @@map("organization")
 }
 
@@ -142,25 +164,187 @@ model Invitation {
   status         String
   createdAt      DateTime
   expiresAt      DateTime
+  firstResendAt  DateTime?
+  lastResendAt   DateTime?
+  resendCount    Int          @default(0)
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   User           User?        @relation(fields: [userId], references: [id])
   userId         String?
+  teamId         String?      // Required when teams are enabled
 
   @@index([organizationId])
   @@index([email])
   @@map("invitation")
 }
 
+
+model Team {
+  id             String       @id
+  name           String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  members        TeamMember[]
+
+  @@index([organizationId])
+  @@map("team")
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  teamId    String
+  userId    String
+  createdAt DateTime @default(now())
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+  @@map("teamMember")
+}
+
+model OrganizationRole {
+  id            String   @id @default(cuid())
+  organizationId String
+  role          String
+  permission    Json     // Record<string, string[]>
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, role])
+  @@index([organizationId])
+  @@index([role])
+  @@map("organizationRole")
+}
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  userId         String
+  action         String
+  resourceType   String?
+  resourceId     String?
+  organizationId String?
+  sessionId      String?
+  details        Json?
+  ipAddress      String?
+  userAgent      String?
+  success        Boolean  @default(true)
+  errorMessage   String?
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType, resourceId])
+  @@index([organizationId])
+  @@index([createdAt])
+  @@map("audit_log")
+}
+
+// Rate Limiting Table
+model RateLimit {
+  id          String @id
+  key         String
+  count       Int
+  lastRequest BigInt
+
+  @@index([key])
+  @@map("rate_limit")
+}
+
+// Account Deletion Request
+model DeletionRequest {
+  id          String    @id @default(cuid())
+  userId      String
+  token       String    @unique
+  requestedAt DateTime  @default(now())
+  confirmedAt DateTime?
+  deletedAt   DateTime?
+  expiresAt   DateTime  @default(dbgenerated("(now() + interval '30 days')"))
+  status      String    @default("pending")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([token])
+  @@map("deletion_request")
+}
+
+// Password History for preventing password reuse
+model PasswordHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  hash      String   // Hash of password (not actual password)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, hash])
+  @@index([userId])
+  @@map("password_history")
+}
+
+// Password Policy configuration
+model PasswordPolicy {
+  id                  String   @id @default(cuid())
+  organizationId      String?  @unique // null = global policy
+  minLength           Int      @default(8)
+  requireUppercase    Boolean  @default(false)
+  requireLowercase    Boolean  @default(false)
+  requireNumbers      Boolean  @default(false)
+  requireSpecialChars Boolean  @default(false)
+  preventReuse        Int      @default(5) // Don't reuse last N passwords
+  expirationDays      Int?     // null = no expiration
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("password_policy")
+}
+
+// Known Devices for login notifications
+model KnownDevice {
+  id          String   @id @default(cuid())
+  userId      String
+  fingerprint String   // SHA-256 hash of IP + User-Agent
+  name        String?  // User-friendly name (browser/device)
+  firstSeen   DateTime @default(now())
+  lastSeen    DateTime @default(now())
+
+  @@unique([userId, fingerprint])
+  @@index([userId])
+  @@map("known_device")
+}
+
+// Ownership Transfer for organizations
+model OwnershipTransfer {
+  id             String       @id @default(cuid())
+  organizationId String
+  fromUserId     String       // Current owner
+  toUserId       String       // New owner
+  token          String       @unique // Confirmation token
+  status         String       @default("pending") // pending, confirmed, expired, cancelled
+  initiatedAt    DateTime     @default(now())
+  confirmedAt    DateTime?
+  expiresAt      DateTime     // 7 days from creation
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([token])
+  @@index([status])
+  @@map("ownership_transfer")
+}
+
 // ==========================================
 // Daymark - Personal Productivity Entities
 // ==========================================
 
-// Life Areas - Context filters for organizing life domains
 model LifeArea {
   id         String   @id @default(cuid())
   userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name       String
-  color      String?  // Hex color like "#4F46E5"
+  color      String?
   order      Int
   isArchived Boolean  @default(false)
   createdAt  DateTime @default(now())
@@ -174,7 +358,6 @@ model LifeArea {
   @@map("life_area")
 }
 
-// Core Daymark Entity - One per user per date per life area
 model Day {
   id         String    @id @default(cuid())
   date       DateTime  @db.Date
@@ -200,32 +383,26 @@ model TopPriority {
   id        String   @id @default(cuid())
   title     String
   completed Boolean  @default(false)
-  order     Int      // 1, 2, or 3
+  order     Int
   dayId     String
   day       Day      @relation(fields: [dayId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Track if this priority was carried forward (prevents showing in carryover UI again)
   carriedToDate DateTime? @db.Date
 
-  // Time blocks linked to this priority
   timeBlocks TimeBlock[]
-
-  // Focus Suite v2: Linked decisions
-  decisions DecisionEntry[]
+  decisions  DecisionEntry[]
 
   @@index([dayId])
   @@index([carriedToDate])
   @@map("top_priority")
 }
 
-
-
 model DiscussionItem {
   id        String   @id @default(cuid())
   content   String
-  order     Int      // 1, 2, or 3
+  order     Int
   dayId     String
   day       Day      @relation(fields: [dayId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
@@ -240,7 +417,7 @@ model TimeBlock {
   title     String
   startTime DateTime
   endTime   DateTime
-  type      String   @default("Deep Work") // Flexible: Deep Work, Meeting, Personal, or custom
+  type      String   @default("Deep Work")
   dayId     String
   day       Day      @relation(fields: [dayId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
@@ -250,27 +427,20 @@ model TimeBlock {
   calendarSourceId String?
   externalEventId  String?
 
-  // Priority linking - connect time blocks to priorities/goals
   priorityId String?
   priority   TopPriority? @relation(fields: [priorityId], references: [id], onDelete: SetNull)
-  
-  // Category for different block types (focus, meeting, break, deep-work, personal)
+
   category String @default("focus")
-  
-  // Recurrence support
-  recurrenceRule    String?   // RRULE format (e.g., "FREQ=DAILY;BYDAY=MO,TU,WE,TH,FR")
+
+  recurrenceRule    String?
   recurrenceEndDate DateTime?
-  parentBlockId     String?   // For recurring instances
+  parentBlockId     String?
   parentBlock       TimeBlock?  @relation("RecurringBlocks", fields: [parentBlockId], references: [id], onDelete: SetNull)
   childBlocks       TimeBlock[] @relation("RecurringBlocks")
-  
-  // Cross-calendar blocking
-  blockExternalCalendars Boolean @default(true) // Whether to push "busy" to external calendars
-  
-  // Focus sessions tracking
-  focusSessions FocusSession[]
 
-  // Focus Suite v2: Matrix tasks scheduled for this block
+  blockExternalCalendars Boolean @default(true)
+
+  focusSessions   FocusSession[]
   eisenhowerTasks EisenhowerTask[]
 
   @@index([dayId])
@@ -282,37 +452,29 @@ model TimeBlock {
   @@map("time_block")
 }
 
-// Focus Session - tracks pomodoro/focus sessions linked to time blocks
 model FocusSession {
-  id          String     @id @default(cuid())
+  id          String    @id @default(cuid())
   timeBlockId String
-  timeBlock   TimeBlock  @relation(fields: [timeBlockId], references: [id], onDelete: Cascade)
-  
+  timeBlock   TimeBlock @relation(fields: [timeBlockId], references: [id], onDelete: Cascade)
+
   startedAt   DateTime
   endedAt     DateTime?
-  duration    Int?       // Duration in seconds
-  
-  // Session status
-  completed   Boolean    @default(false)
-  interrupted Boolean    @default(false)
-  
-  // Session type (from pomodoro settings)
-  sessionType String     @default("focus") // focus, shortBreak, longBreak
-  
-  // Metrics
-  targetDuration Int?    // Expected duration in seconds
-  
-  createdAt   DateTime   @default(now())
-  
-  // Focus Suite v2: Linked decisions
-  decisions   DecisionFocusSession[]
-  
+  duration    Int?
+
+  completed   Boolean @default(false)
+  interrupted Boolean @default(false)
+
+  sessionType    String @default("focus")
+  targetDuration Int?
+
+  createdAt DateTime @default(now())
+
+  decisions DecisionFocusSession[]
+
   @@index([timeBlockId])
   @@index([startedAt])
   @@map("focus_session")
 }
-
-
 
 model QuickNote {
   id        String   @id @default(cuid())
@@ -344,43 +506,32 @@ model DailyReview {
 model UserSettings {
   id     String @id @default(cuid())
   userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Theme Preferences
-  theme String @default("system") // "light", "dark", or "system"
+  theme              String  @default("system")
+  maxTopPriorities   Int     @default(3)
+  maxDiscussionItems Int     @default(3)
+  enabledSections    String  @default("[\"priorities\",\"discussion\",\"schedule\",\"notes\",\"progress\",\"review\"]")
 
-  // Dashboard Preferences
-  maxTopPriorities   Int @default(3) // 1-5
-  maxDiscussionItems Int @default(3) // 0-5
-
-  // Section Visibility (JSON array of enabled section keys)
-  // Default: ["priorities", "discussion", "schedule", "notes", "progress", "review"]
-  enabledSections String @default("[\"priorities\",\"discussion\",\"schedule\",\"notes\",\"progress\",\"review\"]")
-
-  // Scheduling Preferences
-  defaultTimeBlockDuration Int    @default(60) // minutes
+  defaultTimeBlockDuration Int    @default(60)
   defaultTimeBlockType     String @default("Deep Work")
 
-  // Review Preferences
   endOfDayReviewEnabled Boolean @default(true)
+  autoCarryForward      Boolean @default(true)
+  autoCreateNextDay     Boolean @default(true)
 
-  // Daily Behavior Rules
-  autoCarryForward  Boolean @default(true)
-  autoCreateNextDay Boolean @default(true)
-
-  // Tools Settings
   toolsTabEnabled      Boolean @default(true)
   pomodoroEnabled      Boolean @default(true)
   eisenhowerEnabled    Boolean @default(true)
   decisionLogEnabled   Boolean @default(true)
-  pomodoroFocusDuration    Int @default(25)  // minutes
-  pomodoroShortBreak       Int @default(5)   // minutes
-  pomodoroLongBreak        Int @default(15)  // minutes
-  pomodoroSoundEnabled     Boolean @default(true)  // notification sound
-  focusBlocksCalendar      Boolean @default(true)  // Block external calendars during focus
+  pomodoroFocusDuration    Int     @default(25)
+  pomodoroShortBreak       Int     @default(5)
+  pomodoroLongBreak        Int     @default(15)
+  pomodoroSoundEnabled     Boolean @default(true)
+  focusBlocksCalendar      Boolean @default(true)
 
-  // Life Areas Settings
-  lifeAreasEnabled   Boolean @default(true)
-  defaultLifeAreaId  String? // User's preferred default life area
+  lifeAreasEnabled  Boolean @default(true)
+  defaultLifeAreaId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -390,18 +541,19 @@ model UserSettings {
 }
 
 // ==========================================
-// User Time Block Types - Customizable block types
+// User Time Block Types
 // ==========================================
 
 model TimeBlockType {
   id        String   @id @default(cuid())
   userId    String
-  name      String   // e.g., "Deep Work", "Meeting", "Personal"
-  color     String   @default("#6366F1") // Hex color code
-  icon      String?  // Optional icon identifier
-  isDefault Boolean  @default(false) // Whether this is a system default type
-  isActive  Boolean  @default(true) // Whether the type is active/visible
-  order     Int      @default(0) // Display order
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  color     String   @default("#6366F1")
+  icon      String?
+  isDefault Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -419,19 +571,18 @@ model TimeBlockType {
 model EisenhowerTask {
   id         String    @id @default(cuid())
   userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   lifeAreaId String?
   lifeArea   LifeArea? @relation(fields: [lifeAreaId], references: [id], onDelete: SetNull)
   title      String
   note       String?   @db.Text
-  quadrant   Int       // 1=Urgent+Important, 2=Not Urgent+Important, 3=Urgent+Not Important, 4=Neither
+  quadrant   Int
 
-  // Focus Suite v2: Scheduled focus blocks and promotion
   scheduledTimeBlockId String?
   scheduledTimeBlock   TimeBlock? @relation(fields: [scheduledTimeBlockId], references: [id], onDelete: SetNull)
-  promotedDate         DateTime?  // Date when promoted to daily priority
-  promotedPriorityId   String?    // Reference to created priority
+  promotedDate         DateTime?
+  promotedPriorityId   String?
 
-  // Focus Suite v2: Related decisions
   decisions DecisionEntry[]
 
   createdAt DateTime @default(now())
@@ -450,6 +601,7 @@ model EisenhowerTask {
 model DecisionEntry {
   id         String    @id @default(cuid())
   userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   lifeAreaId String?
   lifeArea   LifeArea? @relation(fields: [lifeAreaId], references: [id], onDelete: SetNull)
   title      String
@@ -458,13 +610,11 @@ model DecisionEntry {
   decision   String    @db.Text
   outcome    String?   @db.Text
 
-  // Focus Suite v2: Linkage to related tasks and sessions
   eisenhowerTaskId String?
   eisenhowerTask   EisenhowerTask? @relation(fields: [eisenhowerTaskId], references: [id], onDelete: SetNull)
   priorityId       String?
   priority         TopPriority? @relation(fields: [priorityId], references: [id], onDelete: SetNull)
 
-  // Focus Suite v2: Link to focus sessions that produced this decision
   focusSessions DecisionFocusSession[]
 
   createdAt DateTime @default(now())
@@ -477,7 +627,6 @@ model DecisionEntry {
   @@map("decision_entry")
 }
 
-// Focus Suite v2: Join table for Decision <-> FocusSession many-to-many
 model DecisionFocusSession {
   id             String        @id @default(cuid())
   decisionId     String
@@ -493,7 +642,7 @@ model DecisionFocusSession {
 }
 
 // ==========================================
-// Calendar Sync - Enums
+// Calendar Sync
 // ==========================================
 
 enum CalendarProvider {
@@ -539,40 +688,37 @@ enum ConflictStrategy {
   MANUAL
 }
 
-// ==========================================
-// Calendar Sync - Models
-// ==========================================
-
 model CalendarConnection {
   id                String           @id @default(cuid())
   userId            String
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   provider          CalendarProvider
   providerAccountId String
   providerEmail     String?
 
-  status            ConnectionStatus @default(DISCONNECTED)
-  errorMessage      String?
-  lastErrorAt       DateTime?
+  status       ConnectionStatus @default(DISCONNECTED)
+  errorMessage String?
+  lastErrorAt  DateTime?
 
-  lastSyncAt        DateTime?
-  lastSyncDuration  Int?
-  syncToken         String?
+  lastSyncAt       DateTime?
+  lastSyncDuration Int?
+  syncToken        String?
 
   webhookChannelId  String?
   webhookSecret     String?
   webhookExpiresAt  DateTime?
   webhookResourceId String?
 
-  enabled           Boolean          @default(true)
-  syncIntervalMins  Int              @default(15)
+  enabled          Boolean @default(true)
+  syncIntervalMins Int     @default(15)
 
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  token             CalendarToken?
-  sources           CalendarSource[]
-  conflicts         CalendarConflict[]
-  auditLogs         SyncAuditLog[]
+  token     CalendarToken?
+  sources   CalendarSource[]
+  conflicts CalendarConflict[]
+  auditLogs SyncAuditLog[]
 
   @@unique([userId, provider, providerAccountId])
   @@index([userId])
@@ -585,53 +731,52 @@ model CalendarToken {
   connectionId          String             @unique
   connection            CalendarConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
 
-  accessTokenEncrypted  String             @db.Text
-  refreshTokenEncrypted String?            @db.Text
+  accessTokenEncrypted  String @db.Text
+  refreshTokenEncrypted String? @db.Text
   tokenIv               String
 
-  expiresAt             DateTime?
-  scopes                String[]
-  tokenType             String             @default("Bearer")
+  expiresAt DateTime?
+  scopes    String[]
+  tokenType String   @default("Bearer")
 
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([expiresAt])
   @@map("calendar_token")
 }
 
 model CalendarSource {
-  id                  String             @id @default(cuid())
-  connectionId        String
-  connection          CalendarConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  id                 String             @id @default(cuid())
+  connectionId       String
+  connection         CalendarConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
 
-  externalCalendarId  String
-  name                String
-  description         String?
-  color               String?
-  timeZone            String?
+  externalCalendarId String
+  name               String
+  description        String?
+  color              String?
+  timeZone           String?
 
-  syncEnabled         Boolean            @default(false)
-  syncDirection       SyncDirection      @default(BIDIRECTIONAL)
-  isPrimary           Boolean            @default(false)
+  syncEnabled   Boolean       @default(false)
+  syncDirection SyncDirection @default(BIDIRECTIONAL)
+  isPrimary     Boolean       @default(false)
 
-  privacyMode         PrivacyMode        @default(FULL)
-  defaultEventType    String             @default("Meeting")
-  excludePatterns     String[]
+  privacyMode      PrivacyMode @default(FULL)
+  defaultEventType String      @default("Meeting")
+  excludePatterns  String[]
 
-  calendarSyncToken   String?
-  lastSyncAt          DateTime?
-  eventCount          Int                @default(0)
+  calendarSyncToken String?
+  lastSyncAt        DateTime?
+  eventCount        Int       @default(0)
 
-  // Webhook per source for real-time updates
-  webhookChannelId    String?
-  webhookResourceId   String?
-  webhookExpiresAt    DateTime?
+  webhookChannelId  String?
+  webhookResourceId String?
+  webhookExpiresAt  DateTime?
 
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  eventMappings       EventMapping[]
+  eventMappings EventMapping[]
 
   @@unique([connectionId, externalCalendarId])
   @@index([connectionId])
@@ -640,33 +785,32 @@ model CalendarSource {
 }
 
 model EventMapping {
-  id                String          @id @default(cuid())
-  calendarSourceId  String
-  calendarSource    CalendarSource  @relation(fields: [calendarSourceId], references: [id], onDelete: Cascade)
+  id               String         @id @default(cuid())
+  calendarSourceId String
+  calendarSource   CalendarSource @relation(fields: [calendarSourceId], references: [id], onDelete: Cascade)
 
   externalEventId   String
   externalEtag      String?
   externalUpdatedAt DateTime?
 
-  timeBlockId       String?
+  timeBlockId String?
 
   syncStatus        EventSyncStatus @default(SYNCED)
   lastSyncDirection String?
   lastSyncAt        DateTime?
   syncError         String?
 
-  lastKnownTitle    String?
-  lastKnownStart    DateTime?
-  lastKnownEnd      DateTime?
+  lastKnownTitle String?
+  lastKnownStart DateTime?
+  lastKnownEnd   DateTime?
 
-  // Cross-calendar blocking: tracks if this event was created to block time from another source
-  isBlockingEvent      Boolean  @default(false)
-  blockedByMappingId   String?  // References the original EventMapping that triggered this block
-  blockedByMapping     EventMapping?  @relation("BlockingEvents", fields: [blockedByMappingId], references: [id], onDelete: SetNull)
-  blockingEvents       EventMapping[] @relation("BlockingEvents")
+  isBlockingEvent    Boolean       @default(false)
+  blockedByMappingId String?
+  blockedByMapping   EventMapping? @relation("BlockingEvents", fields: [blockedByMappingId], references: [id], onDelete: SetNull)
+  blockingEvents     EventMapping[] @relation("BlockingEvents")
 
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([calendarSourceId, externalEventId])
   @@index([timeBlockId])
@@ -676,17 +820,17 @@ model EventMapping {
 }
 
 model CalendarConflict {
-  id              String              @id @default(cuid())
-  connectionId    String
-  connection      CalendarConnection  @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  id           String             @id @default(cuid())
+  connectionId String
+  connection   CalendarConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
 
-  conflictType    String
+  conflictType String
 
-  localEventId    String?
-  localTitle      String?
-  localStart      DateTime?
-  localEnd        DateTime?
-  localUpdatedAt  DateTime?
+  localEventId   String?
+  localTitle     String?
+  localStart     DateTime?
+  localEnd       DateTime?
+  localUpdatedAt DateTime?
 
   remoteEventId   String?
   remoteTitle     String?
@@ -694,13 +838,13 @@ model CalendarConflict {
   remoteEnd       DateTime?
   remoteUpdatedAt DateTime?
 
-  resolved        Boolean             @default(false)
-  resolvedAt      DateTime?
-  resolution      String?
+  resolved   Boolean   @default(false)
+  resolvedAt DateTime?
+  resolution String?
 
-  expiresAt       DateTime
+  expiresAt DateTime
 
-  createdAt       DateTime            @default(now())
+  createdAt DateTime @default(now())
 
   @@index([connectionId])
   @@index([resolved])
@@ -708,12 +852,12 @@ model CalendarConflict {
 }
 
 model SyncAuditLog {
-  id            String              @id @default(cuid())
-  connectionId  String
-  connection    CalendarConnection  @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  id           String             @id @default(cuid())
+  connectionId String
+  connection   CalendarConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
 
-  action        String
-  status        String
+  action String
+  status String
 
   eventsProcessed Int?
   eventsCreated   Int?
@@ -722,10 +866,10 @@ model SyncAuditLog {
   conflictsFound  Int?
   durationMs      Int?
 
-  errorMessage    String?           @db.Text
-  metadata        Json?
+  errorMessage String? @db.Text
+  metadata     Json?
 
-  createdAt       DateTime          @default(now())
+  createdAt DateTime @default(now())
 
   @@index([connectionId])
   @@index([createdAt])
@@ -733,24 +877,25 @@ model SyncAuditLog {
 }
 
 model UserCalendarSettings {
-  id                    String            @id @default(cuid())
-  userId                String            @unique
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  defaultSyncDirection  SyncDirection     @default(BIDIRECTIONAL)
-  defaultPrivacyMode    PrivacyMode       @default(FULL)
-  defaultEventType      String            @default("Meeting")
+  defaultSyncDirection  SyncDirection    @default(BIDIRECTIONAL)
+  defaultPrivacyMode    PrivacyMode      @default(FULL)
+  defaultEventType      String           @default("Meeting")
 
-  conflictStrategy      ConflictStrategy  @default(LAST_WRITE_WINS)
+  conflictStrategy      ConflictStrategy @default(LAST_WRITE_WINS)
   primaryCalendarId     String?
-  notifyOnConflict      Boolean           @default(true)
+  notifyOnConflict      Boolean          @default(true)
 
-  syncRangeMonthsPast   Int               @default(1)
-  syncRangeMonthsFuture Int               @default(6)
+  syncRangeMonthsPast   Int @default(1)
+  syncRangeMonthsFuture Int @default(6)
 
-  doubleBookingAlert    Boolean           @default(true)
+  doubleBookingAlert Boolean @default(true)
 
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("user_calendar_settings")
 }

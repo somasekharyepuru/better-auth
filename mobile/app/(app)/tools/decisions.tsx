@@ -93,9 +93,15 @@ export default function DecisionsScreen() {
       {
         text: 'Delete', style: 'destructive', onPress: async () => {
           try {
-            await fetch(`${API_BASE}/api/decision-log/${id}`, { method: 'DELETE', credentials: 'include' });
-            setDecisions(prev => prev.filter(d => d.id !== id));
-          } catch { /* ignore */ }
+            const res = await fetch(`${API_BASE}/api/decision-log/${id}`, { method: 'DELETE', credentials: 'include' });
+            if (res.ok) {
+              setDecisions(prev => prev.filter(d => d.id !== id));
+            } else {
+              Alert.alert('Error', 'Could not delete decision. Try again.');
+            }
+          } catch {
+            Alert.alert('Error', 'Could not delete decision. Try again.');
+          }
         },
       },
     ]);

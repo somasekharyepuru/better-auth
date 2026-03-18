@@ -30,7 +30,7 @@ const SECTIONS: SettingsSection[] = [
   {
     title: 'Integrations',
     items: [
-      { icon: '📅', label: 'Calendar Sync', description: 'Connect Google, Microsoft, Apple', href: '/(app)/profile/security' },
+      { icon: '📅', label: 'Calendar Sync', description: 'Connect Google, Microsoft, Apple', href: '/(app)/integrations/calendar' },
     ],
   },
   {

@@ -1,6 +1,7 @@
 import { ForbiddenException } from '@nestjs/common';
 import { PasswordPolicyController } from './password-policy.controller';
 import { PasswordPolicyService } from './password-policy.service';
+import { PrismaService } from '../common/prisma.service';
 import { auditService } from '../audit/audit.service';
 
 // Mock logger
@@ -23,6 +24,7 @@ jest.mock('../audit/audit.service', () => ({
 describe('PasswordPolicyController', () => {
   let controller: PasswordPolicyController;
   let mockPasswordPolicyService: jest.Mocked<Partial<PasswordPolicyService>>;
+  let mockPrisma: jest.Mocked<Partial<PrismaService>>;
 
   const mockPolicy = {
     minLength: 8,
@@ -42,8 +44,15 @@ describe('PasswordPolicyController', () => {
       updateOrganizationPolicy: jest.fn().mockResolvedValue(mockPolicy),
     };
 
+    mockPrisma = {
+      member: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      } as any,
+    };
+
     controller = new PasswordPolicyController(
-      mockPasswordPolicyService as PasswordPolicyService
+      mockPasswordPolicyService as PasswordPolicyService,
+      mockPrisma as PrismaService,
     );
 
     jest.clearAllMocks();
@@ -254,17 +263,53 @@ describe('PasswordPolicyController', () => {
       );
     });
 
-    it('should throw ForbiddenException for non-admin users', async () => {
+    it('should allow org owner to update their organization policy', async () => {
+      (mockPrisma.member!.findFirst as jest.Mock).mockResolvedValue({ role: 'owner' });
+
       const req = createMockRequest({
         session: {
-          user: { id: 'user-1', role: 'owner' },
+          user: { id: 'user-1', role: 'member' },
+          session: { id: 'session-1' },
+        },
+      });
+      const orgId = 'org-1';
+      const updateData = { minLength: 12 };
+
+      const result = await controller.updateOrganizationPolicy(req.session, req, orgId, updateData);
+
+      expect(result).toEqual(mockPolicy);
+      expect(mockPasswordPolicyService.updateOrganizationPolicy).toHaveBeenCalledWith(orgId, updateData);
+    });
+
+    it('should throw ForbiddenException for non-member non-admin users', async () => {
+      (mockPrisma.member!.findFirst as jest.Mock).mockResolvedValue(null);
+
+      const req = createMockRequest({
+        session: {
+          user: { id: 'user-1', role: 'member' },
         },
       });
 
       await expect(
         controller.updateOrganizationPolicy(req.session, req, 'org-1', { minLength: 10 })
       ).rejects.toThrow(
-        new ForbiddenException('Only admins can update password policies')
+        new ForbiddenException('Only organization owners or admins can update password policies')
+      );
+    });
+
+    it('should throw ForbiddenException for org member with insufficient role', async () => {
+      (mockPrisma.member!.findFirst as jest.Mock).mockResolvedValue({ role: 'viewer' });
+
+      const req = createMockRequest({
+        session: {
+          user: { id: 'user-1', role: 'member' },
+        },
+      });
+
+      await expect(
+        controller.updateOrganizationPolicy(req.session, req, 'org-1', { minLength: 10 })
+      ).rejects.toThrow(
+        new ForbiddenException('Only organization owners or admins can update password policies')
       );
     });
 
