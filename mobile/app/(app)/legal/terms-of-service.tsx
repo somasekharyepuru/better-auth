@@ -1,13 +1,13 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useTheme } from '../../../src/contexts/ThemeContext';
-import { Typography, Spacing } from '../../../src/constants/Theme';
-import { Card, Button } from '../../../components/ui';
+import React from "react";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { useRouter } from "expo-router";
+import { useTheme } from "../../../src/contexts/ThemeContext";
+import { Typography, Spacing } from "../../../src/constants/Theme";
+import { Card, Button } from "../../../components/ui";
 
 const TERMS_LAST_UPDATED = new Date().toLocaleDateString();
 
-export default function TermsOfServiceScreen(): JSX.Element {
+export default function TermsOfServiceScreen() {
   const router = useRouter();
   const { colors } = useTheme();
 
@@ -17,7 +17,9 @@ export default function TermsOfServiceScreen(): JSX.Element {
       contentContainerStyle={styles.content}
     >
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.foreground }]}>Terms of Service</Text>
+        <Text style={[styles.title, { color: colors.foreground }]}>
+          Terms of Service
+        </Text>
         <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
           Last updated: {TERMS_LAST_UPDATED}
         </Text>
@@ -28,7 +30,8 @@ export default function TermsOfServiceScreen(): JSX.Element {
           1. Acceptance of Terms
         </Text>
         <Text style={[styles.sectionText, { color: colors.mutedForeground }]}>
-          By accessing and using this service, you accept and agree to be bound by the terms and provisions of this agreement.
+          By accessing and using this service, you accept and agree to be bound
+          by the terms and provisions of this agreement.
         </Text>
       </Card>
 
@@ -37,7 +40,9 @@ export default function TermsOfServiceScreen(): JSX.Element {
           2. User Responsibilities
         </Text>
         <Text style={[styles.sectionText, { color: colors.mutedForeground }]}>
-          You are responsible for maintaining the confidentiality of your account and password. You agree to accept responsibility for all activities that occur under your account or password.
+          You are responsible for maintaining the confidentiality of your
+          account and password. You agree to accept responsibility for all
+          activities that occur under your account or password.
         </Text>
       </Card>
 
@@ -46,7 +51,9 @@ export default function TermsOfServiceScreen(): JSX.Element {
           3. Privacy Policy
         </Text>
         <Text style={[styles.sectionText, { color: colors.mutedForeground }]}>
-          Your use of our service is also subject to our Privacy Policy. Please review our Privacy Policy, which also governs the service and informs users of our data collection practices.
+          Your use of our service is also subject to our Privacy Policy. Please
+          review our Privacy Policy, which also governs the service and informs
+          users of our data collection practices.
         </Text>
       </Card>
 
@@ -55,7 +62,8 @@ export default function TermsOfServiceScreen(): JSX.Element {
           4. Termination
         </Text>
         <Text style={[styles.sectionText, { color: colors.mutedForeground }]}>
-          We may terminate or suspend access to our service immediately, without prior notice, for any breach of these Terms.
+          We may terminate or suspend access to our service immediately, without
+          prior notice, for any breach of these Terms.
         </Text>
       </Card>
 
@@ -64,7 +72,9 @@ export default function TermsOfServiceScreen(): JSX.Element {
           5. Governing Law
         </Text>
         <Text style={[styles.sectionText, { color: colors.mutedForeground }]}>
-          These Terms shall be governed by and construed in accordance with the laws of your jurisdiction, without regard to its conflict of law provisions.
+          These Terms shall be governed by and construed in accordance with the
+          laws of your jurisdiction, without regard to its conflict of law
+          provisions.
         </Text>
       </Card>
 
@@ -73,7 +83,8 @@ export default function TermsOfServiceScreen(): JSX.Element {
           6. Changes to Terms
         </Text>
         <Text style={[styles.sectionText, { color: colors.mutedForeground }]}>
-          We reserve the right to modify these terms at any time. We will notify users of any material changes via email or in-app notification.
+          We reserve the right to modify these terms at any time. We will notify
+          users of any material changes via email or in-app notification.
         </Text>
       </Card>
 
@@ -82,7 +93,8 @@ export default function TermsOfServiceScreen(): JSX.Element {
           7. Contact Us
         </Text>
         <Text style={[styles.sectionText, { color: colors.mutedForeground }]}>
-          If you have any questions about these Terms, please contact our support team.
+          If you have any questions about these Terms, please contact our
+          support team.
         </Text>
       </Card>
 
@@ -100,11 +112,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingBottom: Spacing['2xl'],
+    paddingBottom: Spacing["2xl"],
   },
   header: {
     padding: Spacing.xl,
-    paddingTop: Spacing['4xl'],
+    paddingTop: Spacing["4xl"],
     marginBottom: Spacing.lg,
   },
   title: {
@@ -120,7 +132,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...Typography.body,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: Spacing.sm,
   },
   sectionText: {
@@ -132,6 +144,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
   },
   backButton: {
-    width: '100%',
+    width: "100%",
   },
 });

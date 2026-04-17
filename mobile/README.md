@@ -5,6 +5,7 @@ Comprehensive authentication SDK for Expo/React Native apps using Better Auth.
 ## Features
 
 ### Core Authentication
+
 - Email/password sign up and sign in
 - Social authentication (Google, Microsoft, Apple)
 - Email verification with OTP
@@ -13,6 +14,7 @@ Comprehensive authentication SDK for Expo/React Native apps using Better Auth.
 - Secure session management
 
 ### Organization Management
+
 - Create and manage organizations
 - Role-based access control (owner, admin, manager, member, viewer)
 - Team management
@@ -20,6 +22,7 @@ Comprehensive authentication SDK for Expo/React Native apps using Better Auth.
 - Organization transfer
 
 ### User Profile
+
 - Profile management (name, avatar, email)
 - Session management (view, revoke sessions)
 - Password change
@@ -27,6 +30,7 @@ Comprehensive authentication SDK for Expo/React Native apps using Better Auth.
 - Audit log access
 
 ### Mobile-Specific Features
+
 - Deep link handling for callbacks
 - Secure token storage with expo-secure-store
 - Biometric authentication support
@@ -117,7 +121,7 @@ const result = await signIn(email, password);
 // Returns: { error?: string; requiresTwoFactor?: boolean }
 
 // Sign in with social provider
-const result = await signInSocial('google');
+const result = await signInSocial("google");
 // Returns: { error?: string }
 
 // Sign in with 2FA
@@ -137,11 +141,11 @@ const result = await signOut();
 
 ```typescript
 // Update profile
-const result = await updateProfile({ name: 'John Doe', image: '...' });
+const result = await updateProfile({ name: "John Doe", image: "..." });
 // Returns: { error?: string }
 
 // Change password
-const result = await changePassword('current', 'new');
+const result = await changePassword("current", "new");
 // Returns: { error?: string }
 ```
 
@@ -200,7 +204,7 @@ const result = await setActiveOrganization(orgId);
 // Returns: { error?: string }
 
 // Create organization
-const result = await createOrganization('My Org', 'my-org');
+const result = await createOrganization("My Org", "my-org");
 // Returns: { error?: string }
 ```
 
@@ -234,7 +238,7 @@ import {
   inviteMember,
   listMembers,
   // ... and many more
-} from 'auth-mobile';
+} from "auth-mobile";
 ```
 
 ## Organization Operations
@@ -271,7 +275,7 @@ import {
   // Permissions
   getOrganizationRole,
   hasOrganizationPermission,
-} from 'auth-mobile';
+} from "auth-mobile";
 ```
 
 ## Mobile-Specific Utilities
@@ -301,34 +305,34 @@ import {
   getSessionTimeRemaining,
   getUserDisplayName,
   getUserAvatarText,
-} from 'auth-mobile';
+} from "auth-mobile";
 ```
 
 ## Role-Based Access Control
 
 The SDK supports five roles with hierarchical permissions:
 
-| Role | Level | Permissions |
-|------|-------|-------------|
-| Owner | 5 | Full control including delete |
-| Admin | 4 | Manage members, teams, settings |
-| Manager | 3 | Manage members, update settings |
-| Member | 2 | Read/write access |
-| Viewer | 1 | Read-only access |
+| Role    | Level | Permissions                     |
+| ------- | ----- | ------------------------------- |
+| Owner   | 5     | Full control including delete   |
+| Admin   | 4     | Manage members, teams, settings |
+| Manager | 3     | Manage members, update settings |
+| Member  | 2     | Read/write access               |
+| Viewer  | 1     | Read-only access                |
 
 ```typescript
-import { getRoleInfo, canManageRole, getAssignableRoles } from 'auth-mobile';
+import { getRoleInfo, canManageRole, getAssignableRoles } from "auth-mobile";
 
 // Get role info
-const info = getRoleInfo('admin');
+const info = getRoleInfo("admin");
 
 // Check if one role can manage another
-if (canManageRole('admin', 'member')) {
+if (canManageRole("admin", "member")) {
   // Admin can manage member
 }
 
 // Get roles that can be assigned by a role
-const assignable = getAssignableRoles('admin');
+const assignable = getAssignableRoles("admin");
 // Returns: ['member', 'viewer']
 ```
 
@@ -348,7 +352,7 @@ import {
   // Helpers
   generateRandomString,
   safeJsonParse,
-} from 'auth-mobile';
+} from "auth-mobile";
 ```
 
 ## Types
@@ -367,7 +371,7 @@ import type {
   AuthError,
   SessionInfo,
   AuditLog,
-} from 'auth-mobile';
+} from "auth-mobile";
 ```
 
 ## Deep Link Configuration
@@ -377,14 +381,17 @@ Add your deep link schemes to `app.json`:
 ```json
 {
   "expo": {
-    "scheme": "mobile",
+    "scheme": "productivity",
     "android": {
       "intentFilters": [
         {
           "action": "VIEW",
-          "data": {
-            "scheme": "mobile"
-          }
+          "data": [
+            {
+              "scheme": "https",
+              "pathPrefix": "/accept-invitation"
+            }
+          ]
         }
       ]
     }

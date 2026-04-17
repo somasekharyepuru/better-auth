@@ -37,7 +37,10 @@ function AuthenticatedContent({ children }: { children: React.ReactNode }) {
         return null;
     }
 
-    const isOrgDashboard = pathname?.startsWith("/organizations/") && pathname.split("/").length > 2;
+    const orgSegments = pathname?.split("/") ?? [];
+    const isOrgDashboard = orgSegments[1] === "organizations" &&
+        orgSegments.length > 2 &&
+        !["create", "invite", "transfer"].includes(orgSegments[2]);
     const isFullWidth = isOrgDashboard;
 
     return (
@@ -49,8 +52,8 @@ function AuthenticatedContent({ children }: { children: React.ReactNode }) {
                         <ImpersonationBanner />
                         <UnifiedHeader />
                         <main className={cn(
-                            "pt-16 min-h-screen",
-                            isFullWidth ? "p-0" : "px-4 py-6 max-w-6xl mx-auto"
+                            "min-h-screen",
+                            isFullWidth ? "p-0" : "pt-20 px-4 pb-8 max-w-6xl mx-auto"
                         )}>
                             {children}
                         </main>

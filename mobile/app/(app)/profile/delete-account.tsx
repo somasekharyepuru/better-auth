@@ -353,7 +353,7 @@ export default function DeleteAccountScreen() {
               variant="ghost"
               onPress={() => setCurrentStep('request')}
               disabled={isLoading}
-              style={styles.backButton}
+              style={styles.ghostBackButton}
             >
               Back
             </Button>
@@ -420,7 +420,7 @@ export default function DeleteAccountScreen() {
       <ConfirmDialog
         visible={showSuccessDialog}
         title="Deletion Requested"
-        message="Please check your email to confirm the account deletion. Your account will be deleted 30 days after confirmation."
+        description="Please check your email to confirm the account deletion. Your account will be deleted 30 days after confirmation."
         confirmLabel="OK"
         onConfirm={() => {
           setShowSuccessDialog(false);
@@ -436,9 +436,9 @@ export default function DeleteAccountScreen() {
       <ConfirmDialog
         visible={showCancelDialog}
         title="Cancel Deletion"
-        message="Are you sure you want to cancel the account deletion request? Your account will remain active."
+        description="Are you sure you want to cancel the account deletion request? Your account will remain active."
         confirmLabel="Cancel Deletion"
-        confirmVariant="destructive"
+        variant="destructive"
         onConfirm={handleCancelDeletion}
         onCancel={() => setShowCancelDialog(false)}
       />
@@ -590,5 +590,8 @@ const styles = StyleSheet.create({
   },
   signOutButton: {
     width: '100%',
+  },
+  ghostBackButton: {
+    marginTop: Spacing.sm,
   },
 });

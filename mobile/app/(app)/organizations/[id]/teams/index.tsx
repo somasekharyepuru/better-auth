@@ -1,21 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useOrganization } from '../../../../../src/contexts/OrganizationContext';
-import { useOrganizationRole } from '../../../../../hooks';
-import { useTheme } from '../../../../../src/contexts/ThemeContext';
-import { Typography, Spacing } from '../../../../../src/constants/Theme';
-import { Button } from '../../../../../components/ui';
-import { Card } from '../../../../../components/ui';
-import { EmptyState } from '../../../../../components/feedback';
-import { usePullToRefresh } from '../../../../../hooks';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+} from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useOrganization } from "../../../../../src/contexts/OrganizationContext";
+import { useOrganizationRole } from "../../../../../hooks";
+import { useTheme } from "../../../../../src/contexts/ThemeContext";
+import { Typography, Spacing } from "../../../../../src/constants/Theme";
+import { Button } from "../../../../../components/ui";
+import { Card } from "../../../../../components/ui";
+import { EmptyState } from "../../../../../components/feedback";
+import { usePullToRefresh } from "../../../../../hooks";
+import { listTeams } from "../../../../../src/lib/auth";
 
 interface Team {
   id: string;
   name: string;
-  slug: string;
+  slug?: string;
   description?: string;
-  memberCount: number;
+  memberCount?: number;
   createdAt: string;
 }
 
@@ -26,33 +33,45 @@ export default function TeamsScreen() {
   const { organizations } = useOrganization();
 
   const orgId = params.id as string;
-  const [organization, setOrganization] = useState(organizations.find(o => o.id === orgId));
+  const [organization, setOrganization] = useState(
+    organizations.find((o) => o.id === orgId),
+  );
   const [teams, setTeams] = useState<Team[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const { canManageTeams } = useOrganizationRole(orgId);
 
   const loadTeams = async () => {
     try {
-      setError('');
-      // For now, use mock data
-      // const { getOrganizationTeams } = await import('../../../../../src/lib/auth');
-      // const result = await getOrganizationTeams(orgId);
-
-      // Mock teams data
-      const mockTeams: Team[] = [];
-
-      setTeams(mockTeams);
+      setError("");
+      const result = await listTeams(orgId);
+      if ("error" in result) {
+        setError(result.error.message || "Failed to load teams");
+        setTeams([]);
+      } else {
+        setTeams(
+          (result.teams as unknown as Team[]).map((team) => ({
+            ...team,
+            slug:
+              (team as unknown as { slug?: string }).slug ??
+              team.name.toLowerCase().replace(/\s+/g, "-"),
+            memberCount:
+              (team as unknown as { memberCount?: number }).memberCount ??
+              (team as unknown as { members?: unknown[] }).members?.length ??
+              0,
+          })),
+        );
+      }
       setIsLoading(false);
     } catch (err) {
-      setError('Failed to load teams');
+      setError("Failed to load teams");
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    const org = organizations.find(o => o.id === orgId);
+    const org = organizations.find((o) => o.id === orgId);
     if (org) {
       setOrganization(org);
     }
@@ -75,32 +94,35 @@ export default function TeamsScreen() {
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.foreground }]}>Teams</Text>
         <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-          {organization?.name || 'Organization'}
+          {organization?.name || "Organization"}
         </Text>
         <Text style={[styles.teamCount, { color: colors.mutedForeground }]}>
-          {teams.length} {teams.length === 1 ? 'team' : 'teams'}
+          {teams.length} {teams.length === 1 ? "team" : "teams"}
         </Text>
       </View>
 
       {error && (
         <Card padding="md" style={styles.errorCard}>
-          <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
+          <Text style={[styles.errorText, { color: colors.destructive }]}>
+            {error}
+          </Text>
         </Card>
       )}
 
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>Loading teams...</Text>
+          <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
+            Loading teams...
+          </Text>
         </View>
       ) : teams.length === 0 ? (
         <EmptyState
           icon="👨‍👩‍👧‍👦"
           title="No teams yet"
           description="Create teams to organize your organization members"
-          actionLabel={canManageTeams ? 'Create Team' : undefined}
+          actionLabel={canManageTeams ? "Create Team" : undefined}
           onAction={() => {
-            // TODO: Navigate to create team screen when route is implemented
-            // router.push(`/organizations/${orgId}/teams/create`);
+            router.push(`/(app)/organizations/${orgId}/teams/create`);
           }}
         />
       ) : (
@@ -108,7 +130,9 @@ export default function TeamsScreen() {
           <Card
             key={team.id}
             variant="interactive"
-            onPress={() => router.push(`/organizations/${orgId}/teams/${team.id}`)}
+            onPress={() =>
+              router.push(`/organizations/${orgId}/teams/${team.id}`)
+            }
             padding="lg"
             style={styles.teamCard}
           >
@@ -120,15 +144,26 @@ export default function TeamsScreen() {
                 {team.name}
               </Text>
               {team.description && (
-                <Text style={[styles.teamDescription, { color: colors.mutedForeground }]} numberOfLines={1}>
+                <Text
+                  style={[
+                    styles.teamDescription,
+                    { color: colors.mutedForeground },
+                  ]}
+                  numberOfLines={1}
+                >
                   {team.description}
                 </Text>
               )}
-              <Text style={[styles.teamMeta, { color: colors.mutedForeground }]}>
-                @{team.slug} • {team.memberCount} {team.memberCount === 1 ? 'member' : 'members'}
+              <Text
+                style={[styles.teamMeta, { color: colors.mutedForeground }]}
+              >
+                @{team.slug} • {team.memberCount}{" "}
+                {team.memberCount === 1 ? "member" : "members"}
               </Text>
             </View>
-            <Text style={[styles.arrow, { color: colors.mutedForeground }]}>→</Text>
+            <Text style={[styles.arrow, { color: colors.mutedForeground }]}>
+              →
+            </Text>
           </Card>
         ))
       )}
@@ -138,8 +173,7 @@ export default function TeamsScreen() {
         <View style={styles.createSection}>
           <Button
             onPress={() => {
-              // TODO: Navigate to create team screen when route is implemented
-              // router.push(`/organizations/${orgId}/teams/create`);
+              router.push(`/(app)/organizations/${orgId}/teams/create`);
             }}
             style={styles.createButton}
           >
@@ -156,11 +190,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingBottom: Spacing['2xl'],
+    paddingBottom: Spacing["2xl"],
   },
   header: {
     padding: Spacing.xl,
-    paddingTop: Spacing['4xl'],
+    paddingTop: Spacing["4xl"],
     marginBottom: Spacing.md,
   },
   title: {
@@ -183,8 +217,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingTop: 100,
   },
   loadingText: {
@@ -198,9 +232,9 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.05)",
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: Spacing.md,
   },
   teamIcon: {
@@ -211,7 +245,7 @@ const styles = StyleSheet.create({
   },
   teamName: {
     ...Typography.body,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: Spacing.xs,
   },
   teamDescription: {
@@ -229,6 +263,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
   },
   createButton: {
-    width: '100%',
+    width: "100%",
   },
 });

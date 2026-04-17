@@ -5,23 +5,29 @@
  * Supports loading states, icons, and haptic feedback.
  */
 
-import React from 'react';
+import React from "react";
 import {
   Pressable,
   Text,
+  View,
   StyleSheet,
   ActivityIndicator,
   GestureResponderEvent,
   StyleProp,
   ViewStyle,
-} from 'react-native';
-import * as Haptics from 'expo-haptics';
-import { useTheme } from '../../src/contexts/ThemeContext';
-import { Colors } from '../../src/constants/Colors';
-import { Typography, Spacing, Radius } from '../../src/constants/Theme';
+} from "react-native";
+import * as Haptics from "expo-haptics";
+import { useTheme } from "../../src/contexts/ThemeContext";
+import { Colors } from "../../src/constants/Colors";
+import { Typography, Spacing, Radius } from "../../src/constants/Theme";
 
-export type ButtonVariant = 'default' | 'outline' | 'ghost' | 'destructive' | 'link';
-export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ButtonVariant =
+  | "default"
+  | "outline"
+  | "ghost"
+  | "destructive"
+  | "link";
+export type ButtonSize = "sm" | "md" | "lg";
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -32,23 +38,25 @@ interface ButtonProps {
   loading?: boolean;
   fullWidth?: boolean;
   icon?: React.ReactNode;
-  iconPosition?: 'left' | 'right';
+  iconPosition?: "left" | "right";
   haptic?: boolean;
   style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({
   children,
   onPress,
-  variant = 'default',
-  size = 'md',
+  variant = "default",
+  size = "md",
   disabled = false,
   loading = false,
   fullWidth = false,
   icon,
-  iconPosition = 'left',
+  iconPosition = "left",
   haptic = true,
   style,
+  accessibilityLabel,
 }) => {
   const { colors, isDark } = useTheme();
 
@@ -63,13 +71,13 @@ export const Button: React.FC<ButtonProps> = ({
     if (disabled || loading) return colors.muted;
 
     switch (variant) {
-      case 'default':
+      case "default":
         return colors.primary;
-      case 'outline':
-      case 'ghost':
-      case 'link':
-        return 'transparent';
-      case 'destructive':
+      case "outline":
+      case "ghost":
+      case "link":
+        return "transparent";
+      case "destructive":
         return colors.destructive;
       default:
         return colors.primary;
@@ -80,14 +88,14 @@ export const Button: React.FC<ButtonProps> = ({
     if (disabled || loading) return colors.mutedForeground;
 
     switch (variant) {
-      case 'default':
+      case "default":
         return colors.primaryForeground;
-      case 'outline':
-      case 'ghost':
+      case "outline":
+      case "ghost":
         return colors.foreground;
-      case 'destructive':
+      case "destructive":
         return colors.destructiveForeground;
-      case 'link':
+      case "link":
         return colors.primary;
       default:
         return colors.primaryForeground;
@@ -95,18 +103,21 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const getBorderColor = () => {
-    if (variant === 'outline') {
+    if (variant === "outline") {
       return disabled ? colors.muted : colors.border;
     }
-    return 'transparent';
+    return "transparent";
   };
 
   const getPadding = () => {
     switch (size) {
-      case 'sm':
+      case "sm":
         return { paddingVertical: Spacing.sm, paddingHorizontal: Spacing.lg };
-      case 'lg':
-        return { paddingVertical: Spacing.lg, paddingHorizontal: Spacing['3xl'] };
+      case "lg":
+        return {
+          paddingVertical: Spacing.lg,
+          paddingHorizontal: Spacing["3xl"],
+        };
       default:
         return { paddingVertical: Spacing.md, paddingHorizontal: Spacing.xl };
     }
@@ -114,9 +125,9 @@ export const Button: React.FC<ButtonProps> = ({
 
   const getFontSize = () => {
     switch (size) {
-      case 'sm':
+      case "sm":
         return Typography.bodySmall.fontSize;
-      case 'lg':
+      case "lg":
         return Typography.button.fontSize;
       default:
         return Typography.button.fontSize;
@@ -130,21 +141,22 @@ export const Button: React.FC<ButtonProps> = ({
 
     const content = (
       <>
-        {icon && iconPosition === 'left' && (
+        {icon && iconPosition === "left" && (
           <View style={[styles.icon, { marginRight: Spacing.sm }]}>
-            <Text style={{ color: getTextColor() }}>
-              {icon}
-            </Text>
+            <Text style={{ color: getTextColor() }}>{icon}</Text>
           </View>
         )}
-        <Text style={[styles.text, { color: getTextColor(), fontSize: getFontSize() }]}>
+        <Text
+          style={[
+            styles.text,
+            { color: getTextColor(), fontSize: getFontSize() },
+          ]}
+        >
           {children}
         </Text>
-        {icon && iconPosition === 'right' && (
+        {icon && iconPosition === "right" && (
           <View style={[styles.icon, { marginLeft: Spacing.sm }]}>
-            <Text style={{ color: getTextColor() }}>
-              {icon}
-            </Text>
+            <Text style={{ color: getTextColor() }}>{icon}</Text>
           </View>
         )}
       </>
@@ -157,15 +169,19 @@ export const Button: React.FC<ButtonProps> = ({
     <Pressable
       onPress={handlePress}
       disabled={disabled || loading}
+      accessibilityLabel={accessibilityLabel}
       style={({ pressed }) => [
         styles.button,
         { backgroundColor: getBackgroundColor() },
         getPadding(),
-        { borderColor: getBorderColor(), borderWidth: variant === 'outline' ? 1.5 : 0 },
+        {
+          borderColor: getBorderColor(),
+          borderWidth: variant === "outline" ? 1.5 : 0,
+        },
         { borderRadius: Radius.lg },
         fullWidth && styles.fullWidth,
-        (variant === 'ghost' || variant === 'link') && styles.noBorder,
-        pressed && variant !== 'link' && styles.pressed,
+        (variant === "ghost" || variant === "link") && styles.noBorder,
+        pressed && variant !== "link" && styles.pressed,
         style,
       ]}
     >
@@ -176,24 +192,23 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    alignSelf: 'flex-start',
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    alignSelf: "flex-start",
   },
   fullWidth: {
-    width: '100%',
+    width: "100%",
   },
   noBorder: {
     borderWidth: 0,
   },
   text: {
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
   },
   icon: {
-    fontSize: 18,
-    lineHeight: 20,
+    justifyContent: "center",
   },
   pressed: {
     transform: [{ scale: 0.97 }],

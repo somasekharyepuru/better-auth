@@ -1,243 +1,287 @@
+/**
+ * Decisions Screen — consolidated to use decisionsApi from daymark-api
+ * Replaces ad-hoc fetch calls with the unified API client
+ */
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, TextInput, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import {
+    View, Text, ScrollView, StyleSheet, TouchableOpacity,
+    TextInput, Alert, ActivityIndicator, RefreshControl, Modal,
+} from 'react-native';
 import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../../src/contexts/ThemeContext';
-import { usePullToRefresh } from '../../../hooks/usePullToRefresh';
 import { Typography, Spacing, Radius } from '../../../src/constants/Theme';
-import { Button, Card } from '../../../components/ui';
 import { PageHeader } from '../../../components/ui';
-import { EmptyState } from '../../../components/feedback';
-
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002';
-
-interface Decision {
-  id: string;
-  title: string;
-  context?: string;
-  outcome?: string;
-  decidedAt: string;
-  status: 'PENDING' | 'DECIDED' | 'REVISIT';
-}
-
-const STATUS_COLORS = {
-  PENDING: '#f59e0b',
-  DECIDED: '#22c55e',
-  REVISIT: '#0ea5e9',
-};
-
-const STATUS_LABELS = {
-  PENDING: 'Pending',
-  DECIDED: 'Decided',
-  REVISIT: 'Revisit',
-};
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-}
+import { decisionsApi, Decision, CreateDecisionInput, formatDate } from '../../../src/lib/daymark-api';
 
 export default function DecisionsScreen() {
-  const router = useRouter();
-  const { colors } = useTheme();
-  const [decisions, setDecisions] = useState<Decision[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [title, setTitle] = useState('');
-  const [context, setContext] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+    const router = useRouter();
+    const { colors } = useTheme();
+    const [decisions, setDecisions] = useState<Decision[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [showForm, setShowForm] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
-  const fetchDecisions = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_BASE}/api/decision-log`, { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        setDecisions(Array.isArray(data) ? data : (data.decisions ?? data.items ?? []));
-      }
-    } catch {
-      // keep previous state
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    // Form state
+    const [title, setTitle] = useState('');
+    const [context, setContext] = useState('');
+    const [decision, setDecision] = useState('');
+    const [outcome, setOutcome] = useState('');
 
-  useEffect(() => { fetchDecisions(); }, [fetchDecisions]);
+    const fetchDecisions = useCallback(async () => {
+        try {
+            const data = await decisionsApi.getAll();
+            setDecisions(data);
+        } catch (error) {
+            console.error('Failed to fetch decisions:', error);
+        }
+    }, []);
 
-  const { refreshing, onRefresh } = usePullToRefresh(fetchDecisions);
+    useEffect(() => {
+        fetchDecisions().finally(() => setIsLoading(false));
+    }, [fetchDecisions]);
 
-  const createDecision = async () => {
-    if (!title.trim()) return;
-    setSubmitting(true);
-    try {
-      const res = await fetch(`${API_BASE}/api/decision-log`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim(), context: context.trim() || undefined, status: 'PENDING' }),
-      });
-      if (res.ok) {
-        const created = await res.json();
-        setDecisions(prev => [created, ...prev]);
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        await fetchDecisions();
+        setIsRefreshing(false);
+    };
+
+    const resetForm = () => {
         setTitle('');
         setContext('');
-        setShowForm(false);
-      }
-    } catch {
-      Alert.alert('Error', 'Could not save decision. Try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+        setDecision('');
+        setOutcome('');
+    };
 
-  const deleteDecision = (id: string) => {
-    Alert.alert('Delete decision?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive', onPress: async () => {
-          try {
-            const res = await fetch(`${API_BASE}/api/decision-log/${id}`, { method: 'DELETE', credentials: 'include' });
-            if (res.ok) {
-              setDecisions(prev => prev.filter(d => d.id !== id));
-            } else {
-              Alert.alert('Error', 'Could not delete decision. Try again.');
-            }
-          } catch {
-            Alert.alert('Error', 'Could not delete decision. Try again.');
-          }
-        },
-      },
-    ]);
-  };
-
-  return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
-      <PageHeader
-        title="Decision Log"
-        backHref={() => router.back()}
-        rightAction={
-          <Pressable onPress={() => setShowForm(v => !v)} style={{ paddingHorizontal: Spacing.sm }}>
-            <Text style={{ color: colors.primary, ...Typography.label }}>{showForm ? 'Cancel' : '+ Add'}</Text>
-          </Pressable>
+    const handleSubmit = async () => {
+        if (!title.trim() || !decision.trim()) {
+            Alert.alert('Missing Fields', 'Title and decision are required.');
+            return;
         }
-      />
+        setSubmitting(true);
+        try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            const input: CreateDecisionInput = {
+                title: title.trim(),
+                date: formatDate(new Date()),
+                decision: decision.trim(),
+                context: context.trim() || undefined,
+                outcome: outcome.trim() || undefined,
+            };
+            const created = await decisionsApi.create(input);
+            setDecisions(prev => [created, ...prev]);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setShowForm(false);
+            resetForm();
+        } catch {
+            Alert.alert('Error', 'Failed to create decision.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
-      {/* New decision form */}
-      {showForm && (
-        <Card padding="lg" style={styles.formCard}>
-          <Text style={[styles.formTitle, { color: colors.foreground }]}>New Decision</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
-            placeholder="What was decided?"
-            placeholderTextColor={colors.mutedForeground}
-            value={title}
-            onChangeText={setTitle}
-          />
-          <TextInput
-            style={[styles.input, styles.textArea, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
-            placeholder="Context (optional)"
-            placeholderTextColor={colors.mutedForeground}
-            value={context}
-            onChangeText={setContext}
-            multiline
-            numberOfLines={3}
-            textAlignVertical="top"
-          />
-          <Button variant="default" size="md" onPress={createDecision} disabled={submitting || !title.trim()}>
-            {submitting ? 'Saving…' : 'Save Decision'}
-          </Button>
-        </Card>
-      )}
+    const handleDelete = (dec: Decision) => {
+        Alert.alert('Delete Decision', `Delete "${dec.title}"?`, [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Delete', style: 'destructive', onPress: async () => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    try {
+                        await decisionsApi.delete(dec.id);
+                        setDecisions(prev => prev.filter(d => d.id !== dec.id));
+                    } catch {
+                        Alert.alert('Error', 'Failed to delete decision.');
+                    }
+                },
+            },
+        ]);
+    };
 
-      {/* List */}
-      <View style={styles.list}>
-        {isLoading ? (
-          <ActivityIndicator color={colors.primary} style={{ marginTop: Spacing.xl }} />
-        ) : decisions.length === 0 ? (
-          <EmptyState
-            icon="📋"
-            title="No decisions yet"
-            description="Track important decisions and outcomes"
-            actionLabel="Log a Decision"
-            onAction={() => setShowForm(true)}
-          />
-        ) : (
-          decisions.map(decision => (
-            <Pressable key={decision.id} onLongPress={() => deleteDecision(decision.id)}>
-              <Card padding="md" style={styles.decisionCard}>
-                <View style={styles.decisionHeader}>
-                  <Text style={[styles.decisionTitle, { color: colors.foreground }]} numberOfLines={2}>
-                    {decision.title}
-                  </Text>
-                  <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[decision.status] + '20' }]}>
-                    <Text style={[styles.statusText, { color: STATUS_COLORS[decision.status] }]}>
-                      {STATUS_LABELS[decision.status]}
-                    </Text>
-                  </View>
+    if (isLoading) {
+        return (
+            <View style={[styles.container, { backgroundColor: colors.background }]}>
+                <PageHeader title="Decision Log" backHref={() => router.back()} />
+                <ActivityIndicator size="large" color={colors.primary} style={{ flex: 1 }} />
+            </View>
+        );
+    }
+
+    return (
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <PageHeader title="Decision Log" backHref={() => router.back()} />
+
+            <ScrollView
+                style={styles.scroll}
+                contentContainerStyle={styles.content}
+                refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Add Button */}
+                <TouchableOpacity
+                    style={[styles.addBtn, { backgroundColor: colors.primary }]}
+                    onPress={() => { Haptics.selectionAsync(); setShowForm(true); }}
+                >
+                    <Text style={styles.addBtnText}>+ Record Decision</Text>
+                </TouchableOpacity>
+
+                {/* Empty State */}
+                {decisions.length === 0 && (
+                    <View style={styles.emptyState}>
+                        <Text style={{ fontSize: 40, marginBottom: Spacing.md }}>📔</Text>
+                        <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No Decisions Yet</Text>
+                        <Text style={[styles.emptyDesc, { color: colors.mutedForeground }]}>
+                            Record important decisions to build a log of your choices and outcomes.
+                        </Text>
+                    </View>
+                )}
+
+                {/* Decisions List */}
+                {decisions.map(dec => (
+                    <TouchableOpacity
+                        key={dec.id}
+                        style={[styles.decisionCard, { backgroundColor: colors.card }]}
+                        onLongPress={() => handleDelete(dec)}
+                        activeOpacity={0.8}
+                    >
+                        <View style={styles.cardHeader}>
+                            <Text style={[styles.cardTitle, { color: colors.foreground }]} numberOfLines={2}>
+                                {dec.title}
+                            </Text>
+                            <Text style={[styles.cardDate, { color: colors.mutedForeground }]}>
+                                {new Date(dec.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </Text>
+                        </View>
+                        <View style={[styles.decisionContent, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                            <Text style={[styles.decisionLabel, { color: colors.mutedForeground }]}>Decision</Text>
+                            <Text style={[styles.decisionText, { color: colors.foreground }]} numberOfLines={3}>
+                                {dec.decision}
+                            </Text>
+                        </View>
+                        {dec.context && (
+                            <Text style={[styles.contextText, { color: colors.mutedForeground }]} numberOfLines={2}>
+                                {dec.context}
+                            </Text>
+                        )}
+                        {dec.outcome && (
+                            <View style={[styles.outcomeRow, { borderTopColor: colors.border }]}>
+                                <Text style={{ fontSize: 14 }}>✅</Text>
+                                <Text style={[styles.outcomeText, { color: colors.foreground }]} numberOfLines={2}>
+                                    {dec.outcome}
+                                </Text>
+                            </View>
+                        )}
+                        <Text style={[styles.longPressHint, { color: colors.mutedForeground }]}>Long press to delete</Text>
+                    </TouchableOpacity>
+                ))}
+            </ScrollView>
+
+            {/* Create Decision Modal */}
+            <Modal visible={showForm} transparent animationType="slide" onRequestClose={() => { setShowForm(false); resetForm(); }}>
+                <View style={[styles.overlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+                    <View style={[styles.modal, { backgroundColor: colors.card }]}>
+                        <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                            <Text style={[styles.modalTitle, { color: colors.foreground }]}>Record Decision</Text>
+                            <TouchableOpacity onPress={() => { setShowForm(false); resetForm(); }}>
+                                <Text style={{ color: colors.mutedForeground, fontSize: 22 }}>✕</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+                            <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>TITLE *</Text>
+                            <TextInput
+                                style={[styles.fieldInput, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                                placeholder="What was the decision about?"
+                                placeholderTextColor={colors.mutedForeground}
+                                value={title}
+                                onChangeText={setTitle}
+                            />
+                            <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>CONTEXT</Text>
+                            <TextInput
+                                style={[styles.fieldTextarea, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                                placeholder="What led to this decision?"
+                                placeholderTextColor={colors.mutedForeground}
+                                value={context}
+                                onChangeText={setContext}
+                                multiline
+                                textAlignVertical="top"
+                            />
+                            <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>DECISION *</Text>
+                            <TextInput
+                                style={[styles.fieldTextarea, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                                placeholder="What did you decide?"
+                                placeholderTextColor={colors.mutedForeground}
+                                value={decision}
+                                onChangeText={setDecision}
+                                multiline
+                                textAlignVertical="top"
+                            />
+                            <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>OUTCOME</Text>
+                            <TextInput
+                                style={[styles.fieldTextarea, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                                placeholder="What was the result? (optional)"
+                                placeholderTextColor={colors.mutedForeground}
+                                value={outcome}
+                                onChangeText={setOutcome}
+                                multiline
+                                textAlignVertical="top"
+                            />
+                        </ScrollView>
+                        <View style={[styles.modalFooter, { borderTopColor: colors.border }]}>
+                            <TouchableOpacity
+                                style={[styles.modalBtn, { backgroundColor: colors.background }]}
+                                onPress={() => { setShowForm(false); resetForm(); }}
+                            >
+                                <Text style={[styles.modalBtnText, { color: colors.foreground }]}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalBtn, { backgroundColor: colors.primary, flex: 2, opacity: submitting ? 0.7 : 1 }]}
+                                onPress={handleSubmit}
+                                disabled={submitting}
+                            >
+                                {submitting ? (
+                                    <ActivityIndicator color="#fff" size="small" />
+                                ) : (
+                                    <Text style={[styles.modalBtnText, { color: '#fff' }]}>Save Decision</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                 </View>
-                {!!decision.context && (
-                  <Text style={[styles.decisionContext, { color: colors.mutedForeground }]} numberOfLines={2}>
-                    {decision.context}
-                  </Text>
-                )}
-                {!!decision.outcome && (
-                  <Text style={[styles.decisionOutcome, { color: colors.foreground }]} numberOfLines={2}>
-                    Outcome: {decision.outcome}
-                  </Text>
-                )}
-                <Text style={[styles.decisionDate, { color: colors.mutedForeground }]}>
-                  {formatDate(decision.decidedAt)}
-                </Text>
-              </Card>
-            </Pressable>
-          ))
-        )}
-      </View>
-
-      <View style={{ height: Spacing.xl }} />
-    </ScrollView>
-  );
+            </Modal>
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  formCard: {
-    marginHorizontal: Spacing.xl,
-    marginBottom: Spacing.md,
-    gap: Spacing.md,
-  },
-  formTitle: { ...Typography.h4 },
-  input: {
-    borderWidth: 1,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    ...Typography.body,
-  },
-  textArea: {
-    minHeight: 80,
-  },
-  list: {
-    paddingHorizontal: Spacing.xl,
-    gap: Spacing.md,
-  },
-  decisionCard: {
-    gap: Spacing.sm,
-  },
-  decisionHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: Spacing.sm,
-  },
-  decisionTitle: { ...Typography.label, flex: 1 },
-  statusBadge: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: Radius.full,
-    flexShrink: 0,
-  },
-  statusText: { ...Typography.caption, fontWeight: '600' },
-  decisionContext: { ...Typography.bodySmall },
-  decisionOutcome: { ...Typography.bodySmall },
-  decisionDate: { ...Typography.caption },
+    container: { flex: 1 },
+    scroll: { flex: 1 },
+    content: { padding: Spacing.lg, paddingBottom: 100, gap: Spacing.md },
+    addBtn: { height: 48, borderRadius: Radius.lg, alignItems: 'center', justifyContent: 'center' },
+    addBtnText: { ...Typography.button, color: '#fff' },
+    emptyState: { alignItems: 'center', paddingVertical: Spacing['2xl'] },
+    emptyTitle: { ...Typography.h4, marginBottom: Spacing.sm },
+    emptyDesc: { ...Typography.bodySmall, textAlign: 'center' },
+    decisionCard: { borderRadius: Radius.lg, padding: Spacing.lg, gap: Spacing.sm },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: Spacing.sm },
+    cardTitle: { ...Typography.body, fontWeight: '600', flex: 1 },
+    cardDate: { ...Typography.caption, flexShrink: 0 },
+    decisionContent: { borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1 },
+    decisionLabel: { ...Typography.caption, marginBottom: 4, letterSpacing: 0.5 },
+    decisionText: { ...Typography.bodySmall },
+    contextText: { ...Typography.caption, fontStyle: 'italic' },
+    outcomeRow: { flexDirection: 'row', gap: Spacing.sm, paddingTop: Spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, alignItems: 'flex-start' },
+    outcomeText: { ...Typography.bodySmall, flex: 1 },
+    longPressHint: { ...Typography.caption, fontSize: 10, textAlign: 'right' },
+    overlay: { flex: 1, justifyContent: 'flex-end' },
+    modal: { borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, maxHeight: '90%' },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: Spacing.lg, borderBottomWidth: StyleSheet.hairlineWidth },
+    modalTitle: { ...Typography.h4 },
+    modalContent: { padding: Spacing.lg },
+    fieldLabel: { ...Typography.caption, letterSpacing: 0.5, marginBottom: Spacing.sm },
+    fieldInput: { height: 44, borderRadius: Radius.md, paddingHorizontal: Spacing.md, borderWidth: 1, ...Typography.body, marginBottom: Spacing.lg },
+    fieldTextarea: { minHeight: 80, borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1, ...Typography.body, marginBottom: Spacing.lg },
+    modalFooter: { flexDirection: 'row', gap: Spacing.md, padding: Spacing.lg, borderTopWidth: StyleSheet.hairlineWidth },
+    modalBtn: { flex: 1, height: 48, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
+    modalBtnText: { ...Typography.button },
 });

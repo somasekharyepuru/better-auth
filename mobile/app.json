@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Auth Service",
-    "slug": "auth-service",
+    "name": "Daymark",
+    "slug": "daymark",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "scheme": "mobile",
+    "scheme": "productivity",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -17,7 +17,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.authservice.app",
+      "bundleIdentifier": "com.daymark.app",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Use Face ID for quick sign-in"
       }
@@ -27,7 +27,22 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.authservice.app"
+      "package": "com.daymark.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "https",
+              "pathPrefix": "/accept-invitation"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

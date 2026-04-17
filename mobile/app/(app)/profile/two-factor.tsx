@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, Share, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
+import * as Clipboard from 'expo-clipboard';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import QRCode from 'react-native-qrcode-svg';
 import { useAuth } from '../../../src/contexts/AuthContext';
 import { useTheme } from '../../../src/contexts/ThemeContext';
 import { Typography, Spacing } from '../../../src/constants/Theme';
@@ -10,10 +14,26 @@ import { TextInput } from '../../../components/ui';
 import { Card } from '../../../components/ui';
 import { ConfirmDialog } from '../../../components/feedback';
 
+function totpSecretFromUri(uri: string): string | null {
+  try {
+    const u = new URL(uri);
+    return u.searchParams.get('secret');
+  } catch {
+    return null;
+  }
+}
+
 export default function TwoFactorScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { user, enableTwoFactor, verifyTwoFactorSetup, disableTwoFactor, generateBackupCodes } = useAuth();
+  const {
+    user,
+    enableTwoFactor,
+    verifyTwoFactorSetup,
+    disableTwoFactor,
+    generateBackupCodes,
+    getBackupCodes,
+  } = useAuth();
 
   const [step, setStep] = useState<'setup' | 'verify' | 'manage' | 'disable' | 'regenerate'>('setup');
   const [password, setPassword] = useState('');
@@ -111,12 +131,9 @@ export default function TwoFactorScreen() {
   const fetchBackupCodes = async () => {
     setIsLoadingBackupCodes(true);
     try {
-      // Fetch existing backup codes - this would call a GET endpoint
-      // For now, we'll set empty if the array is already populated from setup
-      // In production, this should call an API endpoint to retrieve stored codes
-      if (backupCodes.length === 0) {
-        // No codes loaded yet - they may not exist or need to be fetched
-        // This is expected if 2FA was enabled before this feature was added
+      const result = await getBackupCodes();
+      if (!result.error && result.backupCodes) {
+        setBackupCodes(result.backupCodes);
       }
     } catch (err) {
       // Silent fail - backup codes are optional
@@ -130,13 +147,50 @@ export default function TwoFactorScreen() {
     if (user?.twoFactorEnabled && backupCodes.length === 0) {
       fetchBackupCodes();
     }
-  }, [user?.twoFactorEnabled]);
+  }, [user?.twoFactorEnabled, backupCodes.length]);
 
   const openAuthenticatorApp = () => {
     const url = totpURI;
     Linking.openURL(url).catch(() => {
       setError('Unable to open authenticator app. Please scan the QR code manually.');
     });
+  };
+
+  const totpSecret = useMemo(() => (totpURI ? totpSecretFromUri(totpURI) : null), [totpURI]);
+
+  const copyTotpSecret = async () => {
+    if (!totpSecret) return;
+    await Clipboard.setStringAsync(totpSecret);
+  };
+
+  const shareBackupCodes = async (codes: string[]) => {
+    await Share.share({
+      title: 'Daymark backup codes',
+      message: `Daymark two-factor backup codes (save securely):\n\n${codes.join('\n')}`,
+    });
+  };
+
+  const downloadBackupCodesFile = async (codes: string[]) => {
+    try {
+      const file = new File(Paths.cache, `daymark-backup-codes-${Date.now()}.txt`);
+      const content =
+        'Daymark two-factor backup codes (save securely; each code is one-time use):\n\n' +
+        `${codes.join('\n')}\n`;
+      file.write(content);
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(file.uri, {
+          mimeType: 'text/plain',
+          dialogTitle: 'Save backup codes',
+          UTI: 'public.plain-text',
+        });
+      } else {
+        Alert.alert('Saved', `Codes written to:\n${file.uri}`);
+      }
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Download failed', 'Could not create the backup codes file.');
+    }
   };
 
   if (user?.twoFactorEnabled) {
@@ -211,7 +265,7 @@ export default function TwoFactorScreen() {
           <ConfirmDialog
             visible={showBackupCodes}
             title="Backup Codes"
-            message="Save these codes in a secure location. Each code can only be used once."
+            description="Save these codes in a secure location. Each code can only be used once."
             confirmLabel="Done"
             onConfirm={() => setShowBackupCodes(false)}
             onCancel={() => setShowBackupCodes(false)}
@@ -223,6 +277,22 @@ export default function TwoFactorScreen() {
                 </Text>
               ))}
             </View>
+            <Button
+              variant="outline"
+              size="sm"
+              onPress={() => void shareBackupCodes(backupCodes)}
+              style={styles.cardButton}
+            >
+              Share / export codes
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onPress={() => void downloadBackupCodesFile(backupCodes)}
+              style={styles.cardButton}
+            >
+              Download .txt
+            </Button>
           </ConfirmDialog>
         )}
 
@@ -230,7 +300,7 @@ export default function TwoFactorScreen() {
           <ConfirmDialog
             visible={showBackupCodesEmptyDialog}
             title="No Backup Codes"
-            message="You don't have any backup codes saved. You can regenerate them to get new codes."
+            description="You don't have any backup codes saved. You can regenerate them to get new codes."
             confirmLabel="Regenerate Codes"
             onCancel={() => setShowBackupCodesEmptyDialog(false)}
             onConfirm={() => {
@@ -245,11 +315,11 @@ export default function TwoFactorScreen() {
           <ConfirmDialog
             visible={step === 'disable' || step === 'regenerate'}
             title="Confirm Password"
-            message={step === 'disable'
+            description={step === 'disable'
               ? 'Enter your password to disable two-factor authentication'
               : 'Enter your password to regenerate backup codes'}
             confirmLabel={step === 'disable' ? 'Disable 2FA' : 'Regenerate'}
-            confirmVariant="destructive"
+            variant="destructive"
             onConfirm={step === 'disable' ? handleDisable : handleRegenerateCodes}
             onCancel={() => {
               setStep('manage');
@@ -269,9 +339,9 @@ export default function TwoFactorScreen() {
         <ConfirmDialog
           visible={showDisableDialog}
           title="Disable Two-Factor Authentication"
-          message="Are you sure you want to disable 2FA? This will make your account less secure."
+          description="Are you sure you want to disable 2FA? This will make your account less secure."
           confirmLabel="Disable 2FA"
-          confirmVariant="destructive"
+          variant="destructive"
           onConfirm={() => {
             setShowDisableDialog(false);
             setStep('disable');
@@ -359,6 +429,25 @@ export default function TwoFactorScreen() {
               Open Authenticator App
             </Button>
           </Card>
+
+          {totpURI ? (
+            <View style={styles.qrBlock}>
+              <QRCode value={totpURI} size={200} />
+              {totpSecret ? (
+                <View style={styles.secretRow}>
+                  <Text
+                    style={[styles.secretText, { color: colors.foreground }]}
+                    selectable
+                  >
+                    {totpSecret}
+                  </Text>
+                  <Button variant="outline" size="sm" onPress={() => void copyTotpSecret()}>
+                    Copy secret
+                  </Button>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
 
           <TextInput
             label="Verification Code"
@@ -466,6 +555,21 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: Spacing.lg,
+  },
+  qrBlock: {
+    alignItems: 'center',
+    marginVertical: Spacing.lg,
+    gap: Spacing.md,
+  },
+  secretRow: {
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+  },
+  secretText: {
+    ...Typography.bodySmall,
+    fontFamily: 'monospace',
+    textAlign: 'center',
   },
   backupCodesContainer: {
     flexDirection: 'row',

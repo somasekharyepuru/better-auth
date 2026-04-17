@@ -68,6 +68,7 @@ export const ERROR_MESSAGES = {
         ROLE_UPDATE_FAILED: 'Failed to update member role',
         INVITATIONS_FETCH_FAILED: 'Failed to fetch invitations',
         INVITATION_FETCH_FAILED: 'Failed to fetch invitation',
+        INVITATION_SEND_FAILED: 'Failed to send invitation',
         INVITATION_ACCEPT_FAILED: 'Failed to accept invitation',
         INVITATION_REJECT_FAILED: 'Failed to reject invitation',
         LEAVE_FAILED: 'Failed to leave organization',

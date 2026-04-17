@@ -1,8 +1,9 @@
-import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useTheme } from '../../../src/contexts/ThemeContext';
-import { Typography, Spacing, Radius } from '../../../src/constants/Theme';
-import { Card } from '../../../components/ui';
+import { View, Text, ScrollView, StyleSheet, Pressable } from "react-native";
+import { useRouter } from "expo-router";
+import { useTheme } from "../../../src/contexts/ThemeContext";
+import { useSettings } from "../../../src/contexts/SettingsContext";
+import { Typography, Spacing, Radius } from "../../../src/constants/Theme";
+import { Card } from "../../../components/ui";
 
 interface Tool {
   key: string;
@@ -15,37 +16,47 @@ interface Tool {
 
 const TOOLS: Tool[] = [
   {
-    key: 'pomodoro',
-    name: 'Pomodoro Timer',
-    description: 'Focus timer for deep work sessions',
-    icon: '⏱️',
-    href: '/(app)/tools/pomodoro',
-    color: '#ef4444',
+    key: "pomodoro",
+    name: "Pomodoro Timer",
+    description: "Focus timer for deep work sessions",
+    icon: "⏱️",
+    href: "/(app)/tools/pomodoro",
+    color: "#ef4444",
   },
   {
-    key: 'matrix',
-    name: 'Eisenhower Matrix',
-    description: 'Prioritize by urgency and importance',
-    icon: '🎯',
-    href: '/(app)/tools/matrix',
-    color: '#8b5cf6',
+    key: "matrix",
+    name: "Eisenhower Matrix",
+    description: "Prioritize by urgency and importance",
+    icon: "🎯",
+    href: "/(app)/tools/matrix",
+    color: "#8b5cf6",
   },
   {
-    key: 'decisions',
-    name: 'Decision Log',
-    description: 'Record and track important decisions',
-    icon: '📋',
-    href: '/(app)/tools/decisions',
-    color: '#0ea5e9',
+    key: "decisions",
+    name: "Decision Log",
+    description: "Record and track important decisions",
+    icon: "📋",
+    href: "/(app)/tools/decisions",
+    color: "#0ea5e9",
   },
 ];
 
 export default function ToolsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { settings } = useSettings();
+
+  const visibleTools = TOOLS.filter((tool) => {
+    if (tool.key === "pomodoro") return settings.pomodoroEnabled !== false;
+    if (tool.key === "matrix") return settings.eisenhowerEnabled !== false;
+    if (tool.key === "decisions") return settings.decisionLogEnabled !== false;
+    return true;
+  });
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.foreground }]}>Tools</Text>
         <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
@@ -54,24 +65,54 @@ export default function ToolsScreen() {
       </View>
 
       <View style={styles.grid}>
-        {TOOLS.map(tool => (
+        {visibleTools.map((tool) => (
           <Pressable
             key={tool.key}
             onPress={() => router.push(tool.href as any)}
-            style={({ pressed }) => [styles.toolCard, { opacity: pressed ? 0.85 : 1 }]}
+            style={({ pressed }) => [
+              styles.toolCard,
+              { opacity: pressed ? 0.85 : 1 },
+            ]}
           >
             <Card padding="lg" style={styles.card}>
-              <View style={[styles.iconContainer, { backgroundColor: tool.color + '20' }]}>
+              <View
+                style={[
+                  styles.iconContainer,
+                  { backgroundColor: tool.color + "20" },
+                ]}
+              >
                 <Text style={styles.icon}>{tool.icon}</Text>
               </View>
-              <Text style={[styles.toolName, { color: colors.foreground }]}>{tool.name}</Text>
-              <Text style={[styles.toolDesc, { color: colors.mutedForeground }]} numberOfLines={2}>
+              <Text style={[styles.toolName, { color: colors.foreground }]}>
+                {tool.name}
+              </Text>
+              <Text
+                style={[styles.toolDesc, { color: colors.mutedForeground }]}
+                numberOfLines={2}
+              >
                 {tool.description}
               </Text>
-              <Text style={[styles.openHint, { color: tool.color }]}>Open →</Text>
+              <Text style={[styles.openHint, { color: tool.color }]}>
+                Open →
+              </Text>
             </Card>
           </Pressable>
         ))}
+        {visibleTools.length === 0 && (
+          <Card padding="lg" style={styles.emptyCard}>
+            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
+              No tools enabled
+            </Text>
+            <Text
+              style={[
+                styles.emptyDescription,
+                { color: colors.mutedForeground },
+              ]}
+            >
+              Enable tools from Settings to show them here.
+            </Text>
+          </Card>
+        )}
       </View>
     </ScrollView>
   );
@@ -81,7 +122,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
     padding: Spacing.xl,
-    paddingTop: Spacing['4xl'],
+    paddingTop: Spacing["4xl"],
   },
   title: { ...Typography.h1, marginBottom: Spacing.xs },
   subtitle: { ...Typography.body },
@@ -90,14 +131,17 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     gap: Spacing.md,
   },
-  toolCard: { width: '100%' },
-  card: { width: '100%' },
+  toolCard: { width: "100%" },
+  emptyCard: { width: "100%" },
+  emptyTitle: { ...Typography.h4, marginBottom: Spacing.xs },
+  emptyDescription: { ...Typography.bodySmall },
+  card: { width: "100%" },
   iconContainer: {
     width: 52,
     height: 52,
     borderRadius: Radius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: Spacing.md,
   },
   icon: { fontSize: 26 },

@@ -5,7 +5,6 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import {
-  ArrowLeft,
   Wrench,
   Calendar,
   Menu,
@@ -111,12 +110,9 @@ export function UnifiedHeader() {
     command();
   };
 
-  const isProfilePage = pathname === "/profile" || pathname.startsWith("/profile/");
-  const isToolsPage = pathname === "/tools" || pathname.startsWith("/tools/");
   const isCalendarPage = pathname === "/calendar" || pathname.startsWith("/calendar/");
   const isOrgPage = pathname?.startsWith("/organizations/");
   const isDashboard = pathname === "/";
-  const showBackButton = isProfilePage || isToolsPage || isCalendarPage || (isOrgPage && pathname.split("/").length > 2);
   const showToolsLink = settings.toolsTabEnabled && (settings.pomodoroEnabled || settings.eisenhowerEnabled || settings.decisionLogEnabled);
   const showNavLinks = isDashboard || isCalendarPage || isOrgPage;
   const userInitials = getAvatarFallback(user?.name, user?.email);
@@ -128,31 +124,15 @@ export function UnifiedHeader() {
           <div className="flex justify-between items-center h-14 sm:h-16">
             {/* Left side */}
             <div className="flex items-center gap-4">
-              {showBackButton ? (
-                <button
-                  onClick={() => router.push("/")}
-                  className="flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                  <span className="text-sm font-medium hidden sm:inline">Back</span>
-                </button>
-              ) : (
-                <Link href="/" className="transition-opacity hover:opacity-80">
-                  <Logo size="sm" />
-                </Link>
-              )}
+              <Link href="/" className="transition-opacity hover:opacity-80">
+                <Logo size="sm" />
+              </Link>
             </div>
 
             {/* Desktop Navigation - Left */}
             <div className="hidden sm:flex items-center gap-2">
               {/* Calendar Widget */}
               {showNavLinks && <HeaderCalendarWidget variant="full" />}
-
-              {showBackButton && (
-                <Link href="/">
-                  <Logo size="sm" showText={false} />
-                </Link>
-              )}
             </div>
 
             {/* Center - Search / Command Palette Trigger */}
@@ -235,11 +215,6 @@ export function UnifiedHeader() {
                 >
                   {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </button>
-              )}
-              {showBackButton && (
-                <Link href="/">
-                  <Logo size="sm" showText={false} />
-                </Link>
               )}
             </div>
 

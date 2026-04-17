@@ -1,22 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useAuth } from '../../src/contexts/AuthContext';
-import { useTheme } from '../../src/contexts/ThemeContext';
-import { Typography, Spacing } from '../../src/constants/Theme';
-import { Button } from '../../components/ui';
-import { OtpInput } from '../../components/form';
-import { Separator } from '../../components/ui';
-import { AuthLayout, AuthError } from '../../components/auth';
+import React, { useState, useEffect } from "react";
+import { View, Text, TextInput, StyleSheet } from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useAuth } from "../../src/contexts/AuthContext";
+import { useTheme } from "../../src/contexts/ThemeContext";
+import { Typography, Spacing } from "../../src/constants/Theme";
+import { Button } from "../../components/ui";
+import { OtpInput } from "../../components/form";
+import { Separator } from "../../components/ui";
+import { AuthLayout, AuthError } from "../../components/auth";
 
 export default function Verify2FAScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { colors } = useTheme();
-  const { signInWithTwoFactor, pendingCredentials, clearPendingCredentials } = useAuth();
+  const { signInWithTwoFactor, pendingCredentials, clearPendingCredentials } =
+    useAuth();
+  const redirectTo =
+    typeof params.redirectTo === "string" ? params.redirectTo : null;
 
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState("");
   const [useBackupCode, setUseBackupCode] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -27,17 +31,17 @@ export default function Verify2FAScreen() {
 
   useEffect(() => {
     if (!pendingCredentials) {
-      router.replace('/(auth)/login');
+      router.replace("/(auth)/login");
     }
   }, [pendingCredentials, router]);
 
   const handleVerify = async () => {
     if (!pendingCredentials) {
-      setError('Session expired. Please sign in again.');
+      setError("Session expired. Please sign in again.");
       return;
     }
 
-    setError('');
+    setError("");
     setIsLoading(true);
 
     try {
@@ -46,18 +50,18 @@ export default function Verify2FAScreen() {
       if (result.error) {
         setError(result.error);
       } else {
-        router.push('/(app)');
+        router.replace((redirectTo || "/(app)") as any);
       }
     } catch (err) {
-      setError('An unexpected error occurred');
+      setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
   };
 
   const formatBackupCode = (text: string) => {
-    const cleaned = text.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-    const formatted = cleaned.match(/.{1,4}/g)?.join('-') || cleaned;
+    const cleaned = text.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    const formatted = cleaned.match(/.{1,4}/g)?.join("-") || cleaned;
     return formatted.slice(0, 19);
   };
 
@@ -68,20 +72,18 @@ export default function Verify2FAScreen() {
 
   const subtitle = pendingCredentials
     ? `Verifying for ${pendingCredentials.email}`
-    : 'Enter your authentication code';
+    : "Enter your authentication code";
 
   return (
-    <AuthLayout
-      title="Two-Factor Authentication"
-      subtitle={subtitle}
-      icon="🔐"
-    >
+    <AuthLayout title="Two-Factor Authentication" subtitle={subtitle} icon="🔐">
       <AuthError error={error} colors={colors} />
 
       {useBackupCode ? (
         <>
           <View style={styles.backupHeader}>
-            <Text style={[styles.backupLabel, { color: colors.mutedForeground }]}>
+            <Text
+              style={[styles.backupLabel, { color: colors.mutedForeground }]}
+            >
               BACKUP CODE
             </Text>
             <Button
@@ -89,7 +91,7 @@ export default function Verify2FAScreen() {
               size="sm"
               onPress={() => {
                 setUseBackupCode(false);
-                setCode('');
+                setCode("");
               }}
             >
               Use TOTP
@@ -102,9 +104,19 @@ export default function Verify2FAScreen() {
               { backgroundColor: colors.card, borderColor: colors.border },
             ]}
           >
-            <Text style={[styles.backupInput, { color: colors.foreground }]}>
-              {code || 'xxxx-xxxx-xxxx-xxxx'}
-            </Text>
+            <TextInput
+              style={[
+                styles.backupInput,
+                { color: colors.foreground },
+              ]}
+              placeholder="xxxx-xxxx-xxxx-xxxx"
+              placeholderTextColor={colors.mutedForeground}
+              value={code}
+              onChangeText={handleBackupCodeChange}
+              editable={!isLoading}
+              maxLength={19}
+              autoCapitalize="characters"
+            />
           </View>
 
           <Button
@@ -120,7 +132,7 @@ export default function Verify2FAScreen() {
             variant="outline"
             onPress={() => {
               setUseBackupCode(false);
-              setCode('');
+              setCode("");
             }}
             disabled={isLoading}
             style={styles.secondaryButton}
@@ -153,7 +165,7 @@ export default function Verify2FAScreen() {
             size="sm"
             onPress={() => {
               setUseBackupCode(true);
-              setCode('');
+              setCode("");
             }}
             disabled={isLoading}
           >
@@ -179,9 +191,9 @@ export default function Verify2FAScreen() {
 
 const styles = StyleSheet.create({
   backupHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: Spacing.sm,
   },
   backupLabel: {
@@ -195,9 +207,9 @@ const styles = StyleSheet.create({
   },
   backupInput: {
     ...Typography.h3,
-    textAlign: 'center',
+    textAlign: "center",
     letterSpacing: 2,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   button: {
     marginTop: Spacing.lg,
@@ -209,12 +221,12 @@ const styles = StyleSheet.create({
     marginVertical: Spacing.xl,
   },
   tips: {
-    marginTop: Spacing['2xl'],
+    marginTop: Spacing["2xl"],
     gap: Spacing.sm,
   },
   tipsTitle: {
     ...Typography.bodySmall,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   tip: {
     ...Typography.caption,

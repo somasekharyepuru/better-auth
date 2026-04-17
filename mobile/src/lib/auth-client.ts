@@ -6,6 +6,8 @@
 
 import { httpAuthClient } from './http-auth-client';
 
+export { httpAuthClient };
+
 export type { Session, User } from './http-auth-client';
 
 /**
@@ -22,7 +24,7 @@ export const authClient = {
 
     // ============ Sign In ============
     signIn: {
-        email: async (data: { email: string; password: string }) => {
+        email: async (data: { email: string; password: string; rememberMe?: boolean }) => {
             return httpAuthClient.signInEmail(data);
         },
         social: {
@@ -58,6 +60,10 @@ export const authClient = {
         return httpAuthClient.resetPassword(data);
     },
 
+    resetPasswordWithOtp: async (data: { email: string; password: string; code: string }) => {
+        return httpAuthClient.resetPasswordWithOtp(data);
+    },
+
     changePassword: async (data: { currentPassword: string; newPassword: string }) => {
         return httpAuthClient.changePassword(data);
     },
@@ -84,6 +90,9 @@ export const authClient = {
         },
         generateBackupCodes: async () => {
             return httpAuthClient.generateBackupCodes();
+        },
+        getBackupCodes: async () => {
+            return httpAuthClient.getBackupCodes();
         },
     },
 
@@ -171,6 +180,12 @@ export const authClient = {
         },
         revokeOthers: async () => {
             return httpAuthClient.revokeOtherSessions();
+        },
+    },
+
+    admin: {
+        stopImpersonating: async () => {
+            return httpAuthClient.stopImpersonating();
         },
     },
 };

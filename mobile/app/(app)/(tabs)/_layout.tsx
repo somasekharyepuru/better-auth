@@ -1,8 +1,10 @@
-import { Tabs } from 'expo-router';
-import { useTheme } from '../../../src/contexts/ThemeContext';
+import { Tabs } from "expo-router";
+import { useTheme } from "../../../src/contexts/ThemeContext";
+import { useSettings } from "../../../src/contexts/SettingsContext";
 
 export default function TabLayout() {
   const { colors } = useTheme();
+  const { settings } = useSettings();
 
   return (
     <Tabs
@@ -13,7 +15,7 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: colors.card,
           borderTopWidth: 0,
-          shadowColor: '#000',
+          shadowColor: "#000",
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.05,
           shadowRadius: 8,
@@ -24,42 +26,44 @@ export default function TabLayout() {
       <Tabs.Screen
         name="dashboard"
         options={{
-          title: 'Dashboard',
+          title: "Dashboard",
           tabBarIcon: ({ color }) => <TabIcon name="🏠" color={color} />,
         }}
       />
       <Tabs.Screen
         name="calendar"
         options={{
-          title: 'Calendar',
+          title: "Calendar",
           tabBarIcon: ({ color }) => <TabIcon name="📅" color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="tools"
-        options={{
-          title: 'Tools',
-          tabBarIcon: ({ color }) => <TabIcon name="🛠️" color={color} />,
-        }}
-      />
+      {settings.toolsTabEnabled !== false && (
+        <Tabs.Screen
+          name="tools"
+          options={{
+            title: "Tools",
+            tabBarIcon: ({ color }) => <TabIcon name="🛠️" color={color} />,
+          }}
+        />
+      )}
       <Tabs.Screen
         name="organizations"
         options={{
-          title: 'Organizations',
+          title: "Organizations",
           tabBarIcon: ({ color }) => <TabIcon name="🏢" color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: "Profile",
           tabBarIcon: ({ color }) => <TabIcon name="👤" color={color} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
+          title: "Settings",
           tabBarIcon: ({ color }) => <TabIcon name="⚙️" color={color} />,
         }}
       />
@@ -67,7 +71,7 @@ export default function TabLayout() {
   );
 }
 
-import { Text } from 'react-native';
+import { Text } from "react-native";
 
 function TabIcon({ name, color }: { name: string; color: string }) {
   return <Text style={{ fontSize: 24, color }}>{name}</Text>;

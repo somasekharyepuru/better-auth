@@ -8,7 +8,7 @@ export default function SettingsPage() {
     const router = useRouter();
 
     useEffect(() => {
-        router.replace("/profile?tab=preferences");
+        router.replace("/profile/preferences");
     }, [router]);
 
     return (

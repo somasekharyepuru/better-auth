@@ -16,9 +16,9 @@ import { EmptyState } from '../../../../components/feedback';
 import { usePullToRefresh, useDebounce } from '../../../../hooks';
 import { TextInput } from '../../../../components/ui';
 import { ROLE_INFO } from '../../../../src/lib/role-info';
-import { listMembers } from '../../../../src/lib/auth';
+import { listMembers, listTeams, removeMember, updateMemberRole, addTeamMember } from '../../../../src/lib/auth';
 import { X, ChevronLeft, ChevronRight, Layers, Trash2, CheckCircle2 } from 'lucide-react-native';
-import type { Member } from '../../../../src/lib/types';
+import type { Member, UserRole } from '../../../../src/lib/types';
 
 interface MemberWithUser extends Member {
   userName?: string;
@@ -95,6 +95,7 @@ export default function MembersScreen() {
         // Map API response to MemberWithUser interface
         const membersWithUser: MemberWithUser[] = result.members.map((member) => ({
           ...member,
+          role: member.role as UserRole,
           userName: (member as any).user?.name || (member as any).userName,
           userEmail: (member as any).user?.email || (member as any).userEmail,
           userImage: (member as any).user?.image || (member as any).userImage,
@@ -111,11 +112,12 @@ export default function MembersScreen() {
 
   const loadTeams = async () => {
     try {
-      // In production, fetch teams from API
-      // const response = await fetch(`${API_BASE}/api/organizations/${orgId}/teams`, { credentials: 'include' });
-      // const data = await response.json();
-      // setTeams(data.teams || []);
-      setTeams([]);
+      const result = await listTeams(orgId);
+      if ('error' in result) {
+        setTeams([]);
+      } else {
+        setTeams(result.teams as unknown as Team[]);
+      }
     } catch (err) {
       console.error('Failed to load teams:', err);
     }
@@ -149,6 +151,14 @@ export default function MembersScreen() {
     if (!memberToRevoke) return;
     try {
       setError('');
+      const result = await removeMember({
+        organizationId: orgId,
+        memberIdOrEmail: memberToRevoke.userId,
+      });
+      if ('error' in result) {
+        setError(result.error.message || 'Failed to remove member');
+        return;
+      }
       setMembers(members.filter(m => m.id !== memberToRevoke.id));
       setSelectedMembers(prev => {
         const next = new Set(prev);
@@ -164,7 +174,13 @@ export default function MembersScreen() {
   const handleBulkRemove = async () => {
     try {
       setError('');
-      // In production, call API for each member
+      const selected = members.filter(m => selectedMembers.has(m.id));
+      await Promise.all(selected.map((member) =>
+        removeMember({
+          organizationId: orgId,
+          memberIdOrEmail: member.userId,
+        })
+      ));
       setMembers(members.filter(m => !selectedMembers.has(m.id)));
       setSelectedMembers(new Set());
       setShowBulkRemoveDialog(false);
@@ -177,10 +193,18 @@ export default function MembersScreen() {
     if (!memberForRoleChange) return;
     try {
       setError('');
-      // In production, call API
+      const result = await updateMemberRole({
+        organizationId: orgId,
+        memberId: memberForRoleChange.id,
+        role: newRole as UserRole,
+      });
+      if ('error' in result) {
+        setError(result.error.message || 'Failed to update role');
+        return;
+      }
       setMembers(members.map(m =>
         m.id === memberForRoleChange!.id
-          ? { ...m, role: newRole }
+          ? { ...m, role: newRole as UserRole }
           : m
       ));
       setShowRoleDialog(false);
@@ -195,8 +219,11 @@ export default function MembersScreen() {
     setIsAddingToTeam(true);
     try {
       setError('');
-      // In production, call API
-      // await addTeamMember({ teamId: selectedTeamId, userId: memberForTeam.userId });
+      const result = await addTeamMember({ teamId: selectedTeamId, userId: memberForTeam.userId });
+      if ('error' in result) {
+        setError(result.error.message || 'Failed to add to team');
+        return;
+      }
       setShowAddToTeamDialog(false);
       setSelectedTeamId('');
       setTeamSearchQuery('');

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ShieldCheck, Lock } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 interface AuthLayoutProps {
@@ -35,16 +34,6 @@ export function AuthLayout({ children, title, subtitle, className }: AuthLayoutP
             {/* Decorative grid */}
             <div className="absolute inset-0 decorative-grid opacity-20 dark:opacity-10" />
 
-            {/* Header with theme toggle */}
-            <div className="absolute top-0 left-0 right-0 p-4 sm:p-6 flex items-center justify-between z-20">
-                <Link
-                    href="/"
-                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                    <Logo size="sm" />
-                </Link>
-                <ThemeToggle />
-            </div>
 
             {/* Main content */}
             <div className={cn("w-full max-w-md relative z-10", className)}>

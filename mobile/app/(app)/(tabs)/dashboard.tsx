@@ -1,226 +1,374 @@
 /**
- * Dashboard Screen
- *
- * The main dashboard showing user overview, organizations, and quick actions.
+ * Productivity Dashboard Screen
+ * Full feature-parity with the web frontend Daymark productivity suite.
+ * Ported from mobile-old with section tabs: Priorities / Discuss / Schedule / Notes
  */
 
-import { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, FlatList } from 'react-native';
-import { useRouter } from 'expo-router';
-import { RefreshControl } from 'react-native';
-import { useAuth } from '../../../src/contexts/AuthContext';
-import { useOrganization } from '../../../src/contexts/OrganizationContext';
-import { useTheme } from '../../../src/contexts/ThemeContext';
-import { usePullToRefresh } from '../../../hooks/usePullToRefresh';
-import { Typography, Spacing, Radius } from '../../../src/constants/Theme';
-import { Button, Card } from '../../../components/ui';
-import { OrganizationCard } from '../../../components/specialized/OrganizationCard';
-import { EmptyState } from '../../../components/feedback';
+import React, { useState, useCallback, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+  SafeAreaView,
+} from "react-native";
+import { useTheme } from "../../../src/contexts/ThemeContext";
+import { useAuth } from "../../../src/contexts/AuthContext";
+import { useSettings } from "../../../src/contexts/SettingsContext";
+import { useCommandPalette } from "../../../src/contexts/CommandPaletteContext";
+import { useLifeAreas } from "../../../src/contexts/LifeAreasContext";
+import { Spacing, Radius, Typography } from "../../../src/constants/Theme";
+import {
+  daysApi,
+  formatDate,
+  Day,
+  TopPriority,
+  DiscussionItem,
+  TimeBlock,
+  QuickNote,
+  DailyReview,
+} from "../../../src/lib/daymark-api";
 
-type ThemeColors = ReturnType<typeof useTheme>;
+// Dashboard components
+import { DayProgressCard } from "../../../components/dashboard/DayProgressCard";
+import { LifeAreaSelector } from "../../../components/dashboard/LifeAreaSelector";
+import { TopPrioritiesCard } from "../../../components/dashboard/TopPrioritiesCard";
+import { DiscussionItemsCard } from "../../../components/dashboard/DiscussionItemsCard";
+import { TimeBlocksCard } from "../../../components/dashboard/TimeBlocksCard";
+import { QuickNotesCard } from "../../../components/dashboard/QuickNotesCard";
+import { EndOfDayReview } from "../../../components/dashboard/EndOfDayReview";
 
-interface DashboardStyles {
-  statCard: any;
-  statIcon: any;
-  statValue: any;
-  statLabel: any;
-  quickAction: any;
-  quickActionIcon: any;
-  quickActionLabel: any;
-}
+type Section = "priorities" | "discuss" | "schedule" | "notes";
 
-const renderStat = (
-  icon: string,
-  label: string,
-  value: string | number,
-  colors: ThemeColors,
-  styles: DashboardStyles
-) => (
-  <Card style={styles.statCard} padding="md">
-    <Text style={styles.statIcon}>{icon}</Text>
-    <Text style={[styles.statValue, { color: colors.foreground }]}>{value}</Text>
-    <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>{label}</Text>
-  </Card>
-);
-
-const renderQuickAction = (
-  label: string,
-  icon: string,
-  onPress: () => void,
-  colors: ThemeColors,
-  styles: DashboardStyles
-) => (
-  <Pressable
-    style={[styles.quickAction, { backgroundColor: colors.card }]}
-    onPress={onPress}
-  >
-    <Text style={styles.quickActionIcon}>{icon}</Text>
-    <Text style={[styles.quickActionLabel, { color: colors.foreground }]}>{label}</Text>
-  </Pressable>
-);
+const SECTION_TABS: {
+  key: Section;
+  label: string;
+  emoji: string;
+  settingsKey: string;
+}[] = [
+  { key: "priorities", label: "Priorities", emoji: "🎯", settingsKey: "priorities" },
+  { key: "discuss", label: "Discuss", emoji: "💬", settingsKey: "discussion" },
+  { key: "schedule", label: "Schedule", emoji: "📅", settingsKey: "schedule" },
+  { key: "notes", label: "Notes", emoji: "📝", settingsKey: "notes" },
+];
 
 export default function DashboardScreen() {
-  const router = useRouter();
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { organizations, loadOrganizations } = useOrganization();
-  const { refreshing, onRefresh } = usePullToRefresh(loadOrganizations);
+  const { settings, isSectionEnabled } = useSettings();
+  const { openPalette } = useCommandPalette();
+  const { selectedLifeArea } = useLifeAreas();
 
-  const organizationsWithMeta = organizations.map(org => ({
-    ...org,
-    memberCount: org.memberCount || 0,
-    userRole: org.userRole || 'member',
-  }));
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [activeSection, setActiveSection] = useState<Section>("priorities");
+  const [day, setDay] = useState<Day | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showReview, setShowReview] = useState(false);
+
+  const availableTabs = SECTION_TABS.filter((tab) =>
+    isSectionEnabled(tab.settingsKey),
+  );
+
+  useEffect(() => {
+    if (!availableTabs.some((tab) => tab.key === activeSection)) {
+      setActiveSection((availableTabs[0]?.key ?? "discuss") as Section);
+    }
+  }, [availableTabs, activeSection]);
+
+  const dateStr = formatDate(selectedDate);
+
+  // Greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  };
+
+  const isToday = formatDate(selectedDate) === formatDate(new Date());
+
+  // Load day data
+  const loadDay = useCallback(async () => {
+    try {
+      const data = await daysApi.getDay(dateStr, selectedLifeArea?.id);
+      setDay(data);
+    } catch (error) {
+      console.error("Failed to load day:", error);
+      setDay(null);
+    }
+  }, [dateStr, selectedLifeArea?.id]);
+
+  useEffect(() => {
+    setIsLoading(true);
+    loadDay().finally(() => setIsLoading(false));
+  }, [loadDay]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadDay();
+    setIsRefreshing(false);
+  };
+
+  const navigateDate = (direction: -1 | 1) => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() + direction);
+    setSelectedDate(newDate);
+  };
+
+  const goToToday = () => setSelectedDate(new Date());
+
+  // Derived state
+  const priorities: TopPriority[] = day?.priorities ?? [];
+  const discussionItems: DiscussionItem[] = day?.discussionItems ?? [];
+  const timeBlocks: TimeBlock[] = day?.timeBlocks ?? [];
+  const quickNote: QuickNote | null = day?.quickNote ?? null;
+  const dailyReview: DailyReview | null = day?.dailyReview ?? null;
+  const incompletePriorities = priorities.filter((p) => !p.completed);
+  const completedCount = priorities.filter((p) => p.completed).length;
+
+  const formatDateHeader = (date: Date) => {
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    });
+  };
 
   return (
-    <ScrollView
+    <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
     >
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.foreground }]}>
-          Welcome back, {user?.name?.split(' ')[0] || 'User'}!
-        </Text>
-        <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-          Here's what's happening with your account
-        </Text>
-      </View>
-
-      {/* Quick Stats */}
-      <View style={styles.stats}>
-        {renderStat('🏢', 'Organizations', organizations.length, colors, styles)}
-        {renderStat('✓', 'Status', user?.emailVerified ? 'Verified' : 'Unverified', colors, styles)}
-        {renderStat('🔐', '2FA', user?.twoFactorEnabled ? 'Enabled' : 'Disabled', colors, styles)}
-      </View>
-
-      {/* Active Organization */}
-      {organizationsWithMeta.length > 0 && (
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Active Organization</Text>
-          <OrganizationCard
-            organization={organizationsWithMeta[0]}
-            onPress={() => router.push(`/organizations/${organizationsWithMeta[0].id}`)}
-          />
-        </View>
-      )}
-
-      {/* Quick Actions */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Quick Actions</Text>
-        <View style={styles.quickActions}>
-          {renderQuickAction('Create Organization', '+', () => router.push('/(app)/organizations/create'), colors, styles)}
-          {renderQuickAction('View Profile', '👤', () => router.push('/(app)/profile'), colors, styles)}
-          {renderQuickAction('Security', '🔒', () => router.push('/(app)/profile/security'), colors, styles)}
-        </View>
-      </View>
-
-      {/* Organizations */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Organizations</Text>
-          <Button
-            variant="outline"
-            size="sm"
-            onPress={() => router.push('/(app)/organizations/create')}
-          >
-            + Create
-          </Button>
-        </View>
-
-        {organizationsWithMeta.length === 0 ? (
-          <EmptyState
-            icon="🏢"
-            title="No organizations yet"
-            description="Create your first organization or join one via invitation"
-            actionLabel="Create Organization"
-            onAction={() => router.push('/(app)/organizations/create')}
-          />
-        ) : (
+      {/* Greeting Header */}
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerTop}>
           <View>
-            {organizationsWithMeta.map((item, index) => (
-              <View key={item.id}>
-                {index > 0 && <View style={{ height: Spacing.md }} />}
-                <OrganizationCard
-                  organization={item}
-                  onPress={() => router.push(`/organizations/${item.id}`)}
-                />
-              </View>
-            ))}
+            <Text style={[styles.greeting, { color: colors.foreground }]}>
+              {getGreeting()}
+              {user?.name ? `, ${user.name.split(" ")[0]}` : ""}
+            </Text>
+            <Text
+              style={[styles.headerSubtitle, { color: colors.mutedForeground }]}
+            >
+              {isToday ? "Here's your day" : "Your productivity dashboard"}
+            </Text>
           </View>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={[styles.reviewButton, { backgroundColor: colors.card }]}
+              onPress={() => openPalette()}
+              accessibilityLabel="Quick open"
+            >
+              <Text style={{ fontSize: 18 }}>🔎</Text>
+            </TouchableOpacity>
+            {settings.endOfDayReviewEnabled && isSectionEnabled("review") && (
+              <TouchableOpacity
+                style={[styles.reviewButton, { backgroundColor: colors.card }]}
+                onPress={() => setShowReview(true)}
+              >
+                <Text style={{ fontSize: 20 }}>📋</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* Life Area Selector */}
+        <LifeAreaSelector />
+
+        {/* Date Navigation */}
+        <View style={styles.dateNav}>
+          <TouchableOpacity
+            onPress={() => navigateDate(-1)}
+            style={styles.navButton}
+          >
+            <Text style={[styles.navArrow, { color: colors.foreground }]}>
+              ‹
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={goToToday}>
+            <Text style={[styles.dateLabel, { color: colors.foreground }]}>
+              {formatDateHeader(selectedDate)}
+            </Text>
+            {!isToday && (
+              <Text style={[styles.todayHint, { color: colors.primary }]}>
+                Tap for today
+              </Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigateDate(1)}
+            style={styles.navButton}
+          >
+            <Text style={[styles.navArrow, { color: colors.foreground }]}>
+              ›
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Progress Bar */}
+        {isSectionEnabled("progress") && priorities.length > 0 && (
+          <DayProgressCard
+            completed={completedCount}
+            total={priorities.length}
+          />
         )}
       </View>
-    </ScrollView>
+
+      {/* Section Tabs */}
+      <View
+        style={[
+          styles.tabBar,
+          {
+            backgroundColor: colors.background,
+            borderBottomColor: colors.border,
+          },
+        ]}
+      >
+        {availableTabs.map((tab) => {
+          const isActive = activeSection === tab.key;
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              onPress={() => setActiveSection(tab.key)}
+              style={[
+                styles.tab,
+                isActive && {
+                  borderBottomColor: colors.primary,
+                  borderBottomWidth: 2,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: isActive ? colors.primary : colors.mutedForeground },
+                ]}
+              >
+                {tab.emoji} {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Content */}
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primary}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {activeSection === "priorities" && (
+          <TopPrioritiesCard
+            date={dateStr}
+            priorities={priorities}
+            onUpdate={(updated) =>
+              setDay((prev) => (prev ? { ...prev, priorities: updated } : null))
+            }
+            isLoading={isLoading}
+            maxItems={settings.maxTopPriorities ?? 3}
+            isPastDay={!isToday}
+          />
+        )}
+        {activeSection === "discuss" && (
+          <DiscussionItemsCard
+            date={dateStr}
+            items={discussionItems}
+            onUpdate={(updated) =>
+              setDay((prev) =>
+                prev ? { ...prev, discussionItems: updated } : null,
+              )
+            }
+            isLoading={isLoading}
+            isPastDay={!isToday}
+          />
+        )}
+        {activeSection === "schedule" && (
+          <TimeBlocksCard
+            date={dateStr}
+            blocks={timeBlocks}
+            onUpdate={(updated) =>
+              setDay((prev) => (prev ? { ...prev, timeBlocks: updated } : null))
+            }
+            isLoading={isLoading}
+            isPastDay={!isToday}
+          />
+        )}
+        {activeSection === "notes" && (
+          <QuickNotesCard
+            date={dateStr}
+            note={quickNote}
+            onUpdate={(updated) =>
+              setDay((prev) => (prev ? { ...prev, quickNote: updated } : null))
+            }
+            isLoading={isLoading}
+            isPastDay={!isToday}
+          />
+        )}
+      </ScrollView>
+
+      {/* End of Day Review Modal */}
+      <EndOfDayReview
+        date={dateStr}
+        review={dailyReview}
+        incompletePriorities={incompletePriorities}
+        onUpdate={loadDay}
+        isOpen={showReview}
+        onClose={() => setShowReview(false)}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
-    padding: Spacing.xl,
-    paddingTop: Spacing['4xl'],
-  },
-  title: {
-    ...Typography.h1,
-    marginBottom: Spacing.xs,
-  },
-  subtitle: {
-    ...Typography.body,
-  },
-  stats: {
-    flexDirection: 'row',
-    padding: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     gap: Spacing.md,
   },
-  statCard: {
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
+  greeting: { ...Typography.h3 },
+  headerSubtitle: { ...Typography.bodySmall, marginTop: 2 },
+  reviewButton: {
+    width: 40,
+    height: 40,
+    borderRadius: Radius.full,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dateNav: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  navButton: { padding: Spacing.sm },
+  navArrow: { fontSize: 28, fontWeight: "300" },
+  dateLabel: { ...Typography.h4, textAlign: "center" },
+  todayHint: { ...Typography.caption, textAlign: "center" },
+  tabBar: { flexDirection: "row", borderBottomWidth: StyleSheet.hairlineWidth },
+  tab: {
     flex: 1,
-    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    alignItems: "center",
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent",
   },
-  statIcon: {
-    fontSize: 24,
-    marginBottom: Spacing.sm,
-  },
-  statValue: {
-    ...Typography.h3,
-    fontWeight: '700',
-    marginBottom: Spacing.xs,
-  },
-  statLabel: {
-    ...Typography.caption,
-  },
-  section: {
-    padding: Spacing.xl,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.md,
-  },
-  sectionTitle: {
-    ...Typography.h4,
-    marginBottom: Spacing.md,
-  },
-  quickActions: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-  },
-  quickAction: {
-    flex: 1,
-    padding: Spacing.md,
-    borderRadius: Radius.lg,
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  quickActionIcon: {
-    fontSize: 20,
-  },
-  quickActionLabel: {
-    ...Typography.bodySmall,
-    fontWeight: '600',
-  },
+  tabText: { ...Typography.caption, fontWeight: "600", textAlign: "center" },
+  content: { flex: 1 },
+  contentContainer: { flexGrow: 1, paddingBottom: 120 },
 });

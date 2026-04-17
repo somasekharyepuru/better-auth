@@ -150,12 +150,12 @@ export async function isBiometricAvailable(): Promise<boolean> {
  *
  * @returns Promise resolving to biometric type or null
  */
-export async function getBiometricType(): Promise<'facial' | 'fingerprint' | null> {
+export async function getBiometricType(): Promise<'face' | 'fingerprint' | null> {
     try {
         const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
 
         if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
-            return 'facial';
+            return 'face';
         }
         if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
             return 'fingerprint';
@@ -186,6 +186,15 @@ export async function authenticateWithBiometrics(
     } catch {
         return false;
     }
+}
+
+/**
+ * Backward-compatible alias aligned with mobile-features.ts naming.
+ */
+export async function authenticateBiometric(
+    promptMessage: string = 'Authenticate to continue'
+): Promise<boolean> {
+    return authenticateWithBiometrics(promptMessage);
 }
 
 // ============ Push Notifications ============

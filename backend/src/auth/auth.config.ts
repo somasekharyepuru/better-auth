@@ -760,10 +760,11 @@ export const auth = betterAuth({
                 manager,  // Custom role
                 viewer,   // Custom role
             },
-            // Single organization approach - allow admins and owners to create
+            // Only system admins can create organizations
+            // Better Auth user-level roles are 'admin' and 'user'; 'owner' is org-level only
             allowUserToCreateOrganization: async (user) => {
                 const userRole = (user as any)?.role;
-                return userRole === 'admin' || userRole === 'owner';
+                return userRole === 'admin';
             },
             // Send invitation emails via webhook
             async sendInvitationEmail(data) {

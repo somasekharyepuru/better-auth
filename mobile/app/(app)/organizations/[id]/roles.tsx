@@ -1,18 +1,28 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useAuth } from '../../../../src/contexts/AuthContext';
-import { useOrganizationRole } from '../../../../hooks';
-import { useTheme } from '../../../../src/contexts/ThemeContext';
-import { Typography, Spacing } from '../../../../src/constants/Theme';
-import { Button } from '../../../../components/ui';
-import { Card } from '../../../../components/ui';
-import { RoleBadge } from '../../../../components/specialized';
-import { EmptyState } from '../../../../components/feedback';
-import { ConfirmDialog } from '../../../../components/feedback';
-import { usePullToRefresh } from '../../../../hooks';
-import { DEFAULT_ROLES as SHARED_DEFAULT_ROLES, type DefaultRoleName } from '../../../../src/lib/permissions';
-import type { UserRole } from '../../../../src/lib/types';
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+} from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useAuth } from "../../../../src/contexts/AuthContext";
+import { useOrganizationRole } from "../../../../hooks";
+import { useTheme } from "../../../../src/contexts/ThemeContext";
+import { Typography, Spacing } from "../../../../src/constants/Theme";
+import { Button } from "../../../../components/ui";
+import { Card } from "../../../../components/ui";
+import { RoleBadge } from "../../../../components/specialized";
+import { EmptyState } from "../../../../components/feedback";
+import { ConfirmDialog } from "../../../../components/feedback";
+import { usePullToRefresh } from "../../../../hooks";
+import {
+  DEFAULT_ROLES as SHARED_DEFAULT_ROLES,
+  type DefaultRoleName,
+} from "../../../../src/lib/permissions";
+import { organizationsApi } from "../../../../src/lib/daymark-api";
+import type { UserRole } from "../../../../src/lib/types";
 
 interface Permission {
   id: string;
@@ -31,22 +41,59 @@ interface Role {
 }
 
 // Convert shared roles to display format
-const DISPLAY_ROLES: Role[] = Object.entries(SHARED_DEFAULT_ROLES).map(([key, value]) => ({
-  id: key,
-  name: value.label,
-  description: value.description,
-  permissions: [],
-  isCustom: !value.isSystem,
-}));
+const DISPLAY_ROLES: Role[] = Object.entries(SHARED_DEFAULT_ROLES).map(
+  ([key, value]) => ({
+    id: key,
+    name: value.label,
+    description: value.description,
+    permissions: [],
+    isCustom: !value.isSystem,
+  }),
+);
 
 const PERMISSIONS: Permission[] = [
-  { id: 'manage_members', name: 'Manage Members', description: 'Add, remove, and manage members', category: 'Members' },
-  { id: 'manage_teams', name: 'Manage Teams', description: 'Create and manage teams', category: 'Teams' },
-  { id: 'update_settings', name: 'Update Settings', description: 'Modify organization settings', category: 'Settings' },
-  { id: 'view_analytics', name: 'View Analytics', description: 'Access organization analytics', category: 'Analytics' },
-  { id: 'view_resources', name: 'View Resources', description: 'Access organization resources', category: 'General' },
-  { id: 'view_only', name: 'View Only', description: 'Read-only access', category: 'General' },
-  { id: 'all', name: 'All Permissions', description: 'Full control', category: 'System' },
+  {
+    id: "manage_members",
+    name: "Manage Members",
+    description: "Add, remove, and manage members",
+    category: "Members",
+  },
+  {
+    id: "manage_teams",
+    name: "Manage Teams",
+    description: "Create and manage teams",
+    category: "Teams",
+  },
+  {
+    id: "update_settings",
+    name: "Update Settings",
+    description: "Modify organization settings",
+    category: "Settings",
+  },
+  {
+    id: "view_analytics",
+    name: "View Analytics",
+    description: "Access organization analytics",
+    category: "Analytics",
+  },
+  {
+    id: "view_resources",
+    name: "View Resources",
+    description: "Access organization resources",
+    category: "General",
+  },
+  {
+    id: "view_only",
+    name: "View Only",
+    description: "Read-only access",
+    category: "General",
+  },
+  {
+    id: "all",
+    name: "All Permissions",
+    description: "Full control",
+    category: "System",
+  },
 ];
 
 export default function RolesScreen() {
@@ -59,7 +106,7 @@ export default function RolesScreen() {
   const [roles, setRoles] = useState<Role[]>(DISPLAY_ROLES);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -67,15 +114,20 @@ export default function RolesScreen() {
 
   const loadRoles = useCallback(async () => {
     try {
-      setError('');
-      // For now, use default roles - in production this would call an API
-      // const { getOrganizationRoles } = await import('../../../../../../src/lib/auth');
-      // const result = await getOrganizationRoles(orgId);
-
-      setRoles(DISPLAY_ROLES);
+      setError("");
+      const result = await organizationsApi.roles.list(orgId);
+      const apiRoles: Role[] = (result.roles || []).map((role) => ({
+        id: role.id,
+        name: role.name,
+        description: role.name,
+        permissions: role.permissions || [],
+        isCustom: true,
+      }));
+      setRoles([...DISPLAY_ROLES, ...apiRoles]);
       setIsLoading(false);
     } catch (err) {
-      setError('Failed to load roles');
+      setRoles(DISPLAY_ROLES);
+      setError("Failed to load custom roles");
       setIsLoading(false);
     }
   }, [orgId]);
@@ -92,18 +144,20 @@ export default function RolesScreen() {
     if (!roleToDelete) return;
 
     try {
-      setError('');
-      // In production, call delete role API
-      setRoles(roles.filter(r => r.id !== roleToDelete.id));
+      setError("");
+      await organizationsApi.roles.delete(orgId, String(roleToDelete.id));
+      setRoles(roles.filter((r) => r.id !== roleToDelete.id));
       setRoleToDelete(null);
       setShowDeleteDialog(false);
     } catch (err) {
-      setError('Failed to delete role');
+      setError("Failed to delete role");
     }
   };
 
   const getPermissionDetails = (permissionIds: string[]) => {
-    return permissionIds.map(id => PERMISSIONS.find(p => p.id === id)).filter(Boolean) as Permission[];
+    return permissionIds
+      .map((id) => PERMISSIONS.find((p) => p.id === id))
+      .filter(Boolean) as Permission[];
   };
 
   const canDeleteRole = (role: Role) => {
@@ -132,7 +186,9 @@ export default function RolesScreen() {
 
       {error && (
         <Card padding="md" style={styles.errorCard}>
-          <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
+          <Text style={[styles.errorText, { color: colors.destructive }]}>
+            {error}
+          </Text>
         </Card>
       )}
 
@@ -143,13 +199,16 @@ export default function RolesScreen() {
           Default Roles
         </Text>
         <Text style={[styles.infoText, { color: colors.mutedForeground }]}>
-          Owner, Admin, Manager, Member, and Viewer are built-in roles. Create custom roles for specific permission combinations.
+          Owner, Admin, Manager, Member, and Viewer are built-in roles. Create
+          custom roles for specific permission combinations.
         </Text>
       </Card>
 
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>Loading roles...</Text>
+          <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
+            Loading roles...
+          </Text>
         </View>
       ) : roles.length === 0 ? (
         <EmptyState
@@ -160,49 +219,76 @@ export default function RolesScreen() {
       ) : (
         roles.map((roleItem) => {
           const permissions = getPermissionDetails(roleItem.permissions);
-          const permissionNames = permissions.map(p => p.name).join(', ');
+          const permissionNames = permissions.map((p) => p.name).join(", ");
           // Type guard: only pass valid UserRole to RoleBadge
-          const roleBadgeValue = roleItem.id in SHARED_DEFAULT_ROLES ? roleItem.id as UserRole : undefined;
+          const roleBadgeValue =
+            roleItem.id in SHARED_DEFAULT_ROLES
+              ? (roleItem.id as UserRole)
+              : undefined;
 
           return (
-            <Card
-              key={roleItem.id}
-              padding="lg"
-              style={styles.roleCard}
-            >
+            <Card key={roleItem.id} padding="lg" style={styles.roleCard}>
               <View style={styles.roleHeader}>
                 <View style={styles.roleInfo}>
                   <Text style={[styles.roleName, { color: colors.foreground }]}>
                     {roleItem.name}
                   </Text>
                   {roleItem.description && (
-                    <Text style={[styles.roleDescription, { color: colors.mutedForeground }]}>
+                    <Text
+                      style={[
+                        styles.roleDescription,
+                        { color: colors.mutedForeground },
+                      ]}
+                    >
                       {roleItem.description}
                     </Text>
                   )}
                   {roleItem.isCustom && (
                     <View style={styles.customBadge}>
-                      <Text style={[styles.customBadgeText, { color: colors.primary }]}>
+                      <Text
+                        style={[
+                          styles.customBadgeText,
+                          { color: colors.primary },
+                        ]}
+                      >
                         Custom
                       </Text>
                     </View>
                   )}
                 </View>
-                {roleBadgeValue !== undefined && <RoleBadge role={roleBadgeValue} size="md" />}
+                {roleBadgeValue !== undefined && (
+                  <RoleBadge role={roleBadgeValue} size="md" />
+                )}
               </View>
 
               <View style={styles.permissionsSection}>
-                <Text style={[styles.permissionsTitle, { color: colors.mutedForeground }]}>
+                <Text
+                  style={[
+                    styles.permissionsTitle,
+                    { color: colors.mutedForeground },
+                  ]}
+                >
                   Permissions:
                 </Text>
-                <Text style={[styles.permissionsText, { color: colors.foreground }]}>
-                  {roleItem.permissions.includes('all') ? 'All Permissions' : permissionNames || 'None'}
+                <Text
+                  style={[styles.permissionsText, { color: colors.foreground }]}
+                >
+                  {roleItem.permissions.includes("all")
+                    ? "All Permissions"
+                    : permissionNames || "None"}
                 </Text>
               </View>
 
               {roleItem.isCustom && roleItem.memberCount !== undefined && (
-                <Text style={[styles.memberCount, { color: colors.mutedForeground }]}>
-                  {roleItem.memberCount} {roleItem.memberCount === 1 ? 'member' : 'members'} with this role
+                <Text
+                  style={[
+                    styles.memberCount,
+                    { color: colors.mutedForeground },
+                  ]}
+                >
+                  {roleItem.memberCount}{" "}
+                  {roleItem.memberCount === 1 ? "member" : "members"} with this
+                  role
                 </Text>
               )}
 
@@ -213,7 +299,9 @@ export default function RolesScreen() {
                       variant="outline"
                       size="sm"
                       onPress={() => {
-                        // Navigate to edit role screen (to be implemented)
+                        router.push(
+                          `/(app)/organizations/${orgId}/roles/${roleItem.id}/edit`,
+                        );
                       }}
                       style={styles.actionButton}
                     >
@@ -245,7 +333,7 @@ export default function RolesScreen() {
         <View style={styles.createSection}>
           <Button
             onPress={() => {
-              // Navigate to create role screen (to be implemented)
+              router.push(`/(app)/organizations/${orgId}/roles/create`);
             }}
             style={styles.createButton}
           >
@@ -258,9 +346,9 @@ export default function RolesScreen() {
       <ConfirmDialog
         visible={showDeleteDialog}
         title="Delete Role"
-        message={`Are you sure you want to delete the "${roleToDelete?.name}" role? Members with this role will need to be reassigned.`}
+        description={`Are you sure you want to delete the "${roleToDelete?.name}" role? Members with this role will need to be reassigned.`}
         confirmLabel="Delete"
-        confirmVariant="destructive"
+        variant="destructive"
         onConfirm={handleDeleteRole}
         onCancel={() => {
           setRoleToDelete(null);
@@ -276,11 +364,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingBottom: Spacing['2xl'],
+    paddingBottom: Spacing["2xl"],
   },
   header: {
     padding: Spacing.xl,
-    paddingTop: Spacing['4xl'],
+    paddingTop: Spacing["4xl"],
     marginBottom: Spacing.lg,
   },
   title: {
@@ -300,7 +388,7 @@ const styles = StyleSheet.create({
   infoCard: {
     marginHorizontal: Spacing.xl,
     marginBottom: Spacing.lg,
-    alignItems: 'center',
+    alignItems: "center",
   },
   infoIcon: {
     fontSize: 24,
@@ -308,17 +396,17 @@ const styles = StyleSheet.create({
   },
   infoTitle: {
     ...Typography.body,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: Spacing.xs,
   },
   infoText: {
     ...Typography.bodySmall,
-    textAlign: 'center',
+    textAlign: "center",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingTop: 100,
   },
   loadingText: {
@@ -329,9 +417,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   roleHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: Spacing.md,
   },
   roleInfo: {
@@ -339,7 +427,7 @@ const styles = StyleSheet.create({
   },
   roleName: {
     ...Typography.body,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: Spacing.xs,
   },
   roleDescription: {
@@ -347,7 +435,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   customBadge: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
     borderRadius: 4,
@@ -355,7 +443,7 @@ const styles = StyleSheet.create({
   },
   customBadgeText: {
     ...Typography.caption,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   permissionsSection: {
     marginBottom: Spacing.sm,
@@ -372,7 +460,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   actionButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: Spacing.sm,
   },
   actionButton: {
@@ -386,6 +474,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
   },
   createButton: {
-    width: '100%',
+    width: "100%",
   },
 });

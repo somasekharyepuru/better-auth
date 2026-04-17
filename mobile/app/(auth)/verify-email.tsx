@@ -1,12 +1,26 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useAuth } from '../../src/contexts/AuthContext';
-import { useTheme } from '../../src/contexts/ThemeContext';
-import { Spacing } from '../../src/constants/Theme';
-import { Button } from '../../components/ui';
-import { OtpInput } from '../../components/form';
-import { AuthLayout, AuthError } from '../../components/auth';
+import React, { useState } from "react";
+import { View, StyleSheet } from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useAuth } from "../../src/contexts/AuthContext";
+import { useTheme } from "../../src/contexts/ThemeContext";
+import { Spacing } from "../../src/constants/Theme";
+import { Button } from "../../components/ui";
+import { OtpInput } from "../../components/form";
+import { AuthLayout, AuthError } from "../../components/auth";
+
+function sanitizeRedirectTo(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const redirect = value.trim();
+  if (!redirect.startsWith("/") || redirect.startsWith("//")) return null;
+  if (redirect.includes("://")) return null;
+  if (
+    redirect.startsWith("/(app)") ||
+    redirect.startsWith("/accept-invitation/")
+  ) {
+    return redirect;
+  }
+  return null;
+}
 
 export default function VerifyEmailScreen() {
   const router = useRouter();
@@ -14,21 +28,22 @@ export default function VerifyEmailScreen() {
   const { colors } = useTheme();
   const { verifyEmail, sendVerificationOtp } = useAuth();
 
-  const email = params.email as string || '';
+  const email = (params.email as string) || "";
+  const redirectTo = sanitizeRedirectTo(params.redirectTo);
 
   React.useEffect(() => {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      router.replace('/(auth)/signup');
+      router.replace("/(auth)/register");
     }
   }, [email, router]);
 
-  const [otp, setOtp] = useState('');
-  const [error, setError] = useState('');
+  const [otp, setOtp] = useState("");
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
 
   const handleVerify = async () => {
-    setError('');
+    setError("");
     setIsLoading(true);
 
     try {
@@ -36,18 +51,23 @@ export default function VerifyEmailScreen() {
 
       if (result.error) {
         setError(result.error);
+      } else if (result.signedIn) {
+        router.replace((redirectTo || "/(app)/welcome") as any);
       } else {
-        router.push('/(auth)/login');
+        router.push({
+          pathname: "/(auth)/login",
+          params: redirectTo ? { redirectTo } : undefined,
+        });
       }
     } catch (err) {
-      setError('An unexpected error occurred');
+      setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleResend = async () => {
-    setError('');
+    setError("");
     setIsResending(true);
 
     try {
@@ -57,7 +77,7 @@ export default function VerifyEmailScreen() {
         setError(result.error);
       }
     } catch (err) {
-      setError('An unexpected error occurred');
+      setError("An unexpected error occurred");
     } finally {
       setIsResending(false);
     }
@@ -71,11 +91,7 @@ export default function VerifyEmailScreen() {
     >
       <AuthError error={error} colors={colors} />
 
-      <OtpInput
-        value={otp}
-        onChange={setOtp}
-        length={6}
-      />
+      <OtpInput value={otp} onChange={setOtp} length={6} />
 
       <Button
         onPress={handleVerify}

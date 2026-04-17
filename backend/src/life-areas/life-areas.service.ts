@@ -53,6 +53,21 @@ export class LifeAreasService {
   }
 
   /**
+   * List archived life areas (for restore UX on clients)
+   */
+  async getArchivedLifeAreas(userId: string): Promise<LifeAreaResponse[]> {
+    await this.ensureDefaultLifeArea(userId);
+
+    return this.prisma.lifeArea.findMany({
+      where: {
+        userId,
+        isArchived: true,
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+  }
+
+  /**
    * Get a single life area by ID
    */
   async getLifeArea(id: string, userId: string): Promise<LifeAreaResponse> {

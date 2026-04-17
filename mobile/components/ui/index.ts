@@ -8,7 +8,7 @@ export { Button } from './Button';
 export type { ButtonVariant, ButtonSize } from './Button';
 
 export { TextInput } from './TextInput';
-export type { TextInputProps } from './TextInput';
+export type { CustomTextInputProps as TextInputProps } from './TextInput';
 
 export { Card } from './Card';
 export type { CardVariant } from './Card';

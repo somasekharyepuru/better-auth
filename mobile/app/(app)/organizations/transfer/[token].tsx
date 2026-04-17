@@ -5,24 +5,45 @@
  * Route: /organizations/transfer/:token
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import { useRouter, useLocalSearchParams, Link } from 'expo-router';
-import { useAuth } from '../../../../src/contexts/AuthContext';
-import { useTheme } from '../../../../src/contexts/ThemeContext';
-import { Typography, Spacing, Radius } from '../../../../src/constants/Theme';
-import { Button } from '../../../../components/ui';
-import { Card } from '../../../../components/ui';
-import { Badge } from '../../../../components/ui';
-import { getTransferDetails, confirmTransfer } from '../../../../src/lib/auth';
-import type { TransferInfo } from '../../../../src/lib/types';
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
+import { useRouter, useLocalSearchParams, Link } from "expo-router";
+import { useAuth } from "../../../../src/contexts/AuthContext";
+import { useTheme } from "../../../../src/contexts/ThemeContext";
+import { Typography, Spacing, Radius } from "../../../../src/constants/Theme";
+import { Button } from "../../../../components/ui";
+import { Card } from "../../../../components/ui";
+import { Badge } from "../../../../components/ui";
+import { getTransferDetails, confirmTransfer } from "../../../../src/lib/auth";
+import type { TransferInfo } from "../../../../src/lib/types";
 
-type TransferState = 'loading' | 'error' | 'not_found' | 'expired' | 'wrong_user' | 'pending' | 'confirmed' | 'declined';
+type TransferState =
+  | "loading"
+  | "error"
+  | "not_found"
+  | "expired"
+  | "wrong_user"
+  | "pending"
+  | "confirmed"
+  | "declined";
 
 // Type guard to validate API status against allowed TransferState values
 function isValidTransferState(value: string): value is TransferState {
   const validStates: Set<string> = new Set([
-    'loading', 'error', 'not_found', 'expired', 'wrong_user', 'pending', 'confirmed', 'declined'
+    "loading",
+    "error",
+    "not_found",
+    "expired",
+    "wrong_user",
+    "pending",
+    "confirmed",
+    "declined",
   ]);
   return validStates.has(value);
 }
@@ -41,10 +62,12 @@ export default function TransferConfirmScreen() {
     return rawToken;
   })();
 
-  const [state, setState] = useState<TransferState>(token ? 'loading' : 'error');
+  const [state, setState] = useState<TransferState>(
+    token ? "loading" : "error",
+  );
   const [transfer, setTransfer] = useState<TransferInfo | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState(token ? '' : 'Invalid transfer token');
+  const [error, setError] = useState(token ? "" : "Invalid transfer token");
   const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const loadTransferDetails = useCallback(async () => {
@@ -53,16 +76,16 @@ export default function TransferConfirmScreen() {
     try {
       const result = await getTransferDetails(token);
 
-      if ('error' in result) {
-        setState('error');
-        setError(result.error.message || 'Failed to load transfer details');
+      if ("error" in result) {
+        setState("error");
+        setError(result.error.message || "Failed to load transfer details");
       } else {
         setTransfer(result.transfer);
-        setState('pending');
+        setState("pending");
       }
     } catch (err) {
-      setState('error');
-      setError('Failed to load transfer details');
+      setState("error");
+      setError("Failed to load transfer details");
     }
   }, [token]);
 
@@ -71,21 +94,21 @@ export default function TransferConfirmScreen() {
   }, [loadTransferDetails]);
 
   const handleAccept = useCallback(async () => {
-    if (!user || !transfer) return;
+    if (!token || !user || !transfer) return;
 
     setIsProcessing(true);
-    setError('');
+    setError("");
 
     try {
-      const result = await confirmTransfer(token, 'accept');
+      const result = await confirmTransfer(token, "accept");
 
-      if ('error' in result) {
-        setError(result.error.message || 'Failed to accept transfer');
+      if ("error" in result) {
+        setError(result.error.message || "Failed to accept transfer");
       } else {
-        setState('confirmed');
+        setState("confirmed");
       }
     } catch (err) {
-      setError('An unexpected error occurred');
+      setError("An unexpected error occurred");
     } finally {
       setIsProcessing(false);
     }
@@ -93,7 +116,7 @@ export default function TransferConfirmScreen() {
 
   // Handle navigation after successful acceptance with cleanup
   useEffect(() => {
-    if (state === 'confirmed' && transfer) {
+    if (state === "confirmed" && transfer) {
       navigationTimeoutRef.current = setTimeout(() => {
         router.replace(`/organizations/${transfer.organization.id}`);
       }, 2000);
@@ -109,29 +132,36 @@ export default function TransferConfirmScreen() {
   }, [state, transfer, router]);
 
   const handleDecline = useCallback(async () => {
+    if (!token) return;
     setIsProcessing(true);
-    setError('');
+    setError("");
 
     try {
-      const result = await confirmTransfer(token, 'decline');
+      const result = await confirmTransfer(token, "decline");
 
-      if ('error' in result) {
-        setError(result.error.message || 'Failed to decline transfer');
+      if ("error" in result) {
+        setError(result.error.message || "Failed to decline transfer");
       } else {
-        setState('declined');
-        router.replace('/(app)/(tabs)/organizations/');
+        setState("declined");
+        router.replace("/(app)/(tabs)/organizations");
       }
     } catch (err) {
-      setError('An unexpected error occurred');
+      setError("An unexpected error occurred");
     } finally {
       setIsProcessing(false);
     }
   }, [token, router]);
 
   // Render different states
-  if (state === 'loading') {
+  if (state === "loading") {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: colors.background },
+        ]}
+      >
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
           Loading transfer details...
@@ -140,16 +170,24 @@ export default function TransferConfirmScreen() {
     );
   }
 
-  if (state === 'error' || state === 'not_found') {
+  if (state === "error" || state === "not_found") {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: colors.background },
+        ]}
+      >
         <Card padding="lg" style={styles.card}>
           <Text style={[styles.errorIcon]}>✕</Text>
-          <Text style={[styles.title, { color: colors.foreground }]}>Transfer Not Found</Text>
-          <Text style={[styles.message, { color: colors.mutedForeground }]}>
-            {error || 'This transfer link may be invalid or expired.'}
+          <Text style={[styles.title, { color: colors.foreground }]}>
+            Transfer Not Found
           </Text>
-          <Link href="/(app)/(tabs)/organizations/" asChild>
+          <Text style={[styles.message, { color: colors.mutedForeground }]}>
+            {error || "This transfer link may be invalid or expired."}
+          </Text>
+          <Link href="/(app)/(tabs)/organizations" asChild>
             <Button variant="outline" style={styles.button}>
               Go to Organizations
             </Button>
@@ -161,7 +199,13 @@ export default function TransferConfirmScreen() {
 
   if (!transfer) {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: colors.background },
+        ]}
+      >
         <Text style={[styles.message, { color: colors.mutedForeground }]}>
           Transfer not found
         </Text>
@@ -173,30 +217,39 @@ export default function TransferConfirmScreen() {
     if (!transfer) return;
 
     if (transfer.isExpired) {
-      setState('expired');
-    } else if (transfer.status !== 'pending') {
+      setState("expired");
+    } else if (transfer.status !== "pending") {
       // Validate status against allowed TransferState values
       if (isValidTransferState(transfer.status)) {
         setState(transfer.status);
       } else {
         console.warn(`Unknown transfer status: ${transfer.status}`);
-        setState('error');
+        setState("error");
       }
     } else if (user && user.id !== transfer.toUser.id) {
-      setState('wrong_user');
+      setState("wrong_user");
     }
   }, [transfer, user]);
 
-  if (state === 'expired') {
+  if (state === "expired") {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: colors.background },
+        ]}
+      >
         <Card padding="lg" style={styles.card}>
           <Text style={[styles.warningIcon]}>⏰</Text>
-          <Text style={[styles.title, { color: colors.foreground }]}>Transfer Expired</Text>
-          <Text style={[styles.message, { color: colors.mutedForeground }]}>
-            This transfer request has expired. Ask the owner to initiate a new transfer.
+          <Text style={[styles.title, { color: colors.foreground }]}>
+            Transfer Expired
           </Text>
-          <Link href="/(app)/(tabs)/organizations/" asChild>
+          <Text style={[styles.message, { color: colors.mutedForeground }]}>
+            This transfer request has expired. Ask the owner to initiate a new
+            transfer.
+          </Text>
+          <Link href="/(app)/(tabs)/organizations" asChild>
             <Button variant="outline" style={styles.button}>
               Go to Organizations
             </Button>
@@ -206,23 +259,36 @@ export default function TransferConfirmScreen() {
     );
   }
 
-  if (state === 'wrong_user') {
+  if (state === "wrong_user") {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: colors.background },
+        ]}
+      >
         <Card padding="lg" style={styles.card}>
           <Text style={[styles.errorIcon]}>✕</Text>
-          <Text style={[styles.title, { color: colors.foreground }]}>Not Authorized</Text>
+          <Text style={[styles.title, { color: colors.foreground }]}>
+            Not Authorized
+          </Text>
           <Text style={[styles.message, { color: colors.mutedForeground }]}>
-            This transfer was sent to a different user. Please sign in with the correct account.
+            This transfer was sent to a different user. Please sign in with the
+            correct account.
           </Text>
           <View style={styles.userInfo}>
-            <Text style={[styles.userLabel, { color: colors.mutedForeground }]}>Expected:</Text>
+            <Text style={[styles.userLabel, { color: colors.mutedForeground }]}>
+              Expected:
+            </Text>
             <Text style={[styles.userValue, { color: colors.foreground }]}>
               {transfer.toUser.name || transfer.toUser.email}
             </Text>
           </View>
           <View style={styles.userInfo}>
-            <Text style={[styles.userLabel, { color: colors.mutedForeground }]}>Signed in as:</Text>
+            <Text style={[styles.userLabel, { color: colors.mutedForeground }]}>
+              Signed in as:
+            </Text>
             <Text style={[styles.userValue, { color: colors.foreground }]}>
               {user?.name || user?.email}
             </Text>
@@ -237,38 +303,58 @@ export default function TransferConfirmScreen() {
     );
   }
 
-  if (state === 'declined') {
+  if (state === "declined") {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: colors.background },
+        ]}
+      >
         <Card padding="lg" style={styles.card}>
           <Text style={[styles.infoIcon]}>ℹ️</Text>
-          <Text style={[styles.title, { color: colors.mutedForeground }]}>Transfer Declined</Text>
-          <Text style={[styles.message, { color: colors.mutedForeground }]}>
-            You have declined the ownership transfer for <Text style={{ color: colors.foreground }}>{transfer.organization.name}</Text>.
+          <Text style={[styles.title, { color: colors.mutedForeground }]}>
+            Transfer Declined
           </Text>
-          <Link href="/(app)/(tabs)/organizations/" asChild>
-            <Button style={styles.button}>
-              Go to Organizations
-            </Button>
+          <Text style={[styles.message, { color: colors.mutedForeground }]}>
+            You have declined the ownership transfer for{" "}
+            <Text style={{ color: colors.foreground }}>
+              {transfer.organization.name}
+            </Text>
+            .
+          </Text>
+          <Link href="/(app)/(tabs)/organizations" asChild>
+            <Button style={styles.button}>Go to Organizations</Button>
           </Link>
         </Card>
       </View>
     );
   }
 
-  if (state === 'confirmed') {
+  if (state === "confirmed") {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: colors.background },
+        ]}
+      >
         <Card padding="lg" style={styles.card}>
           <Text style={[styles.successIcon]}>✓</Text>
-          <Text style={[styles.title, { color: colors.success }]}>Transfer Complete!</Text>
+          <Text style={[styles.title, { color: colors.success }]}>
+            Transfer Complete!
+          </Text>
           <Text style={[styles.message, { color: colors.mutedForeground }]}>
-            You are now the owner of <Text style={{ color: colors.primary }}>{transfer.organization.name}</Text>.
+            You are now the owner of{" "}
+            <Text style={{ color: colors.primary }}>
+              {transfer.organization.name}
+            </Text>
+            .
           </Text>
           <Link href={`/organizations/${transfer.organization.id}`} asChild>
-            <Button style={styles.button}>
-              Go to Organization
-            </Button>
+            <Button style={styles.button}>Go to Organization</Button>
           </Link>
         </Card>
       </View>
@@ -284,25 +370,48 @@ export default function TransferConfirmScreen() {
       <Card padding="lg" style={styles.mainCard}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.icon, { backgroundColor: colors.primary + '20' }]}>🏢</Text>
+          <Text
+            style={[styles.icon, { backgroundColor: colors.primary + "20" }]}
+          >
+            🏢
+          </Text>
           <Text style={[styles.cardTitle, { color: colors.foreground }]}>
             Organization Ownership Transfer
           </Text>
         </View>
 
         {/* Transfer Details */}
-        <View style={[styles.transferDetails, { backgroundColor: colors.muted + '50' }]}>
+        <View
+          style={[
+            styles.transferDetails,
+            { backgroundColor: colors.muted + "50" },
+          ]}
+        >
           <View style={styles.transferUserRow}>
-            <Text style={[styles.transferUserLabel, { color: colors.mutedForeground }]}>
+            <Text
+              style={[
+                styles.transferUserLabel,
+                { color: colors.mutedForeground },
+              ]}
+            >
               From:
             </Text>
-            <Text style={[styles.transferUserName, { color: colors.foreground }]}>
+            <Text
+              style={[styles.transferUserName, { color: colors.foreground }]}
+            >
               {transfer.fromUser.name || transfer.fromUser.email}
             </Text>
           </View>
-          <Text style={[styles.arrow, { color: colors.mutedForeground }]}>→</Text>
+          <Text style={[styles.arrow, { color: colors.mutedForeground }]}>
+            →
+          </Text>
           <View style={styles.transferUserRow}>
-            <Text style={[styles.transferUserLabel, { color: colors.mutedForeground }]}>
+            <Text
+              style={[
+                styles.transferUserLabel,
+                { color: colors.mutedForeground },
+              ]}
+            >
               To (You):
             </Text>
             <Text style={[styles.transferUserName, { color: colors.primary }]}>
@@ -311,7 +420,9 @@ export default function TransferConfirmScreen() {
           </View>
           <View style={styles.transferOrgRow}>
             <Text style={styles.orgIcon}>🏢</Text>
-            <Text style={[styles.transferOrgName, { color: colors.foreground }]}>
+            <Text
+              style={[styles.transferOrgName, { color: colors.foreground }]}
+            >
               {transfer.organization.name}
             </Text>
             <Badge>{transfer.organization.slug}</Badge>
@@ -319,7 +430,9 @@ export default function TransferConfirmScreen() {
         </View>
 
         {/* What happens info */}
-        <View style={[styles.infoBox, { backgroundColor: colors.warning + '10' }]}>
+        <View
+          style={[styles.infoBox, { backgroundColor: colors.warning + "10" }]}
+        >
           <Text style={[styles.infoTitle, { color: colors.foreground }]}>
             What happens when you accept?
           </Text>
@@ -335,8 +448,15 @@ export default function TransferConfirmScreen() {
         </View>
 
         {error && (
-          <View style={[styles.errorBox, { backgroundColor: colors.destructive + '20' }]}>
-            <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
+          <View
+            style={[
+              styles.errorBox,
+              { backgroundColor: colors.destructive + "20" },
+            ]}
+          >
+            <Text style={[styles.errorText, { color: colors.destructive }]}>
+              {error}
+            </Text>
           </View>
         )}
 
@@ -356,14 +476,15 @@ export default function TransferConfirmScreen() {
             loading={isProcessing}
             style={styles.acceptButton}
           >
-            {isProcessing ? 'Processing...' : 'Accept Transfer'}
+            {isProcessing ? "Processing..." : "Accept Transfer"}
           </Button>
         </View>
 
         <Text style={[styles.expiresText, { color: colors.mutedForeground }]}>
-          Expires: {new Date(transfer.expiresAt).toLocaleString(undefined, {
-            dateStyle: 'medium',
-            timeStyle: 'short',
+          Expires:{" "}
+          {new Date(transfer.expiresAt).toLocaleString(undefined, {
+            dateStyle: "medium",
+            timeStyle: "short",
           })}
         </Text>
       </Card>
@@ -376,50 +497,50 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   content: {
     padding: Spacing.xl,
-    paddingTop: Spacing['4xl'],
-    paddingBottom: Spacing['2xl'],
+    paddingTop: Spacing["4xl"],
+    paddingBottom: Spacing["2xl"],
   },
   card: {
     maxWidth: 400,
-    width: '100%',
+    width: "100%",
   },
   errorIcon: {
     fontSize: 48,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: Spacing.md,
   },
   warningIcon: {
     fontSize: 48,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: Spacing.md,
   },
   successIcon: {
     fontSize: 48,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: Spacing.md,
   },
   infoIcon: {
     fontSize: 48,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: Spacing.md,
   },
   title: {
     ...Typography.h3,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: Spacing.sm,
   },
   message: {
     ...Typography.body,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: Spacing.lg,
   },
   button: {
-    width: '100%',
+    width: "100%",
   },
   userInfo: {
     marginBottom: Spacing.sm,
@@ -430,28 +551,28 @@ const styles = StyleSheet.create({
   },
   userValue: {
     ...Typography.body,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   // Main card styles
   mainCard: {
     maxWidth: 500,
-    width: '100%',
+    width: "100%",
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: Spacing.lg,
   },
   icon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: Spacing.sm,
   },
   cardTitle: {
     ...Typography.h3,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: Spacing.xs,
   },
   transferDetails: {
@@ -460,9 +581,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   transferUserRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: Spacing.xs,
   },
   transferUserLabel: {
@@ -470,17 +591,17 @@ const styles = StyleSheet.create({
   },
   transferUserName: {
     ...Typography.body,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   arrow: {
     fontSize: 20,
-    textAlign: 'center',
+    textAlign: "center",
     marginVertical: Spacing.xs,
   },
   transferOrgRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: Spacing.sm,
   },
   orgIcon: {
@@ -488,7 +609,7 @@ const styles = StyleSheet.create({
   },
   transferOrgName: {
     ...Typography.body,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   infoBox: {
     padding: Spacing.md,
@@ -497,7 +618,7 @@ const styles = StyleSheet.create({
   },
   infoTitle: {
     ...Typography.body,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: Spacing.sm,
   },
   infoItem: {
@@ -514,7 +635,7 @@ const styles = StyleSheet.create({
     ...Typography.bodySmall,
   },
   buttonRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: Spacing.md,
   },
   declineButton: {
@@ -525,7 +646,7 @@ const styles = StyleSheet.create({
   },
   expiresText: {
     ...Typography.caption,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: Spacing.md,
   },
   loadingText: {

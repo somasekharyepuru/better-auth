@@ -21,6 +21,8 @@ export interface Session {
     expiresAt: string;
     userId: string;
     activeOrganizationId: string | null;
+    /** Present when an admin is impersonating this session (Better Auth admin plugin) */
+    impersonatedBy?: string | null;
 }
 
 export interface User {
@@ -179,6 +181,7 @@ class HTTPAuthClient {
     async signInEmail(data: {
         email: string;
         password: string;
+        rememberMe?: boolean;
     }): Promise<AuthResponse<{ user: User; session: Session }>> {
         return this.request('sign-in/email', {
             method: 'POST',
@@ -213,6 +216,17 @@ class HTTPAuthClient {
         token: string;
     }): Promise<AuthResponse<{ user: User }>> {
         return this.request('reset-password', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async resetPasswordWithOtp(data: {
+        email: string;
+        password: string;
+        code: string;
+    }): Promise<AuthResponse<{ success: boolean }>> {
+        return this.requestAPI('auth/reset-password', {
             method: 'POST',
             body: JSON.stringify(data),
         });
@@ -281,6 +295,14 @@ class HTTPAuthClient {
     }>> {
         return this.request('two-factor/generate-backup-codes', {
             method: 'POST',
+        });
+    }
+
+    async getBackupCodes(): Promise<AuthResponse<{
+        codes: string[];
+    }>> {
+        return this.request('two-factor/backup-codes', {
+            method: 'GET',
         });
     }
 
@@ -358,6 +380,10 @@ class HTTPAuthClient {
 
     async revokeOtherSessions(): Promise<AuthResponse<undefined>> {
         return this.request('revoke-sessions', { method: 'POST' });
+    }
+
+    async stopImpersonating(): Promise<AuthResponse<{ user?: User }>> {
+        return this.request('admin/stop-impersonating', { method: 'POST' });
     }
 
     // ============ Update User ============

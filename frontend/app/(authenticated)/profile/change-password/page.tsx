@@ -5,12 +5,10 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Eye, EyeOff, ArrowLeft } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 import { toast } from "sonner"
-import Link from "next/link"
 
 import { LoadingButton } from "@/components/ui/loading-button"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -87,18 +85,6 @@ export default function ChangePasswordPage() {
 
   const content = (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/profile">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Change Password</h2>
-          <p className="text-muted-foreground">Enter your current password and choose a new one.</p>
-        </div>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle>Password</CardTitle>

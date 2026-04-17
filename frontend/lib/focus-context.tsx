@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode, useMemo } from "react";
+import dayjs from "dayjs";
 import { FocusSession, TopPriority, focusSessionsApi } from "@/lib/daymark-api";
 import { useSettingsOptional } from "@/lib/settings-context";
 
@@ -93,7 +94,7 @@ export function FocusProvider({ children }: FocusProviderProps) {
                 
                 if (backendSession) {
                     // Backend has an active session - sync to it
-                    const elapsed = Math.floor((Date.now() - new Date(backendSession.startedAt).getTime()) / 1000);
+                    const elapsed = dayjs().diff(dayjs(backendSession.startedAt), 'second');
                     const targetDuration = backendSession.targetDuration || DEFAULT_FOCUS_DURATION;
                     const remaining = Math.max(0, targetDuration - elapsed);
 

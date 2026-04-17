@@ -1,222 +1,236 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../../src/contexts/ThemeContext';
+import { useSettings } from '../../../src/contexts/SettingsContext';
+import { useFocus } from '../../../lib/focus-context';
 import { Typography, Spacing, Radius } from '../../../src/constants/Theme';
-import { Button, Card } from '../../../components/ui';
-import { PageHeader } from '../../../components/ui';
+import { Button, Card, PageHeader } from '../../../components/ui';
 
-type Phase = 'focus' | 'short_break' | 'long_break';
-
-const DURATIONS: Record<Phase, number> = {
-  focus: 25 * 60,
-  short_break: 5 * 60,
-  long_break: 15 * 60,
-};
+type Phase = 'focus' | 'shortBreak' | 'longBreak';
 
 const PHASE_LABELS: Record<Phase, string> = {
-  focus: 'Focus',
-  short_break: 'Short Break',
-  long_break: 'Long Break',
+    focus: 'Focus',
+    shortBreak: 'Short Break',
+    longBreak: 'Long Break',
 };
 
 const PHASE_COLORS: Record<Phase, string> = {
-  focus: '#ef4444',
-  short_break: '#22c55e',
-  long_break: '#0ea5e9',
+    focus: '#7C3AED',
+    shortBreak: '#16A34A',
+    longBreak: '#2563EB',
 };
 
 function formatTime(seconds: number) {
-  const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-  const s = (seconds % 60).toString().padStart(2, '0');
-  return `${m}:${s}`;
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
 }
 
 export default function PomodoroScreen() {
-  const router = useRouter();
-  const { colors } = useTheme();
-  const [phase, setPhase] = useState<Phase>('focus');
-  const [secondsLeft, setSecondsLeft] = useState(DURATIONS.focus);
-  const [isRunning, setIsRunning] = useState(false);
-  const [completedPomodoros, setCompletedPomodoros] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const router = useRouter();
+    const { colors } = useTheme();
+    const { settings } = useSettings();
+    const focus = useFocus();
 
-  const clearTimer = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  }, []);
+    const focusMins = settings.pomodoroFocusDuration ?? 25;
+    const shortBreakMins = settings.pomodoroShortBreak ?? 5;
+    const longBreakMins = settings.pomodoroLongBreak ?? 15;
 
-  useEffect(() => {
-    if (isRunning) {
-      intervalRef.current = setInterval(() => {
-        setSecondsLeft(s => {
-          if (s <= 1) {
-            clearTimer();
-            setIsRunning(false);
-            if (phase === 'focus') {
-              setCompletedPomodoros(n => n + 1);
-              Alert.alert('Focus session complete!', 'Time for a break.');
-            } else {
-              Alert.alert('Break over!', 'Ready to focus again?');
-            }
-            return 0;
-          }
-          return s - 1;
-        });
-      }, 1000);
-    } else {
-      clearTimer();
-    }
-    return clearTimer;
-  }, [isRunning, phase, clearTimer]);
+    const {
+        mode,
+        remainingSeconds,
+        isRunning,
+        isPaused,
+        sessionCount,
+        targetDuration,
+        startStandaloneSession,
+        pauseTimer,
+        resumeTimer,
+        stopSession,
+        skipBreak,
+        isLoading,
+    } = focus;
 
-  const switchPhase = (newPhase: Phase) => {
-    clearTimer();
-    setIsRunning(false);
-    setPhase(newPhase);
-    setSecondsLeft(DURATIONS[newPhase]);
-  };
+    const phase = mode as Phase;
+    const phaseColor = PHASE_COLORS[phase];
+    const progress = targetDuration > 0 ? 1 - remainingSeconds / targetDuration : 0;
 
-  const reset = () => {
-    clearTimer();
-    setIsRunning(false);
-    setSecondsLeft(DURATIONS[phase]);
-  };
+    const handlePhaseSwitch = async (newPhase: Phase) => {
+        if (isRunning || isPaused) {
+            await stopSession(false);
+        }
+        const sessionType = newPhase === 'shortBreak' ? 'shortBreak' : newPhase === 'longBreak' ? 'longBreak' : 'focus';
+        const duration =
+            newPhase === 'focus'
+                ? focusMins
+                : newPhase === 'shortBreak'
+                  ? shortBreakMins
+                  : longBreakMins;
+        try {
+            await startStandaloneSession(duration, sessionType);
+        } catch (error) {
+            console.error('Failed to switch phase:', error);
+        }
+    };
 
-  const phaseColor = PHASE_COLORS[phase];
-  const progress = 1 - secondsLeft / DURATIONS[phase];
+    const handlePlayPause = () => {
+        if (isRunning) {
+            pauseTimer();
+        } else {
+            resumeTimer();
+        }
+    };
 
-  return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-      <PageHeader title="Pomodoro Timer" backHref={() => router.back()} />
+    const handleReset = async () => {
+        await stopSession(false);
+    };
 
-      {/* Phase selector */}
-      <View style={styles.phaseRow}>
-        {(Object.keys(DURATIONS) as Phase[]).map(p => (
-          <Pressable
-            key={p}
-            style={[
-              styles.phaseBtn,
-              {
-                backgroundColor: phase === p ? phaseColor : colors.card,
-              },
-            ]}
-            onPress={() => switchPhase(p)}
-          >
-            <Text style={[styles.phaseBtnText, { color: phase === p ? '#fff' : colors.foreground }]}>
-              {PHASE_LABELS[p]}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+    const hasSession = isRunning || isPaused;
 
-      {/* Timer */}
-      <View style={styles.timerSection}>
-        <Card padding="none" style={[styles.timerCard, { borderColor: phaseColor, borderWidth: 3 }]}>
-          <Text style={[styles.phaseLabel, { color: phaseColor }]}>{PHASE_LABELS[phase]}</Text>
-          <Text style={[styles.timerText, { color: colors.foreground }]}>{formatTime(secondsLeft)}</Text>
-          <Text style={[styles.progressText, { color: colors.mutedForeground }]}>
-            {Math.round(progress * 100)}% complete
-          </Text>
-        </Card>
-      </View>
+    return (
+        <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+            <PageHeader title="Pomodoro Timer" backHref={() => router.back()} />
 
-      {/* Controls */}
-      <View style={styles.controls}>
-        <Button
-          variant="outline"
-          size="md"
-          onPress={reset}
-          style={styles.controlBtn}
-        >
-          Reset
-        </Button>
-        <Pressable
-          style={[styles.playBtn, { backgroundColor: phaseColor }]}
-          onPress={() => setIsRunning(r => !r)}
-        >
-          <Text style={styles.playBtnText}>{isRunning ? '⏸ Pause' : '▶ Start'}</Text>
-        </Pressable>
-      </View>
+            {/* Phase selector */}
+            <View style={styles.phaseRow}>
+                {(Object.keys(PHASE_LABELS) as Phase[]).map(p => (
+                    <Pressable
+                        key={p}
+                        style={[
+                            styles.phaseBtn,
+                            {
+                                backgroundColor: phase === p ? phaseColor : colors.card,
+                                opacity: (isRunning || isPaused) && p !== phase ? 0.5 : 1,
+                            },
+                        ]}
+                        onPress={() => handlePhaseSwitch(p)}
+                        disabled={isLoading || (isRunning && p !== phase)}
+                    >
+                        <Text style={[styles.phaseBtnText, { color: phase === p ? '#fff' : colors.foreground }]}>
+                            {PHASE_LABELS[p]}
+                        </Text>
+                    </Pressable>
+                ))}
+            </View>
 
-      {/* Stats */}
-      <View style={styles.stats}>
-        <Card padding="md" style={styles.statCard}>
-          <Text style={[styles.statValue, { color: colors.foreground }]}>{completedPomodoros}</Text>
-          <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Completed Today</Text>
-        </Card>
-        <Card padding="md" style={styles.statCard}>
-          <Text style={[styles.statValue, { color: colors.foreground }]}>{completedPomodoros * 25}m</Text>
-          <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Focus Time</Text>
-        </Card>
-        <Card padding="md" style={styles.statCard}>
-          <Text style={[styles.statValue, { color: colors.foreground }]}>
-            {completedPomodoros >= 4 ? Math.floor(completedPomodoros / 4) : 0}
-          </Text>
-          <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Long Breaks Earned</Text>
-        </Card>
-      </View>
-    </ScrollView>
-  );
+            {/* Timer */}
+            <View style={styles.timerSection}>
+                <View style={[styles.timerCard, { borderColor: phaseColor, borderWidth: 3, backgroundColor: colors.card }]}>
+                    <Text style={[styles.phaseLabel, { color: phaseColor }]}>{PHASE_LABELS[phase]}</Text>
+                    <Text style={[styles.timerText, { color: colors.foreground }]}>{formatTime(remainingSeconds)}</Text>
+                    <Text style={[styles.progressText, { color: colors.mutedForeground }]}>
+                        {Math.round(progress * 100)}% complete
+                    </Text>
+                </View>
+            </View>
+
+            {/* Controls */}
+            {!hasSession ? (
+                <View style={styles.controls}>
+                    <Pressable
+                        style={[styles.playBtn, { backgroundColor: phaseColor, opacity: isLoading ? 0.5 : 1 }]}
+                        onPress={() => handlePhaseSwitch(phase)}
+                        disabled={isLoading}
+                    >
+                        <Text style={styles.playBtnText}>{isLoading ? 'Starting...' : '▶ Start'}</Text>
+                    </Pressable>
+                </View>
+            ) : (
+                <View style={styles.controls}>
+                    <Button variant="outline" size="md" onPress={handleReset} style={styles.controlBtn} disabled={isLoading}>
+                        Reset
+                    </Button>
+                    <Pressable
+                        style={[styles.playBtn, { backgroundColor: phaseColor }]}
+                        onPress={handlePlayPause}
+                        disabled={isLoading}
+                    >
+                        <Text style={styles.playBtnText}>{isRunning ? '⏸ Pause' : '▶ Resume'}</Text>
+                    </Pressable>
+                    {mode !== 'focus' && (
+                        <Button variant="outline" size="md" onPress={skipBreak} style={styles.controlBtn} disabled={isLoading}>
+                            Skip
+                        </Button>
+                    )}
+                </View>
+            )}
+
+            {/* Stats */}
+            <View style={styles.stats}>
+                <Card padding="md" style={styles.statCard}>
+                    <Text style={[styles.statValue, { color: colors.foreground }]}>{sessionCount}</Text>
+                    <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Completed</Text>
+                </Card>
+                <Card padding="md" style={styles.statCard}>
+                    <Text style={[styles.statValue, { color: colors.foreground }]}>{sessionCount * focusMins}m</Text>
+                    <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Focus Time</Text>
+                </Card>
+                <Card padding="md" style={styles.statCard}>
+                    <Text style={[styles.statValue, { color: colors.foreground }]}>
+                        {sessionCount >= 4 ? Math.floor(sessionCount / 4) : 0}
+                    </Text>
+                    <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Cycles</Text>
+                </Card>
+            </View>
+        </ScrollView>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  phaseRow: {
-    flexDirection: 'row',
-    marginHorizontal: Spacing.xl,
-    marginBottom: Spacing.xl,
-    gap: Spacing.sm,
-  },
-  phaseBtn: {
-    flex: 1,
-    paddingVertical: Spacing.sm,
-    borderRadius: Radius.lg,
-    alignItems: 'center',
-  },
-  phaseBtnText: { ...Typography.bodySmall, fontWeight: '600' },
-  timerSection: {
-    alignItems: 'center',
-    marginHorizontal: Spacing.xl,
-    marginBottom: Spacing.xl,
-  },
-  timerCard: {
-    width: '100%',
-    borderRadius: Radius.xl,
-    alignItems: 'center',
-    paddingVertical: Spacing['4xl'],
-  },
-  phaseLabel: { ...Typography.label, marginBottom: Spacing.md },
-  timerText: {
-    fontSize: 72,
-    fontWeight: '700',
-    lineHeight: 80,
-    fontVariant: ['tabular-nums'],
-  },
-  progressText: { ...Typography.caption, marginTop: Spacing.md },
-  controls: {
-    flexDirection: 'row',
-    marginHorizontal: Spacing.xl,
-    gap: Spacing.md,
-    marginBottom: Spacing.xl,
-  },
-  controlBtn: { flex: 1 },
-  playBtn: {
-    flex: 2,
-    paddingVertical: Spacing.md,
-    borderRadius: Radius.lg,
-    alignItems: 'center',
-  },
-  playBtnText: { ...Typography.button, color: '#fff' },
-  stats: {
-    flexDirection: 'row',
-    marginHorizontal: Spacing.xl,
-    gap: Spacing.md,
-    marginBottom: Spacing.xl,
-  },
-  statCard: { flex: 1, alignItems: 'center' },
-  statValue: { ...Typography.h3, fontWeight: '700' },
-  statLabel: { ...Typography.caption, textAlign: 'center', marginTop: 2 },
+    container: { flex: 1 },
+    phaseRow: {
+        flexDirection: 'row',
+        marginHorizontal: Spacing.xl,
+        marginBottom: Spacing.xl,
+        gap: Spacing.sm,
+    },
+    phaseBtn: {
+        flex: 1,
+        paddingVertical: Spacing.sm,
+        borderRadius: Radius.lg,
+        alignItems: 'center',
+    },
+    phaseBtnText: { ...Typography.bodySmall, fontWeight: '600' },
+    timerSection: {
+        alignItems: 'center',
+        marginHorizontal: Spacing.xl,
+        marginBottom: Spacing.xl,
+    },
+    timerCard: {
+        width: '100%',
+        borderRadius: Radius.xl,
+        alignItems: 'center',
+        paddingVertical: Spacing['4xl'],
+    },
+    phaseLabel: { ...Typography.label, marginBottom: Spacing.md },
+    timerText: {
+        fontSize: 72,
+        fontWeight: '700',
+        lineHeight: 80,
+        fontVariant: ['tabular-nums'],
+    },
+    progressText: { ...Typography.caption, marginTop: Spacing.md },
+    controls: {
+        flexDirection: 'row',
+        marginHorizontal: Spacing.xl,
+        gap: Spacing.md,
+        marginBottom: Spacing.xl,
+    },
+    controlBtn: { flex: 1 },
+    playBtn: {
+        flex: 2,
+        paddingVertical: Spacing.md,
+        borderRadius: Radius.lg,
+        alignItems: 'center',
+    },
+    playBtnText: { ...Typography.button, color: '#fff' },
+    stats: {
+        flexDirection: 'row',
+        marginHorizontal: Spacing.xl,
+        gap: Spacing.md,
+        marginBottom: Spacing.xl,
+    },
+    statCard: { flex: 1, alignItems: 'center' },
+    statValue: { ...Typography.h3, fontWeight: '700' },
+    statLabel: { ...Typography.caption, textAlign: 'center', marginTop: 2 },
 });

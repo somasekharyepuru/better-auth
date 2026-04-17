@@ -16,7 +16,7 @@ import { authClient, getApiBaseURL, validateClientConfig } from '../lib/auth-cli
 // Mock the expo client and secure store
 jest.mock('@better-auth/expo/client', () => ({
   expoClient: jest.fn(() => ({
-    scheme: 'mobile',
+    scheme: 'productivity',
     storagePrefix: 'auth_mobile',
     storage: jest.fn(),
   })),
@@ -74,8 +74,10 @@ describe('Auth Client', () => {
     expect(validateClientConfig()).toBe(true)
   })
 
-  it('validateClientConfig throws for invalid URL', () => {
+  it('validateClientConfig returns false for invalid URL', () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation()
     process.env.EXPO_PUBLIC_API_URL = 'not-a-valid-url'
-    expect(() => validateClientConfig()).toThrow()
+    expect(validateClientConfig()).toBe(false)
+    warnSpy.mockRestore()
   })
 })

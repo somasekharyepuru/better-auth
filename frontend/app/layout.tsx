@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { GoogleAnalytics } from "@/components/google-analytics";
+import { PerformancePolyfill } from "@/components/runtime/performance-polyfill";
 import { ToastProvider } from "@/components/ui/toast";
 import { APP_CONFIG } from "@/config/app.constants";
 
@@ -23,6 +24,7 @@ export default function RootLayout({
                 <GoogleAnalytics />
             </head>
             <body suppressHydrationWarning>
+                <PerformancePolyfill />
                 <QueryProvider>
                     <ThemeProvider
                         attribute="class"

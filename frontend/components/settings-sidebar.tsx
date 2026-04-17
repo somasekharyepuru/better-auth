@@ -100,8 +100,7 @@ export function SettingsSidebar({
   if (isMobile) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">{title}</h1>
+        <div className="flex items-center justify-end">
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon">
@@ -135,7 +134,6 @@ export function SettingsSidebar({
   // Desktop: Use inline sidebar
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">{title}</h1>
       <div className={cn("flex gap-6")}>
         {renderNavItems(false)}
         <div className="flex-1">{children}</div>

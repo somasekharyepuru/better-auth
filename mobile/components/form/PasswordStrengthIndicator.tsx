@@ -39,12 +39,16 @@ export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps>
     : [hasLowercase, hasUppercase, hasNumber, hasSpecial, hasLength].filter(Boolean).length;
 
   const getStrengthColor = () => {
+    const weakColor = colors.warning?.startsWith('#') && colors.warning.length === 7
+      ? `${colors.warning}CC`
+      : colors.warning;
+
     switch (strength) {
       case 0:
       case 1:
         return colors.destructive;
       case 2:
-        return colors.destructive; // or add a colors.error if different shade needed
+        return weakColor;
       case 3:
         return colors.warning;
       case 4:

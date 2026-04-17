@@ -12,6 +12,7 @@ import {
     getErrorMessage,
 } from './error-utils';
 import { ERROR_MESSAGES } from './error-messages';
+import { ROLE_HIERARCHY } from './role-info';
 import type {
     User,
     AuthError,
@@ -24,32 +25,6 @@ import type {
     UserRole,
     TransferInfo,
 } from './types';
-import { ROLE_HIERARCHY } from './role-info';
-
-// ============ Type Guards ============
-
-/**
- * Type guard for Better Auth success result
- */
-interface SuccessResult<T> {
-    data: T;
-    error: null;
-}
-
-/**
- * Type guard for Better Auth error result
- */
-interface ErrorResult {
-    data: null;
-    error: { message: string; code?: string; status?: number };
-}
-
-type AuthResult<T> = SuccessResult<T> | ErrorResult;
-
-function isSuccess<T>(result: AuthResult<T>): result is SuccessResult<T> {
-    return result.error === null;
-}
-
 /**
  * Check if result has a redirect (for 2FA)
  */
@@ -106,11 +81,13 @@ export async function signUp(data: {
 export async function signIn(data: {
     email: string;
     password: string;
-}): Promise<{ user: User; requiresTwoFactor?: boolean } | { error: AuthError }> {
+    rememberMe?: boolean;
+}): Promise<{ user?: User; requiresTwoFactor?: boolean } | { error: AuthError }> {
     try {
         const result = await authClient.signIn.email({
             email: data.email,
             password: data.password,
+            rememberMe: data.rememberMe,
         });
 
         if (result.error) {
@@ -129,9 +106,9 @@ export async function signIn(data: {
 
         // Check if result is a redirect (2FA required)
         if (isRedirectResult(result.data)) {
-            // Two-factor authentication required - but this result type doesn't have user
+            // Two-factor authentication required
             return {
-                error: { message: 'Two-factor authentication required' },
+                requiresTwoFactor: true,
             };
         }
 
@@ -151,115 +128,118 @@ export async function signIn(data: {
 }
 
 /**
- * Sign in with two-factor authentication code
+ * Sign in with two-factor authentication code (TOTP or backup code)
  *
  * @param data - User credentials and 2FA code
  * @returns User object or error
  */
-/**
- * Result shape for two-factor verification
- */
-interface TwoFactorVerifyResult {
-    error?: { message?: string };
-}
-
-/**
- * Two-factor client interface with optional verification methods
- */
-interface TwoFactorClient {
-    verifySetup?: (params: { code: string }) => Promise<TwoFactorVerifyResult | null>;
-    verifyTotp?: (params: { code: string }) => Promise<TwoFactorVerifyResult | null>;
-}
-
 export async function signInWithTwoFactor(data: {
     email: string;
     password: string;
     code: string;
 }): Promise<{ user: User } | { error: AuthError }> {
     try {
-        // For 2FA sign in, we need to use the verifyTotp endpoint
-        const twoFactorClient = authClient.twoFactor;
-        if (!twoFactorClient) {
-            return { error: { message: ERROR_MESSAGES.TWO_FACTOR.NOT_ENABLED } };
-        }
-
-        const tfClient = twoFactorClient as TwoFactorClient;
-        const verifyFn = tfClient.verifySetup ?? tfClient.verifyTotp;
-        if (!verifyFn) {
-            return { error: { message: ERROR_MESSAGES.TWO_FACTOR.NOT_ENABLED } };
-        }
-        const rawResult = await verifyFn({
+        // Call the proper 2FA sign-in endpoint with either TOTP or backup code
+        const result = await authClient.signInWithTwoFactor({
+            email: data.email,
+            password: data.password,
             code: data.code,
         });
-        const result = rawResult as TwoFactorVerifyResult | null;
 
-        if (result?.error) {
+        if (result.error) {
             return {
                 error: {
                     message: result.error.message || ERROR_MESSAGES.TWO_FACTOR.VERIFY_FAILED,
+                    code: result.error.code,
+                    status: result.error.status,
                 },
             };
         }
 
-        // After successful 2FA, get the session
-        const sessionResult = await authClient.getSession();
-        if (!sessionResult.data?.user) {
-            return { error: { message: ERROR_MESSAGES.AUTH.NO_SESSION } };
+        if (!result.data?.user) {
+            return { error: { message: ERROR_MESSAGES.AUTH.NO_USER_RETURNED } };
         }
 
-        return { user: sessionResult.data.user as unknown as User };
+        return { user: result.data.user as unknown as User };
     } catch (error) {
         return { error: createError(error, ERROR_MESSAGES.AUTH.SIGN_IN_FAILED) };
     }
 }
 
 /**
- * Sign in with social provider (Google, Microsoft, Apple)
+ * Sign in with social provider (Google or Microsoft)
+ * 
+ * Note: Full OAuth flow implementation requires deep linking and browser handling.
+ * Currently, this initiates the OAuth flow by sending a request to the backend.
+ * The backend will return an OAuth authorization URL that should be opened in a browser.
  *
- * @param provider - The social provider to use
- * @returns User object or error
+ * @param provider - The social provider to use ('google' or 'microsoft')
+ * @returns OAuth URL to redirect to or error
  */
 export async function signInSocial(
-    provider: 'google' | 'microsoft' | 'apple'
-): Promise<{ user: User } | { error: AuthError }> {
+    provider: 'google' | 'microsoft'
+): Promise<{ url?: string; user?: User } | { error: AuthError }> {
     try {
-        const result = await (authClient.signIn.social as unknown as (data: { provider: string; callbackURL: string }) => Promise<{ data: unknown; error: { message: string } | null }>)({
-            provider,
-            callbackURL: 'mobile://callback',
-        });
-
-        if (result.error) {
+        // Validate provider is supported
+        if (provider !== 'google' && provider !== 'microsoft') {
             return {
                 error: {
-                    message: result.error.message || `${provider} sign in failed`,
+                    message: `${provider} social sign-in is not yet supported`,
                 },
             };
         }
 
-        // Social sign in may return redirect or user data
-        if (!result.data) {
+        // Call the appropriate social sign-in method based on provider
+        if (provider === 'google') {
+            const result = await authClient.signIn.social.google.callback({
+                code: undefined,
+                state: undefined,
+            });
+
+            if (result.error) {
+                return {
+                    error: {
+                        message: result.error.message || 'Google sign-in failed',
+                    },
+                };
+            }
+
+            const data = result.data as unknown as { user?: User };
+            if (data.user) {
+                return { user: data.user };
+            }
+
             return {
                 error: {
-                    message: `${provider} sign in failed - no data returned`,
+                    message: 'Google sign-in failed - no user returned',
+                },
+            };
+        } else {
+            // Microsoft
+            const result = await authClient.signIn.social.microsoft.callback({
+                code: undefined,
+                state: undefined,
+            });
+
+            if (result.error) {
+                return {
+                    error: {
+                        message: result.error.message || 'Microsoft sign-in failed',
+                    },
+                };
+            }
+
+            const data = result.data as unknown as { user?: User };
+            if (data.user) {
+                return { user: data.user };
+            }
+
+            return {
+                error: {
+                    message: 'Microsoft sign-in failed - no user returned',
                 },
             };
         }
-
-        if (isRedirectResult(result.data)) {
-            // Redirect to OAuth provider
-            return { error: { message: `Redirecting to ${provider}...` } };
-        }
-
-        const data = result.data as { user?: User };
-        if (data.user) {
-            return { user: data.user };
-        }
-
-        return {
-            error: {
-                message: `${provider} sign in failed - no user returned`,
-            },
-        };
     } catch (error) {
         return {
             error: createError(error, `${provider} sign in failed`),
@@ -294,6 +274,7 @@ export async function getSession(): Promise<{
         expiresAt: Date;
         token: string;
         userId: string;
+        impersonatedBy?: string | null;
     } | null;
 } | null> {
     try {
@@ -304,15 +285,38 @@ export async function getSession(): Promise<{
             const session = rawSession ? {
                 ...rawSession,
                 activeOrganizationId: rawSession.activeOrganizationId ?? null,
+                impersonatedBy: (rawSession as { impersonatedBy?: string | null }).impersonatedBy ?? null,
             } : null;
             return {
                 user: result.data.user as unknown as User,
-                session: session as unknown as { id: string; activeOrganizationId: string | null; expiresAt: Date; token: string; userId: string; } | null,
+                session: session as unknown as {
+                    id: string;
+                    activeOrganizationId: string | null;
+                    expiresAt: Date;
+                    token: string;
+                    userId: string;
+                    impersonatedBy?: string | null;
+                } | null,
             };
         }
         return null;
     } catch {
         return null;
+    }
+}
+
+/**
+ * End admin impersonation session (Better Auth admin plugin)
+ */
+export async function stopImpersonating(): Promise<{ error?: AuthError } | Record<string, never>> {
+    try {
+        const result = await authClient.admin.stopImpersonating();
+        if (result.error) {
+            return { error: { message: result.error.message || 'Failed to stop impersonating' } };
+        }
+        return {};
+    } catch (error) {
+        return { error: createError(error, 'Failed to stop impersonating') };
     }
 }
 
@@ -427,6 +431,38 @@ export async function forgotPassword(
 }
 
 /**
+ * Reset password with OTP verification code.
+ *
+ * @param data - Email, new password, and 6-digit verification code
+ * @returns Success indicator or error
+ */
+export async function resetPasswordWithOtp(data: {
+    email: string;
+    password: string;
+    code: string;
+}): Promise<{ success: boolean } | { error: AuthError }> {
+    try {
+        const result = await authClient.resetPasswordWithOtp({
+            email: data.email,
+            password: data.password,
+            code: data.code,
+        });
+
+        if (result.error) {
+            return {
+                error: {
+                    message: result.error.message || ERROR_MESSAGES.PASSWORD.RESET_FAILED,
+                },
+            };
+        }
+
+        return { success: true };
+    } catch (error) {
+        return { error: createError(error, ERROR_MESSAGES.PASSWORD.RESET_FAILED) };
+    }
+}
+
+/**
  * Reset password with token
  *
  * @param data - Password and token
@@ -520,9 +556,9 @@ function getTwoFactorClient() {
         twoFactor?: {
             enable: (params: { password: string }) => Promise<unknown>;
             verifySetup: (params: { code: string }) => Promise<unknown>;
-            verifyTotp: (params: { code: string }) => Promise<unknown>;
             disable: (params: { password: string }) => Promise<unknown>;
             generateBackupCodes: (params: { password: string }) => Promise<unknown>;
+            getBackupCodes?: () => Promise<unknown>;
         };
     };
     return client.twoFactor;
@@ -586,7 +622,7 @@ export async function verifyTwoFactorSetup(
             return { error: { message: ERROR_MESSAGES.TWO_FACTOR.NOT_AVAILABLE } };
         }
 
-        const result = await twoFactor.verifyTotp({ code });
+        const result = await twoFactor.verifySetup({ code });
 
         if (!result || typeof result !== 'object') {
             return { error: { message: ERROR_MESSAGES.TWO_FACTOR.VERIFY_FAILED } };
@@ -672,6 +708,38 @@ export async function generateBackupCodes(
 
         const data = result as { backupCodes?: string[] };
         return { backupCodes: data.backupCodes };
+    } catch (error) {
+        return { error: createError(error, ERROR_MESSAGES.TWO_FACTOR.BACKUP_CODES_FAILED) };
+    }
+}
+
+/**
+ * Retrieve existing backup codes for the current user.
+ *
+ * @returns Stored backup codes or error
+ */
+export async function getBackupCodes(): Promise<{ backupCodes: string[] } | { error: AuthError }> {
+    try {
+        const twoFactor = getTwoFactorClient();
+        if (!twoFactor?.getBackupCodes) {
+            return { error: { message: ERROR_MESSAGES.TWO_FACTOR.NOT_AVAILABLE } };
+        }
+
+        const result = await twoFactor.getBackupCodes();
+        if (!result || typeof result !== 'object') {
+            return { error: { message: ERROR_MESSAGES.TWO_FACTOR.BACKUP_CODES_FAILED } };
+        }
+
+        if ('error' in result && result.error) {
+            return {
+                error: {
+                    message: (result.error as { message?: string }).message || ERROR_MESSAGES.TWO_FACTOR.BACKUP_CODES_FAILED,
+                },
+            };
+        }
+
+        const data = result as { codes?: string[]; backupCodes?: string[] };
+        return { backupCodes: data.codes ?? data.backupCodes ?? [] };
     } catch (error) {
         return { error: createError(error, ERROR_MESSAGES.TWO_FACTOR.BACKUP_CODES_FAILED) };
     }

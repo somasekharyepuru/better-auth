@@ -6,7 +6,7 @@
  */
 
 import React, { Component, ReactNode } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Share } from 'react-native';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { Typography, Spacing, Radius } from '../../src/constants/Theme';
 import { Card } from '../ui';
@@ -30,7 +30,7 @@ const ErrorBoundaryWithTheme: React.FC<ErrorBoundaryProps> = (props) => {
 
 import { Colors } from '../../src/constants/Colors';
 
-type ThemeColors = typeof Colors;
+type ThemeColors = (typeof Colors)["light"] | (typeof Colors)["dark"];
 
 class ErrorBoundaryInternal extends Component<
   ErrorBoundaryProps & { themeColors: ThemeColors },
@@ -60,6 +60,22 @@ class ErrorBoundaryInternal extends Component<
         retryCount: prev.retryCount + 1,
       }));
     }
+  };
+
+  handleReportIssue = async () => {
+    const { error, retryCount } = this.state;
+
+    await Share.share({
+      message: [
+        'Daymark crash report',
+        '',
+        `Error: ${error?.message ?? 'Unknown error'}`,
+        `Retries: ${retryCount}`,
+        error?.stack ? `Stack: ${error.stack}` : null,
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    });
   };
 
   render() {
@@ -98,7 +114,7 @@ class ErrorBoundaryInternal extends Component<
               ) : (
                 <Pressable
                   style={[styles.retryButton, { backgroundColor: themeColors.destructive }]}
-                  onPress={() => console.warn('TODO: Implement report flow', { error, retryCount })}
+                  onPress={this.handleReportIssue}
                 >
                   <Text style={[styles.retryButtonText, { color: themeColors.primaryForeground }]}>
                     Report Issue

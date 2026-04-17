@@ -5,36 +5,46 @@
  * Includes password visibility toggle and focus states.
  */
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
   TextInput as RNTextInput,
   StyleSheet,
   Pressable,
-  TextInputProps,
-} from 'react-native';
-import { Eye, EyeOff } from 'lucide-react-native';
-import { useTheme } from '../../src/contexts/ThemeContext';
-import { Typography, Spacing, Radius } from '../../src/constants/Theme';
+  TextInputProps as RNTextInputProps,
+  StyleProp,
+  ViewStyle,
+} from "react-native";
+import { Eye, EyeOff } from "lucide-react-native";
+import { useTheme } from "../../src/contexts/ThemeContext";
+import { Typography, Spacing, Radius } from "../../src/constants/Theme";
 
-interface CustomTextInputProps extends Omit<TextInputProps, 'style'> {
+export interface CustomTextInputProps extends Omit<RNTextInputProps, "style"> {
   label?: string;
   error?: string;
+  icon?: React.ReactNode;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   showPasswordToggle?: boolean;
+  disabled?: boolean;
+  style?: StyleProp<ViewStyle>;
 }
+
+export type TextInputProps = CustomTextInputProps;
 
 export const TextInput: React.FC<CustomTextInputProps> = ({
   label,
   error,
+  icon,
   leftIcon,
   rightIcon,
   showPasswordToggle = false,
   secureTextEntry: propSecureTextEntry,
   onChangeText,
   placeholder,
+  disabled = false,
+  style,
   ...props
 }) => {
   const { colors } = useTheme();
@@ -51,10 +61,13 @@ export const TextInput: React.FC<CustomTextInputProps> = ({
   };
 
   const renderLeftIcon = () => {
-    if (!leftIcon) return null;
+    const resolvedLeftIcon = leftIcon ?? icon;
+    if (!resolvedLeftIcon) return null;
     return (
       <View style={styles.iconContainer}>
-        <Text style={[styles.icon, { color: colors.mutedForeground }]}>{leftIcon}</Text>
+        <Text style={[styles.icon, { color: colors.mutedForeground }]}>
+          {resolvedLeftIcon}
+        </Text>
       </View>
     );
   };
@@ -75,19 +88,17 @@ export const TextInput: React.FC<CustomTextInputProps> = ({
       );
     }
     if (rightIcon) {
-      return (
-        <View style={styles.iconContainer}>
-          {rightIcon}
-        </View>
-      );
+      return <View style={styles.iconContainer}>{rightIcon}</View>;
     }
     return null;
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       {label && (
-        <Text style={[styles.label, { color: colors.foreground }]}>{label}</Text>
+        <Text style={[styles.label, { color: colors.foreground }]}>
+          {label}
+        </Text>
       )}
       <View
         style={[
@@ -107,12 +118,15 @@ export const TextInput: React.FC<CustomTextInputProps> = ({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholder={placeholder}
+          editable={!disabled && props.editable !== false}
           {...props}
         />
         {renderRightIcon()}
       </View>
       {error && (
-        <Text style={[styles.error, { color: colors.destructive }]}>{error}</Text>
+        <Text style={[styles.error, { color: colors.destructive }]}>
+          {error}
+        </Text>
       )}
     </View>
   );
@@ -124,13 +138,13 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    fontWeight: '600' as const,
+    fontWeight: "600" as const,
     letterSpacing: 0.8,
     marginBottom: Spacing.sm,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1.5,
     borderRadius: Radius.lg,
     paddingHorizontal: Spacing.md,
@@ -143,7 +157,7 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     paddingHorizontal: Spacing.sm,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   icon: {
     fontSize: 18,

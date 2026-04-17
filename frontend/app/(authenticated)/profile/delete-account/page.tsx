@@ -1,9 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, AlertTriangle, Check, Info, Trash2 } from "lucide-react"
+import { AlertTriangle, Check, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
@@ -16,6 +15,8 @@ import {
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
+import { SettingsSidebar } from "@/components/settings-sidebar"
+import { profileSettingsItems } from "@/lib/profile-settings"
 
 interface DeletionStatus {
   hasActiveRequest: boolean
@@ -135,30 +136,17 @@ export default function DeleteAccountPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
-        <Spinner size="lg" />
-      </div>
+      <SettingsSidebar items={profileSettingsItems} basePath="/profile" title="Profile">
+        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+          <Spinner size="lg" />
+        </div>
+      </SettingsSidebar>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center px-4 md:max-w-lg md:mx-auto">
-          <Link href="/profile" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </Link>
-        </div>
-      </header>
-
-      <main className="px-4 py-8 md:max-w-lg md:mx-auto">
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Delete Account</h1>
-            <p className="text-muted-foreground">Permanently delete your account and all associated data</p>
-          </div>
-
+    <SettingsSidebar items={profileSettingsItems} basePath="/profile" title="Profile">
+      <div className="space-y-6">
           {status?.hasActiveRequest && status.status !== "deleted" && (
             <div className="p-4 bg-warning/10 border border-warning/20 rounded-lg">
               <div className="flex items-start gap-3">
@@ -353,7 +341,6 @@ export default function DeleteAccountPage() {
             After deletion, your account and all personal data are permanently removed. You cannot recover your account after the grace period.
           </div>
         </div>
-      </main>
-    </div>
+    </SettingsSidebar>
   )
 }

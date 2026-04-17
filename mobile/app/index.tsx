@@ -1,20 +1,20 @@
-import { ActivityIndicator, View } from 'react-native';
-import { Redirect } from 'expo-router';
-import { useAuth } from '@/contexts/AuthContext';
+import { ActivityIndicator, View } from "react-native";
+import { Redirect } from "expo-router";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Index() {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" />
       </View>
     );
   }
 
   if (isAuthenticated) {
-    return <Redirect href="/(app)" />;
+    return <Redirect href="/(app)/(tabs)/dashboard" />;
   }
 
   return <Redirect href="/(auth)/welcome" />;

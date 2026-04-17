@@ -12,18 +12,36 @@ import type { UserRole } from '../src/lib/types';
 
 interface UseOrganizationRoleReturn {
   currentUserRole: UserRole | null;
+  role: UserRole | null; // alias for compatibility
   currentUserId: string | null;
   isLoading: boolean;
+  canManageMembers: boolean;
+  canInviteMembers: boolean;
+  canRemoveMembers: boolean;
+  canChangeRole: boolean;
+  canManageTeams: boolean;
+  canAccessSettings: boolean;
+  canUpdateSettings: boolean;
+  canDeleteOrganization: boolean;
+  canDeleteOrg: boolean;
+  canManageInvitations: boolean;
+  canInvite: boolean;
+  canBulkManage: boolean;
+  canManageRoles: boolean;
   permissions: {
     canManageMembers: boolean;
     canInviteMembers: boolean;
+    canRemoveMembers: boolean;
+    canChangeRole: boolean;
     canManageTeams: boolean;
     canAccessSettings: boolean;
+    canUpdateSettings: boolean;
+    canDeleteOrganization: boolean;
     canViewFullMemberDetails: boolean;
     canSearchMembers: boolean;
     canBulkManage: boolean;
     canSeeInvitations: boolean;
-    canDeleteOrganization: boolean;
+    canManageInvitations: boolean;
     canTransferOwnership: boolean;
   };
 }
@@ -32,61 +50,81 @@ const ROLE_PERMISSIONS = {
   owner: {
     canManageMembers: true,
     canInviteMembers: true,
+    canRemoveMembers: true,
+    canChangeRole: true,
     canManageTeams: true,
     canAccessSettings: true,
+    canUpdateSettings: true,
+    canDeleteOrganization: true,
     canViewFullMemberDetails: true,
     canSearchMembers: true,
     canBulkManage: true,
     canSeeInvitations: true,
-    canDeleteOrganization: true,
+    canManageInvitations: true,
     canTransferOwnership: true,
   },
   admin: {
     canManageMembers: true,
     canInviteMembers: true,
+    canRemoveMembers: true,
+    canChangeRole: true,
     canManageTeams: true,
     canAccessSettings: true,
+    canUpdateSettings: true,
+    canDeleteOrganization: false,
     canViewFullMemberDetails: true,
     canSearchMembers: true,
     canBulkManage: true,
     canSeeInvitations: true,
-    canDeleteOrganization: false,
+    canManageInvitations: true,
     canTransferOwnership: false,
   },
   manager: {
     canManageMembers: true,
     canInviteMembers: true,
+    canRemoveMembers: true,
+    canChangeRole: true,
     canManageTeams: false,
     canAccessSettings: true,
+    canUpdateSettings: true,
+    canDeleteOrganization: false,
     canViewFullMemberDetails: true,
     canSearchMembers: true,
     canBulkManage: false,
     canSeeInvitations: true,
-    canDeleteOrganization: false,
+    canManageInvitations: true,
     canTransferOwnership: false,
   },
   member: {
     canManageMembers: false,
     canInviteMembers: false,
+    canRemoveMembers: false,
+    canChangeRole: false,
     canManageTeams: false,
     canAccessSettings: false,
+    canUpdateSettings: false,
+    canDeleteOrganization: false,
     canViewFullMemberDetails: false,
     canSearchMembers: false,
     canBulkManage: false,
     canSeeInvitations: false,
-    canDeleteOrganization: false,
+    canManageInvitations: false,
     canTransferOwnership: false,
   },
   viewer: {
     canManageMembers: false,
     canInviteMembers: false,
+    canRemoveMembers: false,
+    canChangeRole: false,
     canManageTeams: false,
     canAccessSettings: false,
+    canUpdateSettings: false,
+    canDeleteOrganization: false,
     canViewFullMemberDetails: false,
     canSearchMembers: false,
     canBulkManage: false,
     canSeeInvitations: false,
-    canDeleteOrganization: false,
+    canManageInvitations: false,
     canTransferOwnership: false,
   },
 };
@@ -113,9 +151,7 @@ export function useOrganizationRole(organizationId?: string): UseOrganizationRol
 
     const org = organizations.find(o => o.id === orgId);
     if (org) {
-      // In a real implementation, you'd fetch members and find current user's role
-      // For now, we'll use the org's metadata or default to the organization context
-      const userRole = org.userRole;
+      const userRole = org.userRole ?? org.role;
       // Validate role is a known value before setting
       if (userRole && userRole in ROLE_PERMISSIONS) {
         setRole(userRole as UserRole);
@@ -131,20 +167,38 @@ export function useOrganizationRole(organizationId?: string): UseOrganizationRol
     : {
         canManageMembers: false,
         canInviteMembers: false,
+        canRemoveMembers: false,
+        canChangeRole: false,
         canManageTeams: false,
         canAccessSettings: false,
+        canUpdateSettings: false,
+        canDeleteOrganization: false,
         canViewFullMemberDetails: false,
         canSearchMembers: false,
         canBulkManage: false,
         canSeeInvitations: false,
-        canDeleteOrganization: false,
+        canManageInvitations: false,
         canTransferOwnership: false,
       };
 
   return {
     currentUserRole: role,
+    role, // Alias for compatibility
     currentUserId: user?.id ?? null,
     isLoading: isLoading || isAuthLoading,
+    canManageMembers: permissions.canManageMembers,
+    canInviteMembers: permissions.canInviteMembers,
+    canRemoveMembers: permissions.canRemoveMembers,
+    canChangeRole: permissions.canChangeRole,
+    canManageTeams: permissions.canManageTeams,
+    canAccessSettings: permissions.canAccessSettings,
+    canUpdateSettings: permissions.canUpdateSettings,
+    canDeleteOrganization: permissions.canDeleteOrganization,
+    canDeleteOrg: permissions.canDeleteOrganization,
+    canManageInvitations: permissions.canManageInvitations,
+    canInvite: permissions.canInviteMembers,
+    canBulkManage: permissions.canBulkManage,
+    canManageRoles: role === 'owner' || role === 'admin',
     permissions,
   };
 }

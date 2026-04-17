@@ -258,7 +258,7 @@ export default function OrganizationSettingsScreen() {
             Current Role:
           </Text>
           <Text style={[styles.roleValue, { color: colors.primary }]}>
-            {role.charAt(0).toUpperCase() + role.slice(1)}
+            {role ? role.charAt(0).toUpperCase() + role.slice(1) : "—"}
           </Text>
         </View>
       </Card>

@@ -1,10 +1,15 @@
-import { z } from 'zod';
+/**
+ * Backward-compatible schema entrypoint.
+ * Keep this file as a thin re-export to avoid duplicate validation rules.
+ */
 
-export const createOrgSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters').max(50, 'Name must be at most 50 characters'),
-  slug: z.string().min(2, 'Slug must be at least 2 characters').max(50, 'Slug must be at most 50 characters')
-    .regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens')
-    .optional(),
-});
-
-export type CreateOrgInput = z.infer<typeof createOrgSchema>;
+export {
+    createOrgSchema,
+    inviteSchema,
+    resetPasswordSchema,
+} from './schemas/index';
+export type {
+    CreateOrgSchema as CreateOrgInput,
+    InviteSchema as InviteInput,
+    ResetPasswordSchema as ResetPasswordInput,
+} from './schemas/index';

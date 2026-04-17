@@ -5,18 +5,28 @@
  * Route: /accept-invitation/:id
  */
 
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import { useRouter, useLocalSearchParams, Link } from 'expo-router';
-import { useAuth } from '../../../src/contexts/AuthContext';
-import { useTheme } from '../../../src/contexts/ThemeContext';
-import { Typography, Spacing, Radius } from '../../../src/constants/Theme';
-import { Button } from '../../../components/ui';
-import { Card } from '../../../components/ui';
-import { Badge } from '../../../components/ui';
-import { getInvitation, acceptInvitation, rejectInvitation } from '../../../src/lib/auth';
-import { ConfirmDialog } from '../../../components/feedback';
-import type { Invitation } from '../../../src/lib/types';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
+import { useRouter, useLocalSearchParams, Link } from "expo-router";
+import { useAuth } from "../../../src/contexts/AuthContext";
+import { useTheme } from "../../../src/contexts/ThemeContext";
+import { Typography, Spacing, Radius } from "../../../src/constants/Theme";
+import { Button } from "../../../components/ui";
+import { Card } from "../../../components/ui";
+import { Badge } from "../../../components/ui";
+import {
+  getInvitation,
+  acceptInvitation,
+  rejectInvitation,
+} from "../../../src/lib/auth";
+import { ConfirmDialog } from "../../../components/feedback";
+import type { Invitation } from "../../../src/lib/types";
 
 export default function AcceptInvitationScreen() {
   const router = useRouter();
@@ -25,12 +35,13 @@ export default function AcceptInvitationScreen() {
   const { colors } = useTheme();
 
   const invitationId = params.id as string;
+  const invitePath = `/accept-invitation/${invitationId}`;
 
   const [invitation, setInvitation] = useState<Invitation | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [showRejectDialog, setShowRejectDialog] = useState(false);
 
   useEffect(() => {
@@ -40,23 +51,17 @@ export default function AcceptInvitationScreen() {
   const loadInvitation = async () => {
     try {
       setLoading(true);
-      setError('');
-
-      if (!user) {
-        setMessage('Please log in to accept the invitation');
-        setLoading(false);
-        return;
-      }
+      setError("");
 
       const result = await getInvitation(invitationId);
 
-      if ('error' in result) {
+      if ("error" in result) {
         setError(result.error.message);
       } else {
         setInvitation(result.invitation);
       }
     } catch (err) {
-      setError('Failed to load invitation');
+      setError("Failed to load invitation");
     } finally {
       setLoading(false);
     }
@@ -64,21 +69,21 @@ export default function AcceptInvitationScreen() {
 
   const handleAccept = async () => {
     setProcessing(true);
-    setError('');
+    setError("");
 
     try {
       const result = await acceptInvitation(invitationId);
 
-      if ('error' in result) {
-        setError(result.error.message || 'Failed to accept invitation');
+      if ("error" in result) {
+        setError(result.error.message || "Failed to accept invitation");
       } else {
-        setMessage('Invitation accepted! Redirecting...');
+        setMessage("Invitation accepted! Redirecting...");
         setTimeout(() => {
-          router.push('/(app)/(tabs)/organizations/');
+          router.push("/(app)/(tabs)/organizations");
         }, 1500);
       }
     } catch (err) {
-      setError('Failed to accept invitation');
+      setError("Failed to accept invitation");
     } finally {
       setProcessing(false);
     }
@@ -87,31 +92,39 @@ export default function AcceptInvitationScreen() {
   const handleReject = async () => {
     setShowRejectDialog(false);
     setProcessing(true);
-    setError('');
+    setError("");
 
     try {
       const result = await rejectInvitation(invitationId);
 
-      if ('error' in result) {
-        setError(result.error.message || 'Failed to reject invitation');
+      if ("error" in result) {
+        setError(result.error.message || "Failed to reject invitation");
       } else {
-        setMessage('Invitation rejected');
+        setMessage("Invitation rejected");
         setTimeout(() => {
-          router.push('/(app)/(tabs)/organizations/');
+          router.push("/(app)/(tabs)/organizations");
         }, 1500);
       }
     } catch (err) {
-      setError('Failed to reject invitation');
+      setError("Failed to reject invitation");
     } finally {
       setProcessing(false);
     }
   };
 
-  const isExpired = invitation ? new Date(invitation.expiresAt) < new Date() : false;
+  const isExpired = invitation
+    ? new Date(invitation.expiresAt) < new Date()
+    : false;
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: colors.background },
+        ]}
+      >
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
           Loading invitation...
@@ -128,9 +141,28 @@ export default function AcceptInvitationScreen() {
             <Text style={[styles.messageText, { color: colors.foreground }]}>
               {message}
             </Text>
-            <Link href="/(auth)/login" asChild>
-              <Button style={styles.button}>Go to Login</Button>
-            </Link>
+            <View style={styles.authActions}>
+              <Link
+                href={{
+                  pathname: "/(auth)/login",
+                  params: { redirectTo: invitePath },
+                }}
+                asChild
+              >
+                <Button style={styles.button}>Sign In</Button>
+              </Link>
+              <Link
+                href={{
+                  pathname: "/(auth)/register",
+                  params: { redirectTo: invitePath },
+                }}
+                asChild
+              >
+                <Button variant="outline" style={styles.button}>
+                  Sign Up
+                </Button>
+              </Link>
+            </View>
           </Card>
         </ScrollView>
       </View>
@@ -142,12 +174,23 @@ export default function AcceptInvitationScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <Card padding="lg">
-            <Text style={[styles.title, { color: colors.foreground }]}>Invitation Error</Text>
-            <View style={[styles.errorBox, { backgroundColor: colors.destructive + '20' }]}>
-              <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
+            <Text style={[styles.title, { color: colors.foreground }]}>
+              Invitation Error
+            </Text>
+            <View
+              style={[
+                styles.errorBox,
+                { backgroundColor: colors.destructive + "20" },
+              ]}
+            >
+              <Text style={[styles.errorText, { color: colors.destructive }]}>
+                {error}
+              </Text>
             </View>
-            <Link href="/(app)/(tabs)/organizations/" asChild>
-              <Button variant="ghost" style={styles.button}>Back to Organizations</Button>
+            <Link href="/(app)/(tabs)/organizations" asChild>
+              <Button variant="ghost" style={styles.button}>
+                Back to Organizations
+              </Button>
             </Link>
           </Card>
         </ScrollView>
@@ -163,8 +206,10 @@ export default function AcceptInvitationScreen() {
             <Text style={[styles.messageText, { color: colors.foreground }]}>
               Invitation not found
             </Text>
-            <Link href="/(app)/(tabs)/organizations/" asChild>
-              <Button variant="ghost" style={styles.button}>Back to Organizations</Button>
+            <Link href="/(app)/(tabs)/organizations" asChild>
+              <Button variant="ghost" style={styles.button}>
+                Back to Organizations
+              </Button>
             </Link>
           </Card>
         </ScrollView>
@@ -175,36 +220,60 @@ export default function AcceptInvitationScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={[styles.title, { color: colors.foreground }]}>Organization Invitation</Text>
+        <Text style={[styles.title, { color: colors.foreground }]}>
+          Organization Invitation
+        </Text>
 
         {error ? (
-          <View style={[styles.errorBox, { backgroundColor: colors.destructive + '20' }]}>
-            <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
+          <View
+            style={[
+              styles.errorBox,
+              { backgroundColor: colors.destructive + "20" },
+            ]}
+          >
+            <Text style={[styles.errorText, { color: colors.destructive }]}>
+              {error}
+            </Text>
           </View>
         ) : null}
 
         {message ? (
-          <View style={[styles.successBox, { backgroundColor: colors.primary + '20' }]}>
-            <Text style={[styles.successText, { color: colors.primary }]}>✓ {message}</Text>
+          <View
+            style={[
+              styles.successBox,
+              { backgroundColor: colors.primary + "20" },
+            ]}
+          >
+            <Text style={[styles.successText, { color: colors.primary }]}>
+              ✓ {message}
+            </Text>
           </View>
         ) : null}
 
         <Card padding="lg">
           <View style={styles.detailRow}>
-            <Text style={[styles.label, { color: colors.mutedForeground }]}>Email:</Text>
+            <Text style={[styles.label, { color: colors.mutedForeground }]}>
+              Email:
+            </Text>
             <Text style={[styles.value, { color: colors.foreground }]}>
               {invitation.email}
             </Text>
           </View>
 
           <View style={styles.detailRow}>
-            <Text style={[styles.label, { color: colors.mutedForeground }]}>Role:</Text>
+            <Text style={[styles.label, { color: colors.mutedForeground }]}>
+              Role:
+            </Text>
             <Badge>{invitation.role}</Badge>
           </View>
 
           <View style={styles.detailRow}>
-            <Text style={[styles.label, { color: colors.mutedForeground }]}>Status:</Text>
-            <Badge variant={invitation.status === 'pending' ? 'default' : 'outline'}>
+            <Text style={[styles.label, { color: colors.mutedForeground }]}>
+              Status:
+            </Text>
+            <Badge
+              variant={invitation.status === "pending" ? "default" : "outline"}
+            >
               {invitation.status}
             </Badge>
           </View>
@@ -216,28 +285,53 @@ export default function AcceptInvitationScreen() {
           )}
         </Card>
 
-        {!isExpired && invitation.status === 'pending' && (
-          <View style={styles.buttonRow}>
-            <Button
-              onPress={handleAccept}
-              disabled={processing}
-              loading={processing}
-              style={styles.acceptButton}
-            >
-              Accept Invitation
-            </Button>
-            <Button
-              variant="outline"
-              onPress={() => setShowRejectDialog(true)}
-              disabled={processing}
-              style={styles.rejectButton}
-            >
-              Reject
-            </Button>
-          </View>
-        )}
+        {!isExpired &&
+          invitation.status === "pending" &&
+          (user ? (
+            <View style={styles.buttonRow}>
+              <Button
+                onPress={handleAccept}
+                disabled={processing}
+                loading={processing}
+                style={styles.acceptButton}
+              >
+                Accept Invitation
+              </Button>
+              <Button
+                variant="outline"
+                onPress={() => setShowRejectDialog(true)}
+                disabled={processing}
+                style={styles.rejectButton}
+              >
+                Reject
+              </Button>
+            </View>
+          ) : (
+            <View style={styles.authActions}>
+              <Link
+                href={{
+                  pathname: "/(auth)/login",
+                  params: { redirectTo: invitePath },
+                }}
+                asChild
+              >
+                <Button style={styles.acceptButton}>Sign In to Accept</Button>
+              </Link>
+              <Link
+                href={{
+                  pathname: "/(auth)/register",
+                  params: { redirectTo: invitePath },
+                }}
+                asChild
+              >
+                <Button variant="outline" style={styles.rejectButton}>
+                  Sign Up
+                </Button>
+              </Link>
+            </View>
+          ))}
 
-        <Link href="/(app)/(tabs)/organizations/" asChild>
+        <Link href="/(app)/(tabs)/organizations" asChild>
           <Button variant="link" style={styles.backButton}>
             Back to Organizations
           </Button>
@@ -247,8 +341,8 @@ export default function AcceptInvitationScreen() {
       <ConfirmDialog
         visible={showRejectDialog}
         title="Reject Invitation"
-        message="Are you sure you want to reject this invitation?"
-        confirmText="Reject"
+        description="Are you sure you want to reject this invitation?"
+        confirmLabel="Reject"
         onConfirm={handleReject}
         onCancel={() => setShowRejectDialog(false)}
       />
@@ -261,12 +355,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   scrollContent: {
     padding: Spacing.xl,
-    paddingTop: Spacing['3xl'],
+    paddingTop: Spacing["3xl"],
   },
   title: {
     ...Typography.h2,
@@ -297,14 +391,14 @@ const styles = StyleSheet.create({
     ...Typography.bodySmall,
   },
   detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: Spacing.md,
   },
   label: {
     ...Typography.body,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   value: {
     ...Typography.body,
@@ -314,9 +408,13 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
   },
   buttonRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: Spacing.md,
     marginTop: Spacing.lg,
+  },
+  authActions: {
+    flexDirection: "row",
+    gap: Spacing.md,
   },
   acceptButton: {
     flex: 1,

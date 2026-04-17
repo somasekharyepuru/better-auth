@@ -37,13 +37,17 @@ export interface Organization {
     logo?: string | null;
     metadata?: string | null;
     createdAt: Date;
+    memberCount?: number;
+    teamCount?: number;
+    userRole?: UserRole; // Current user's role in this organization
+    role?: UserRole; // Backward-compatible alias from auth API payloads
 }
 
 export interface Member {
     id: string;
     userId: string;
     organizationId: string;
-    role: string;
+    role: UserRole;
     createdAt: Date;
     user: {
         id: string;
@@ -56,7 +60,7 @@ export interface Member {
 export interface Invitation {
     id: string;
     email: string;
-    role: string;
+    role: UserRole;
     status: "pending" | "accepted" | "rejected" | "canceled";
     createdAt: Date;
     expiresAt: Date;
@@ -80,10 +84,12 @@ export interface SessionInfo {
     id: string;
     token: string;
     expiresAt: Date;
+    updatedAt?: Date;
     ipAddress?: string;
     userAgent?: string;
     device?: string;
     isActive: boolean;
+    current?: boolean;
 }
 
 export interface AuditLog {
@@ -94,6 +100,12 @@ export interface AuditLog {
     ipAddress: string;
     userAgent: string;
     createdAt: Date;
+    details?: string | Record<string, unknown>;
+    performedBy?: {
+        id?: string;
+        name?: string | null;
+        email?: string | null;
+    };
 }
 
 export interface TransferInfo {

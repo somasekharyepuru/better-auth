@@ -12,10 +12,12 @@ import {
 } from "@/lib/daymark-api";
 import { useSettings } from "@/lib/settings-context";
 import { useLifeAreas } from "@/lib/life-areas-context";
+import { useDayQuery } from "@/hooks/queries/use-day";
+import dayjs from "dayjs";
 import { Spinner } from "@/components/ui/spinner";
 import { DatePickerIcon } from "@/components/ui/date-picker";
 import { DayProgress } from "@/components/daymark/day-progress";
-import { TopPriorities } from "@/components/daymark/top-priorities";
+import { TopPriorities } from "@/components/daymark/top-priorities/index";
 import { ToDiscuss } from "@/components/daymark/to-discuss";
 import { TimeBlocks } from "@/components/daymark/time-blocks";
 import { QuickNotes } from "@/components/daymark/quick-notes";
@@ -35,8 +37,6 @@ interface DashboardContentProps {
 
 export function DashboardContent({ user }: DashboardContentProps) {
   const [currentDate, setCurrentDate] = useState(() => formatDate(new Date()));
-  const [dayData, setDayData] = useState<Day | null>(null);
-  const [isDayLoading, setIsDayLoading] = useState(false);
   const [showReview, setShowReview] = useState(false);
   const { settings, isSectionEnabled } = useSettings();
   const {
@@ -45,62 +45,13 @@ export function DashboardContent({ user }: DashboardContentProps) {
     isLoading: isLifeAreasLoading,
   } = useLifeAreas();
 
-  // Load day data
-  const loadDayData = useCallback(async () => {
-    if (!selectedLifeArea) return;
-    setIsDayLoading(true);
-    try {
-      const data = await daysApi.getDay(currentDate, selectedLifeArea.id);
-      setDayData(data);
-    } catch (error) {
-      console.error("Failed to load day data:", error);
-    } finally {
-      setIsDayLoading(false);
-    }
-  }, [currentDate, selectedLifeArea]);
-
-  useEffect(() => {
-    if (user && selectedLifeArea) {
-      loadDayData();
-    }
-  }, [user, currentDate, selectedLifeArea, loadDayData]);
-
-  // Optimistic update handlers - update specific parts of dayData without refetching everything
-  const updatePriorities = useCallback(
-    (priorities: TopPriority[]) => {
-      if (dayData) {
-        setDayData({ ...dayData, priorities });
-      }
-    },
-    [dayData],
+  // Load day data using React Query
+  const { data: dayData, isLoading: isDayLoading, refetch: loadDayData } = useDayQuery(
+    currentDate,
+    selectedLifeArea?.id || null
   );
 
-  const updateDiscussionItems = useCallback(
-    (discussionItems: DiscussionItem[]) => {
-      if (dayData) {
-        setDayData({ ...dayData, discussionItems });
-      }
-    },
-    [dayData],
-  );
 
-  const updateTimeBlocks = useCallback(
-    (timeBlocks: TimeBlock[]) => {
-      if (dayData) {
-        setDayData({ ...dayData, timeBlocks });
-      }
-    },
-    [dayData],
-  );
-
-  const updateQuickNote = useCallback(
-    (quickNote: QuickNote | null) => {
-      if (dayData) {
-        setDayData({ ...dayData, quickNote });
-      }
-    },
-    [dayData],
-  );
 
   // Date navigation
   const goToPreviousDay = () => {
@@ -120,7 +71,7 @@ export function DashboardContent({ user }: DashboardContentProps) {
   };
 
   const isToday = currentDate === formatDate(new Date());
-  const isPastDay = new Date(currentDate) < new Date(formatDate(new Date()));
+  const isPastDay = dayjs(currentDate).isBefore(dayjs().startOf('day'));
 
   // Format display date
   const displayDate = new Date(currentDate).toLocaleDateString("en-US", {
@@ -330,7 +281,7 @@ export function DashboardContent({ user }: DashboardContentProps) {
                   <TopPriorities
                     date={currentDate}
                     priorities={dayData?.priorities || []}
-                    onUpdate={updatePriorities}
+                    onUpdate={() => {}} // Legacy prop kept for compatibility if needed before complete rewrite
                     lifeAreaId={selectedLifeArea?.id}
                     readOnly={isPastDay}
                     lifeAreas={lifeAreas}
@@ -341,7 +292,7 @@ export function DashboardContent({ user }: DashboardContentProps) {
                   <ToDiscuss
                     date={currentDate}
                     items={dayData?.discussionItems || []}
-                    onUpdate={updateDiscussionItems}
+                    onUpdate={() => {}}
                     lifeAreaId={selectedLifeArea?.id}
                     readOnly={isPastDay}
                     lifeAreas={lifeAreas}
@@ -356,7 +307,7 @@ export function DashboardContent({ user }: DashboardContentProps) {
                   <TimeBlocks
                     date={currentDate}
                     blocks={dayData?.timeBlocks || []}
-                    onUpdate={updateTimeBlocks}
+                    onUpdate={() => {}}
                     defaultDuration={settings.defaultTimeBlockDuration}
                     defaultType={settings.defaultTimeBlockType}
                     lifeAreaId={selectedLifeArea?.id}
@@ -367,7 +318,7 @@ export function DashboardContent({ user }: DashboardContentProps) {
                   <QuickNotes
                     date={currentDate}
                     note={dayData?.quickNote || null}
-                    onUpdate={updateQuickNote}
+                    onUpdate={() => {}}
                     className="flex-1 min-h-[200px]"
                     lifeAreaId={selectedLifeArea?.id}
                   />

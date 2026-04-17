@@ -5,12 +5,12 @@
 
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as Linking from 'expo-linking';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Conditional import for notifications (may not be installed)
-type ExpoNotifications = typeof import('expo-notifications');
-let Notifications: ExpoNotifications | null = null;
+let Notifications: any = null;
 try {
   Notifications = require('expo-notifications');
 } catch (e) {
@@ -261,7 +261,17 @@ export async function getPushToken(): Promise<string | null> {
     const { granted } = await getNotificationPermissions();
     if (!granted) return null;
 
-    const token = await Notifications.getExpoPushTokenAsync();
+    const projectId =
+      Constants?.expoConfig?.extra?.eas?.projectId ||
+      Constants?.easConfig?.projectId;
+
+    if (!projectId) {
+      console.warn('EAS projectId not found; push token may fail in production builds');
+    }
+
+    const token = await Notifications.getExpoPushTokenAsync(
+      projectId ? { projectId } : undefined
+    );
     return token.data;
   } catch (error) {
     console.error('Failed to get push token:', error);

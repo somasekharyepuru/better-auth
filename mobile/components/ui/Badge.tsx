@@ -5,35 +5,42 @@
  * Supports role-based colors and various semantic variants.
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useTheme } from '../../src/contexts/ThemeContext';
-import { Typography, Spacing, Radius } from '../../src/constants/Theme';
-import type { UserRole } from '../../src/lib/types';
+import React from "react";
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
+import { useTheme } from "../../src/contexts/ThemeContext";
+import { Typography, Spacing, Radius } from "../../src/constants/Theme";
+import type { UserRole } from "../../src/lib/types";
 
-export type BadgeVariant = 'default' | 'success' | 'warning' | 'destructive' | 'outline';
+export type BadgeVariant =
+  | "default"
+  | "secondary"
+  | "success"
+  | "warning"
+  | "destructive"
+  | "outline";
 
 interface BadgeProps {
   children: React.ReactNode;
   variant?: BadgeVariant;
   role?: UserRole;
-  size?: 'sm' | 'md';
+  size?: "sm" | "md";
+  style?: StyleProp<ViewStyle>;
 }
 
 type RoleToColorKey = {
-  owner: 'roleOwner';
-  admin: 'roleAdmin';
-  manager: 'roleManager';
-  member: 'roleMember';
-  viewer: 'roleViewer';
+  owner: "roleOwner";
+  admin: "roleAdmin";
+  manager: "roleManager";
+  member: "roleMember";
+  viewer: "roleViewer";
 };
 
 const ROLE_COLOR_MAP: RoleToColorKey = {
-  owner: 'roleOwner',
-  admin: 'roleAdmin',
-  manager: 'roleManager',
-  member: 'roleMember',
-  viewer: 'roleViewer',
+  owner: "roleOwner",
+  admin: "roleAdmin",
+  manager: "roleManager",
+  member: "roleMember",
+  viewer: "roleViewer",
 };
 
 function getLuminance(hex: string): number {
@@ -60,9 +67,10 @@ const LARGE_TEXT_THRESHOLD = 3.0;
 
 export const Badge: React.FC<BadgeProps> = ({
   children,
-  variant = 'default',
+  variant = "default",
   role,
-  size = 'sm',
+  size = "sm",
+  style,
 }) => {
   const { colors } = useTheme();
 
@@ -73,45 +81,47 @@ export const Badge: React.FC<BadgeProps> = ({
       if (colorValue) return colorValue;
     }
     switch (variant) {
-      case 'success':
+      case "success":
         return colors.success;
-      case 'warning':
+      case "warning":
         return colors.warning;
-      case 'destructive':
+      case "destructive":
         return colors.destructive;
-      case 'outline':
-        return 'transparent';
+      case "outline":
+        return "transparent";
+      case "secondary":
+        return colors.secondary;
       default:
         return colors.muted;
     }
   };
 
   const getTextColor = () => {
-    if (variant === 'outline') {
+    if (variant === "outline") {
       return colors.foreground;
     }
 
     const backgroundColor = getBackgroundColor();
     const contrastThreshold = LARGE_TEXT_THRESHOLD;
 
-    const whiteContrast = getContrastRatio('#FFFFFF', backgroundColor);
+    const whiteContrast = getContrastRatio("#FFFFFF", backgroundColor);
     if (whiteContrast >= contrastThreshold) {
-      return '#FFFFFF';
+      return "#FFFFFF";
     }
 
-    const blackContrast = getContrastRatio('#000000', backgroundColor);
+    const blackContrast = getContrastRatio("#000000", backgroundColor);
     if (blackContrast >= contrastThreshold) {
-      return '#000000';
+      return "#000000";
     }
 
-    return whiteContrast > blackContrast ? '#FFFFFF' : '#000000';
+    return whiteContrast > blackContrast ? "#FFFFFF" : "#000000";
   };
 
   const getBorderColor = () => {
-    if (variant === 'outline') {
+    if (variant === "outline") {
       return colors.border;
     }
-    return 'transparent';
+    return "transparent";
   };
 
   return (
@@ -121,9 +131,10 @@ export const Badge: React.FC<BadgeProps> = ({
         {
           backgroundColor: getBackgroundColor(),
           borderColor: getBorderColor(),
-          paddingVertical: size === 'sm' ? Spacing.xs : Spacing.sm,
-          paddingHorizontal: size === 'sm' ? Spacing.sm : Spacing.md,
+          paddingVertical: size === "sm" ? Spacing.xs : Spacing.sm,
+          paddingHorizontal: size === "sm" ? Spacing.sm : Spacing.md,
         },
+        style,
       ]}
     >
       <Text
@@ -131,7 +142,10 @@ export const Badge: React.FC<BadgeProps> = ({
           styles.text,
           {
             color: getTextColor(),
-            fontSize: size === 'sm' ? Typography.caption.fontSize : Typography.bodySmall.fontSize,
+            fontSize:
+              size === "sm"
+                ? Typography.caption.fontSize
+                : Typography.bodySmall.fontSize,
           },
         ]}
       >
@@ -143,12 +157,12 @@ export const Badge: React.FC<BadgeProps> = ({
 
 const styles = StyleSheet.create({
   badge: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     borderRadius: Radius.full,
     borderWidth: 1,
   },
   text: {
-    fontWeight: '500',
+    fontWeight: "500",
     letterSpacing: 0.2,
   },
 });

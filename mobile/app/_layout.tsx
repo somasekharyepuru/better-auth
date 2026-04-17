@@ -6,6 +6,16 @@ import { OrganizationProvider } from '../src/contexts/AuthContext';
 import { THEME } from '../src/constants/Theme';
 import Toast from 'react-native-toast-message';
 
+// Some runtimes expose partial performance APIs; guard missing methods used by dependencies.
+const perf = (globalThis as any).performance;
+if (perf) {
+  ['mark', 'measure', 'clearMarks', 'clearMeasures'].forEach((method) => {
+    if (typeof perf[method] !== 'function') {
+      perf[method] = () => {};
+    }
+  });
+}
+
 function RootLayoutNav() {
   const { isDark } = useTheme();
 

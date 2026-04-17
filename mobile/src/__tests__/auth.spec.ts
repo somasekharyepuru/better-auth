@@ -179,9 +179,10 @@ describe('Authentication Functions', () => {
     })
 
     it('verifies two-factor setup', async () => {
-      ; (authClient.twoFactor.verifySetup as jest.Mock).mockResolvedValue({
-        error: null,
-      })
+      ; (authClient.twoFactor as any).verifyTotp = jest.fn()
+        ; ((authClient.twoFactor as any).verifyTotp as jest.Mock).mockResolvedValue({
+          error: null,
+        })
 
       const result = await verifyTwoFactorSetup('123456')
 

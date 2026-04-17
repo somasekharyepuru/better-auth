@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { Typography, Spacing, Radius } from '../../src/constants/Theme';
 import type { UserRole } from '../../src/lib/types';
@@ -14,6 +14,7 @@ import { formatRoleName } from '../../src/lib/role-info';
 interface RoleBadgeProps {
   role: UserRole;
   size?: 'sm' | 'md';
+  style?: StyleProp<ViewStyle>;
 }
 
 const ROLE_ICONS: Record<UserRole, string> = {
@@ -24,7 +25,7 @@ const ROLE_ICONS: Record<UserRole, string> = {
   viewer: '👁️',
 };
 
-export const RoleBadge: React.FC<RoleBadgeProps> = ({ role, size = 'sm' }) => {
+export const RoleBadge: React.FC<RoleBadgeProps> = ({ role, size = 'sm', style }) => {
   const { colors } = useTheme();
 
   const getIconColor = () => {
@@ -33,7 +34,7 @@ export const RoleBadge: React.FC<RoleBadgeProps> = ({ role, size = 'sm' }) => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: `${getIconColor()}20` }]}>
+    <View style={[styles.container, { backgroundColor: `${getIconColor()}20` }, style]}> 
       {ROLE_ICONS[role] && (
         <Text style={styles.icon}>{ROLE_ICONS[role]}</Text>
       )}

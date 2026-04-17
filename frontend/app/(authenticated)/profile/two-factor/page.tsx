@@ -219,11 +219,6 @@ export default function TwoFactorPage() {
 
   const content = (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Two-Factor Authentication</h2>
-        <p className="text-muted-foreground">Add an extra layer of security to your account</p>
-      </div>
-
       {/* Password Prompt */}
       {showPasswordPrompt && (
         <Card className="animate-fade-in-scale border-primary/20">

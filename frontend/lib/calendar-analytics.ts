@@ -1,3 +1,5 @@
+import dayjs from "dayjs";
+
 /**
  * Analytics tracking for Calendar & Time Blocks feature
  * 
@@ -98,7 +100,7 @@ function track(event: AnalyticsEvent, properties?: AnalyticsProperties): void {
     // Add timestamp
     const props = {
         ...properties,
-        timestamp: properties?.timestamp || new Date().toISOString(),
+        timestamp: properties?.timestamp || dayjs().toISOString(),
     };
 
     // Log in development

@@ -1,13 +1,22 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import { useAuth } from '../../src/contexts/AuthContext';
-import { useTheme } from '../../src/contexts/ThemeContext';
-import { Typography, Spacing, Radius } from '../../src/constants/Theme';
-import { Button } from '../../components/ui';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Dimensions,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuth } from "../../src/contexts/AuthContext";
+import { useTheme } from "../../src/contexts/ThemeContext";
+import { Typography, Spacing, Radius } from "../../src/constants/Theme";
+import { Button } from "../../components/ui";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
+const ONBOARDING_COMPLETE_KEY = "@app_onboarding_complete";
 
 interface OnboardingStep {
   id: string;
@@ -19,37 +28,51 @@ interface OnboardingStep {
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
   {
-    id: 'welcome',
-    icon: '👋',
-    title: 'Welcome to\nAuth Service',
-    description: 'Your secure authentication and organization management platform. Let\'s get you started with a quick tour.',
+    id: "welcome",
+    icon: "👋",
+    title: "Welcome to\nAuth Service",
+    description:
+      "Your secure authentication and organization management platform. Let's get you started with a quick tour.",
   },
   {
-    id: 'organizations',
-    icon: '🏢',
-    title: 'Manage\nOrganizations',
-    description: 'Create and join organizations to collaborate with teams.',
-    features: ['Create multiple organizations', 'Invite members via email', 'Custom roles and permissions'],
+    id: "organizations",
+    icon: "🏢",
+    title: "Manage\nOrganizations",
+    description: "Create and join organizations to collaborate with teams.",
+    features: [
+      "Create multiple organizations",
+      "Invite members via email",
+      "Custom roles and permissions",
+    ],
   },
   {
-    id: 'security',
-    icon: '🔒',
-    title: 'Your Security\nMatters',
-    description: 'Keep your account secure with advanced protection.',
-    features: ['TOTP-based 2FA', 'Manage active sessions', 'Full activity audit log'],
+    id: "security",
+    icon: "🔒",
+    title: "Your Security\nMatters",
+    description: "Keep your account secure with advanced protection.",
+    features: [
+      "TOTP-based 2FA",
+      "Manage active sessions",
+      "Full activity audit log",
+    ],
   },
   {
-    id: 'mobile',
-    icon: '📱',
-    title: 'Stay\nConnected',
-    description: 'Access your account on the go with modern mobile features.',
-    features: ['Biometric authentication', 'Deep link support', 'Push notifications'],
+    id: "mobile",
+    icon: "📱",
+    title: "Stay\nConnected",
+    description: "Access your account on the go with modern mobile features.",
+    features: [
+      "Biometric authentication",
+      "Deep link support",
+      "Push notifications",
+    ],
   },
   {
-    id: 'ready',
-    icon: '🚀',
-    title: 'You\'re\nAll Set!',
-    description: 'Start by creating your first organization or explore the dashboard.',
+    id: "ready",
+    icon: "🚀",
+    title: "You're\nAll Set!",
+    description:
+      "Start by creating your first organization or explore the dashboard.",
   },
 ];
 
@@ -65,43 +88,66 @@ export default function WelcomeScreen() {
 
   const completeOnboarding = async () => {
     try {
-      // In production, update user profile to mark onboarding complete
+      await AsyncStorage.setItem(ONBOARDING_COMPLETE_KEY, "true");
     } catch (err) {
-      console.error('Failed to complete onboarding:', err);
+      console.error("Failed to complete onboarding:", err);
     }
   };
 
   const handleNext = () => {
     if (isLastStep) {
       completeOnboarding();
-      router.replace('/(app)/(tabs)');
+      router.replace("/(app)/(tabs)/dashboard");
     } else {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep((prev) => prev + 1);
     }
   };
 
   const handleSkip = () => {
     completeOnboarding();
-    router.replace('/(app)/(tabs)');
+    router.replace("/(app)/(tabs)/dashboard");
   };
 
   const handleBack = () => {
     if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep((prev) => prev - 1);
     }
   };
 
   const gradientColors = isDark
-    ? ['#16162A', '#1E1E38', '#2A2650'] as const
-    : ['#FBF8F4', '#F0ECF6', '#DDD5EE'] as const;
+    ? (["#16162A", "#1E1E38", "#2A2650"] as const)
+    : (["#FBF8F4", "#F0ECF6", "#DDD5EE"] as const);
 
   return (
     <LinearGradient colors={gradientColors} style={styles.container}>
       {/* Decorative elements */}
-      <View style={[styles.decorCircle, { backgroundColor: colors.primary, opacity: isDark ? 0.15 : 0.25 }]} />
-      <View style={[styles.decorDot, styles.dot1, { backgroundColor: isDark ? colors.warning : '#E8836F' }]} />
-      <View style={[styles.decorDot, styles.dot2, { backgroundColor: isDark ? colors.warning : '#E8836F' }]} />
-      <View style={[styles.decorDot, styles.dot3, { backgroundColor: isDark ? colors.warning : '#E8836F' }]} />
+      <View
+        style={[
+          styles.decorCircle,
+          { backgroundColor: colors.primary, opacity: isDark ? 0.15 : 0.25 },
+        ]}
+      />
+      <View
+        style={[
+          styles.decorDot,
+          styles.dot1,
+          { backgroundColor: isDark ? colors.warning : "#E8836F" },
+        ]}
+      />
+      <View
+        style={[
+          styles.decorDot,
+          styles.dot2,
+          { backgroundColor: isDark ? colors.warning : "#E8836F" },
+        ]}
+      />
+      <View
+        style={[
+          styles.decorDot,
+          styles.dot3,
+          { backgroundColor: isDark ? colors.warning : "#E8836F" },
+        ]}
+      />
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -114,7 +160,10 @@ export default function WelcomeScreen() {
               key={index}
               style={[
                 styles.progressDot,
-                { backgroundColor: index === currentStep ? colors.primary : colors.muted },
+                {
+                  backgroundColor:
+                    index === currentStep ? colors.primary : colors.muted,
+                },
               ]}
             />
           ))}
@@ -138,9 +187,19 @@ export default function WelcomeScreen() {
         {step.features && (
           <View style={styles.featureList}>
             {step.features.map((feature, index) => (
-              <View key={index} style={[styles.featureItem, { backgroundColor: colors.card }]}>
-                <View style={[styles.featureDot, { backgroundColor: colors.primary }]} />
-                <Text style={[styles.featureText, { color: colors.foreground }]}>
+              <View
+                key={index}
+                style={[styles.featureItem, { backgroundColor: colors.card }]}
+              >
+                <View
+                  style={[
+                    styles.featureDot,
+                    { backgroundColor: colors.primary },
+                  ]}
+                />
+                <Text
+                  style={[styles.featureText, { color: colors.foreground }]}
+                >
                   {feature}
                 </Text>
               </View>
@@ -152,7 +211,7 @@ export default function WelcomeScreen() {
         {currentStep === 0 && user && (
           <View style={[styles.userCard, { backgroundColor: colors.card }]}>
             <Text style={[styles.welcomeName, { color: colors.foreground }]}>
-              Welcome, {user.name || 'User'}!
+              Welcome, {user.name || "User"}!
             </Text>
             <Text style={[styles.userEmail, { color: colors.mutedForeground }]}>
               {user.email}
@@ -166,7 +225,14 @@ export default function WelcomeScreen() {
         <View style={styles.footerRow}>
           {currentStep > 0 && !isLastStep ? (
             <Pressable onPress={handleBack} style={styles.textButton}>
-              <Text style={[styles.textButtonLabel, { color: colors.mutedForeground }]}>Back</Text>
+              <Text
+                style={[
+                  styles.textButtonLabel,
+                  { color: colors.mutedForeground },
+                ]}
+              >
+                Back
+              </Text>
             </Pressable>
           ) : (
             <View style={styles.textButton} />
@@ -174,7 +240,17 @@ export default function WelcomeScreen() {
 
           {!isLastStep && (
             <Pressable onPress={handleSkip} style={styles.textButton}>
-              <Text style={[styles.textButtonLabel, { color: colors.mutedForeground, textDecorationLine: 'underline' }]}>Skip</Text>
+              <Text
+                style={[
+                  styles.textButtonLabel,
+                  {
+                    color: colors.mutedForeground,
+                    textDecorationLine: "underline",
+                  },
+                ]}
+              >
+                Skip
+              </Text>
             </Pressable>
           )}
         </View>
@@ -183,12 +259,17 @@ export default function WelcomeScreen() {
           onPress={handleNext}
           style={({ pressed }) => [
             styles.nextButton,
-            { backgroundColor: isDark ? '#F5F1EC' : '#1A1A2E' },
+            { backgroundColor: isDark ? "#F5F1EC" : "#1A1A2E" },
             pressed && { transform: [{ scale: 0.97 }] },
           ]}
         >
-          <Text style={[styles.nextButtonText, { color: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
-            {isLastStep ? 'Get Started' : 'Next'}
+          <Text
+            style={[
+              styles.nextButtonText,
+              { color: isDark ? "#1A1A2E" : "#FFFFFF" },
+            ]}
+          >
+            {isLastStep ? "Get Started" : "Next"}
           </Text>
         </Pressable>
       </View>
@@ -201,7 +282,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   decorCircle: {
-    position: 'absolute',
+    position: "absolute",
     top: -30,
     right: -30,
     width: 140,
@@ -209,33 +290,33 @@ const styles = StyleSheet.create({
     borderRadius: 70,
   },
   decorDot: {
-    position: 'absolute',
+    position: "absolute",
     width: 6,
     height: 6,
     borderRadius: 3,
   },
   dot1: {
     top: 100,
-    left: '32%',
+    left: "32%",
   },
   dot2: {
     top: 118,
-    left: '48%',
+    left: "48%",
   },
   dot3: {
     top: 108,
-    left: '58%',
+    left: "58%",
   },
   content: {
     flexGrow: 1,
     paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing['4xl'],
+    paddingTop: Spacing["4xl"],
     paddingBottom: Spacing.xl,
   },
   progressContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    marginBottom: Spacing['3xl'],
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    marginBottom: Spacing["3xl"],
     gap: Spacing.sm,
   },
   progressDot: {
@@ -251,7 +332,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 34,
-    fontWeight: '700',
+    fontWeight: "700",
     lineHeight: 42,
     marginBottom: Spacing.md,
   },
@@ -265,12 +346,12 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
     borderRadius: Radius.lg,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 4,
@@ -284,13 +365,13 @@ const styles = StyleSheet.create({
   },
   featureText: {
     ...Typography.body,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   userCard: {
     padding: Spacing.lg,
     borderRadius: Radius.xl,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -305,12 +386,12 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: Spacing.xl,
-    paddingBottom: Spacing['2xl'],
+    paddingBottom: Spacing["2xl"],
     paddingTop: Spacing.md,
   },
   footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: Spacing.md,
   },
   textButton: {
@@ -319,17 +400,17 @@ const styles = StyleSheet.create({
   },
   textButtonLabel: {
     ...Typography.body,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   nextButton: {
-    width: '100%',
+    width: "100%",
     paddingVertical: 18,
     borderRadius: Radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   nextButtonText: {
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

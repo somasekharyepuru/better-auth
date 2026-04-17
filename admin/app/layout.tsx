@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, IBM_Plex_Mono, Lora } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { PerformancePolyfill } from "@/components/runtime/performance-polyfill";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -36,6 +37,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${plusJakartaSans.variable} ${ibmPlexMono.variable} ${lora.variable} font-sans`}>
+        <PerformancePolyfill />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

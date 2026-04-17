@@ -71,7 +71,7 @@ export default function SessionsScreen() {
 
     const result = await revokeSession(sessionToRevoke);
     if (result.error) {
-      Alert.alert('Error', result.error.message || 'Failed to revoke session. Please try again.');
+      Alert.alert('Error', result.error || 'Failed to revoke session. Please try again.');
     } else {
       setSessions(sessions.filter(s => s.id !== sessionToRevoke));
     }
@@ -81,7 +81,7 @@ export default function SessionsScreen() {
   const handleRevokeAll = async () => {
     const result = await revokeOtherSessions();
     if (result.error) {
-      Alert.alert('Error', result.error.message || 'Failed to revoke sessions. Please try again.');
+      Alert.alert('Error', result.error || 'Failed to revoke sessions. Please try again.');
     } else {
       setSessions(sessions.filter(s => s.current));
     }
@@ -93,7 +93,7 @@ export default function SessionsScreen() {
     { label: '📱 Mobile', value: 'mobile' },
     { label: '🖥️ Desktop', value: 'desktop' },
     { label: '🌐 Other', value: 'other' },
-  ] as const;
+  ];
 
   const currentSession = filteredAndSortedSessions.find(s => s.current);
   const otherSessions = filteredAndSortedSessions.filter(s => !s.current);
@@ -180,9 +180,9 @@ export default function SessionsScreen() {
       <ConfirmDialog
         visible={sessionToRevoke !== null}
         title="Revoke Session"
-        message="Are you sure you want to revoke this session? The device will be signed out."
+        description="Are you sure you want to revoke this session? The device will be signed out."
         confirmLabel="Revoke"
-        confirmVariant="destructive"
+        variant="destructive"
         onConfirm={handleRevokeSession}
         onCancel={() => setSessionToRevoke(null)}
       />
@@ -190,9 +190,9 @@ export default function SessionsScreen() {
       <ConfirmDialog
         visible={showRevokeAllDialog}
         title="Revoke All Other Sessions"
-        message={`Are you sure you want to revoke ${otherSessions.length} other session(s)? All other devices will be signed out.`}
+        description={`Are you sure you want to revoke ${otherSessions.length} other session(s)? All other devices will be signed out.`}
         confirmLabel="Revoke All"
-        confirmVariant="destructive"
+        variant="destructive"
         onConfirm={handleRevokeAll}
         onCancel={() => setShowRevokeAllDialog(false)}
       />

@@ -21,6 +21,9 @@ export default function AuthLayout() {
       <Stack.Screen name="reset-password" />
       <Stack.Screen name="verify-email" />
       <Stack.Screen name="verify-2fa" />
+      <Stack.Screen name="legal/terms-of-service" />
+      <Stack.Screen name="legal/privacy-policy" />
+      <Stack.Screen name="legal/security" />
     </Stack>
   );
 }

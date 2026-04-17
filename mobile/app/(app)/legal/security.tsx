@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useTheme } from '../../../src/contexts/ThemeContext';
-import { Typography, Spacing } from '../../../src/constants/Theme';
-import { Card, Button } from '../../../components/ui';
+import React from "react";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { useRouter } from "expo-router";
+import { useTheme } from "../../../src/contexts/ThemeContext";
+import { Typography, Spacing } from "../../../src/constants/Theme";
+import { Card, Button } from "../../../components/ui";
 
 export default function SecurityScreen() {
   const router = useRouter();
@@ -11,44 +11,52 @@ export default function SecurityScreen() {
 
   const securityFeatures = [
     {
-      icon: '🔐',
-      title: 'Encryption',
-      description: 'All data is encrypted in transit using TLS 1.3 and at rest using industry-standard AES-256 encryption.',
+      icon: "🔐",
+      title: "Encryption",
+      description:
+        "All data is encrypted in transit using TLS 1.3 and at rest using industry-standard AES-256 encryption.",
     },
     {
-      icon: '📱',
-      title: 'Two-Factor Authentication (2FA)',
-      description: 'Add an extra layer of security with TOTP authenticator apps or backup codes. We support Google Authenticator, Authy, and more.',
+      icon: "📱",
+      title: "Two-Factor Authentication (2FA)",
+      description:
+        "Add an extra layer of security with TOTP authenticator apps or backup codes. We support Google Authenticator, Authy, and more.",
     },
     {
-      icon: '🔑',
-      title: 'Password Security',
-      description: 'Enforce strong passwords with complexity requirements. We check against known breached passwords and prevent password reuse.',
+      icon: "🔑",
+      title: "Password Security",
+      description:
+        "Enforce strong passwords with complexity requirements. We check against known breached passwords and prevent password reuse.",
     },
     {
-      icon: '🌐',
-      title: 'Secure Authentication',
-      description: 'Built on Better Auth with industry-standard OAuth 2.0 flows. Social sign-in with Google and Microsoft.',
+      icon: "🌐",
+      title: "Secure Authentication",
+      description:
+        "Built on Better Auth with industry-standard OAuth 2.0 flows. Social sign-in with Google and Microsoft.",
     },
     {
-      icon: '📊',
-      title: 'Session Management',
-      description: 'View and revoke active sessions across all your devices. Get notified of new sign-ins from unrecognized devices.',
+      icon: "📊",
+      title: "Session Management",
+      description:
+        "View and revoke active sessions across all your devices. Get notified of new sign-ins from unrecognized devices.",
     },
     {
-      icon: '🔍',
-      title: 'Audit Logging',
-      description: 'Comprehensive logging of all authentication events, account changes, and organization activities.',
+      icon: "🔍",
+      title: "Audit Logging",
+      description:
+        "Comprehensive logging of all authentication events, account changes, and organization activities.",
     },
     {
-      icon: '⏰',
-      title: 'Account Deletion',
-      description: 'GDPR-compliant account deletion with a 30-day grace period. Your data is permanently removed after confirmation.',
+      icon: "⏰",
+      title: "Account Deletion",
+      description:
+        "GDPR-compliant account deletion with a 30-day grace period. Your data is permanently removed after confirmation.",
     },
     {
-      icon: '🏢',
-      title: 'Organization Security',
-      description: 'Role-based access control (RBAC) with granular permissions. Organization-level audit trails and member management.',
+      icon: "🏢",
+      title: "Organization Security",
+      description:
+        "Role-based access control (RBAC) with granular permissions. Organization-level audit trails and member management.",
     },
   ];
 
@@ -58,7 +66,9 @@ export default function SecurityScreen() {
       contentContainerStyle={styles.content}
     >
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.foreground }]}>Security</Text>
+        <Text style={[styles.title, { color: colors.foreground }]}>
+          Security
+        </Text>
         <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
           How we protect your account and data
         </Text>
@@ -71,7 +81,9 @@ export default function SecurityScreen() {
           Your Security is Our Priority
         </Text>
         <Text style={[styles.sectionText, { color: colors.mutedForeground }]}>
-          We implement industry-leading security practices to protect your account and organizational data. Here's how we keep your information safe.
+          We implement industry-leading security practices to protect your
+          account and organizational data. Here's how we keep your information
+          safe.
         </Text>
       </Card>
 
@@ -88,7 +100,12 @@ export default function SecurityScreen() {
               <Text style={[styles.featureTitle, { color: colors.foreground }]}>
                 {feature.title}
               </Text>
-              <Text style={[styles.featureDescription, { color: colors.mutedForeground }]}>
+              <Text
+                style={[
+                  styles.featureDescription,
+                  { color: colors.mutedForeground },
+                ]}
+              >
                 {feature.description}
               </Text>
             </View>
@@ -106,22 +123,34 @@ export default function SecurityScreen() {
           Protect Your Account
         </Text>
         <View style={styles.practicesList}>
-          <Text style={[styles.practiceItem, { color: colors.mutedForeground }]}>
+          <Text
+            style={[styles.practiceItem, { color: colors.mutedForeground }]}
+          >
             • Use a unique, strong password for your account
           </Text>
-          <Text style={[styles.practiceItem, { color: colors.mutedForeground }]}>
+          <Text
+            style={[styles.practiceItem, { color: colors.mutedForeground }]}
+          >
             • Enable two-factor authentication (2FA)
           </Text>
-          <Text style={[styles.practiceItem, { color: colors.mutedForeground }]}>
+          <Text
+            style={[styles.practiceItem, { color: colors.mutedForeground }]}
+          >
             • Regularly review your active sessions
           </Text>
-          <Text style={[styles.practiceItem, { color: colors.mutedForeground }]}>
+          <Text
+            style={[styles.practiceItem, { color: colors.mutedForeground }]}
+          >
             • Be cautious of phishing attempts
           </Text>
-          <Text style={[styles.practiceItem, { color: colors.mutedForeground }]}>
+          <Text
+            style={[styles.practiceItem, { color: colors.mutedForeground }]}
+          >
             • Keep your contact information up to date
           </Text>
-          <Text style={[styles.practiceItem, { color: colors.mutedForeground }]}>
+          <Text
+            style={[styles.practiceItem, { color: colors.mutedForeground }]}
+          >
             • Report suspicious activity immediately
           </Text>
         </View>
@@ -136,21 +165,21 @@ export default function SecurityScreen() {
         <View style={styles.actionButtons}>
           <Button
             variant="outline"
-            onPress={() => router.push('/(app)/(tabs)/profile/security')}
+            onPress={() => router.push("/(app)/profile/security")}
             style={styles.actionButton}
           >
             Change Password
           </Button>
           <Button
             variant="outline"
-            onPress={() => router.push('/(app)/(tabs)/profile/2fa')}
+            onPress={() => router.push("/(app)/profile/two-factor")}
             style={styles.actionButton}
           >
             Manage 2FA
           </Button>
           <Button
             variant="outline"
-            onPress={() => router.push('/(app)/(tabs)/profile/sessions')}
+            onPress={() => router.push("/(app)/profile/sessions")}
             style={styles.actionButton}
           >
             View Sessions
@@ -164,7 +193,8 @@ export default function SecurityScreen() {
           Report Security Issues
         </Text>
         <Text style={[styles.sectionText, { color: colors.mutedForeground }]}>
-          If you discover a security vulnerability or have concerns about your account's safety, please contact our security team immediately.
+          If you discover a security vulnerability or have concerns about your
+          account's safety, please contact our security team immediately.
         </Text>
         <View style={styles.contactInfo}>
           <Text style={[styles.contactLabel, { color: colors.foreground }]}>
@@ -190,11 +220,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingBottom: Spacing['2xl'],
+    paddingBottom: Spacing["2xl"],
   },
   header: {
     padding: Spacing.xl,
-    paddingTop: Spacing['4xl'],
+    paddingTop: Spacing["4xl"],
     marginBottom: Spacing.lg,
   },
   title: {
@@ -210,7 +240,7 @@ const styles = StyleSheet.create({
   },
   sectionIcon: {
     fontSize: 32,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: Spacing.md,
   },
   sectionTitle: {
@@ -232,8 +262,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   featureHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
   },
   featureIcon: {
     fontSize: 24,
@@ -244,7 +274,7 @@ const styles = StyleSheet.create({
   },
   featureTitle: {
     ...Typography.body,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: Spacing.xs,
   },
   featureDescription: {
@@ -263,7 +293,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   actionButton: {
-    width: '100%',
+    width: "100%",
   },
   contactInfo: {
     marginTop: Spacing.md,
@@ -274,13 +304,13 @@ const styles = StyleSheet.create({
   },
   contactValue: {
     ...Typography.body,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   footer: {
     paddingHorizontal: Spacing.xl,
     marginTop: Spacing.lg,
   },
   backButton: {
-    width: '100%',
+    width: "100%",
   },
 });

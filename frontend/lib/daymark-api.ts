@@ -101,9 +101,11 @@ async function fetchWithCredentials(url: string, options: RequestInit = {}) {
     return response.json();
 }
 
+import dayjs from "dayjs";
+
 // Format date to YYYY-MM-DD
-export function formatDate(date: Date): string {
-    return date.toISOString().split('T')[0];
+export function formatDate(date: Date | string | number | dayjs.Dayjs): string {
+    return dayjs(date).format('YYYY-MM-DD');
 }
 
 // Life Areas API
