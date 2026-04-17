@@ -16,24 +16,6 @@ const featureIcons = [
 ];
 
 export function LandingPage() {
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("revealed");
-          }
-        });
-      },
-      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
-    );
-
-    // Use querySelectorAll to get all reveal sections after render
-    const sections = document.querySelectorAll('.reveal');
-    sections.forEach((section) => observer.observe(section));
-
-    return () => observer.disconnect();
-  }, []);
 
   return (
     <div className="min-h-screen bg-premium flex flex-col font-sans">
@@ -98,7 +80,7 @@ export function LandingPage() {
         </section>
 
         {/* Philosophy Section */}
-        <section className="py-32 px-6 reveal">
+        <section className="py-32 px-6 opacity-0-initial animate-fade-in-up delay-500">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-4xl md:text-6xl font-semibold text-gray-900 dark:text-white mb-8 tracking-tight">
               {APP_CONFIG.philosophy.headline}
@@ -110,11 +92,11 @@ export function LandingPage() {
         </section>
 
         {/* Feature Highlights - Bento Box Style */}
-        <section className="py-32 px-6 reveal flex justify-center">
+        <section className="py-32 px-6 opacity-0-initial animate-fade-in-up flex justify-center">
           <div className="max-w-6xl w-full">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-5xl font-semibold text-gray-900 dark:text-white tracking-tight">
-                Everything you need. <br className="hidden md:block" /> Nothing you don&apos;t.
+                {APP_CONFIG.featuresHeadline.part1} <br className="hidden md:block" /> {APP_CONFIG.featuresHeadline.part2}
               </h2>
             </div>
 
@@ -145,7 +127,7 @@ export function LandingPage() {
         <SeparatorLine />
 
         {/* How It Fits Into Your Life */}
-        <section className="py-24 px-6 relative overflow-hidden reveal">
+        <section className="py-24 px-6 relative overflow-hidden opacity-0-initial animate-fade-in-up">
           <div className="absolute inset-0 bg-gray-50 dark:bg-gray-900/50 mix-blend-multiply" />
           <div className="max-w-5xl mx-auto relative z-10 w-full">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 divide-y md:divide-y-0 md:divide-x divide-gray-200 dark:divide-gray-800 text-center">
@@ -164,7 +146,7 @@ export function LandingPage() {
         </section>
 
         {/* Final CTA */}
-        <section className="py-40 px-6 reveal flex justify-center">
+        <section className="py-40 px-6 opacity-0-initial animate-fade-in-up flex justify-center">
           <div className="w-full max-w-4xl text-center card-premium py-20 px-8 relative overflow-hidden text-center justify-center items-center flex flex-col">
             {/* Decorative blob */}
             <div className="absolute top-0 right-0 -m-32 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl"></div>

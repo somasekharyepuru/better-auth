@@ -43,6 +43,12 @@ export class LifeAreasController {
     return this.lifeAreasService.getDefaultLifeArea(userId);
   }
 
+  @Get("archived")
+  async getArchivedLifeAreas(@Req() req: Request) {
+    const userId = this.getUserIdFromRequest(req);
+    return this.lifeAreasService.getArchivedLifeAreas(userId);
+  }
+
   @Get(":id/pending-items")
   async getPendingItemsCount(@Param("id") id: string, @Req() req: Request) {
     const userId = this.getUserIdFromRequest(req);

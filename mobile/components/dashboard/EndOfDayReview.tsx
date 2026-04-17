@@ -1,65 +1,40 @@
 /**
- * End of Day Review Modal component
- * Allows reflection on what went well and carry forward incomplete priorities
+ * End of Day Review — adapted from mobile-old for current mobile ThemeContext
  */
-
 import React, { useState, useEffect } from 'react';
 import {
-    View,
-    Text,
-    StyleSheet,
-    Modal,
-    TouchableOpacity,
-    TextInput,
-    ActivityIndicator,
-    ScrollView,
+    View, Text, StyleSheet, Modal, TouchableOpacity,
+    TextInput, ActivityIndicator, ScrollView,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '../../src/contexts/ThemeContext';
+import { Spacing, Radius, Typography } from '../../src/constants/Theme';
+import { DailyReview, TopPriority, dailyReviewApi, formatDate } from '../../src/lib/daymark-api';
 
-import { typography, spacing, radius, shadows, sizing } from '@/constants/Theme';
-import { ThemeColors } from '@/constants/Colors';
-import { DailyReview, TopPriority, dailyReviewApi, formatDate } from '@/lib/api';
-
-interface EndOfDayReviewProps {
+interface Props {
     date: string;
     review: DailyReview | null;
     incompletePriorities: TopPriority[];
     onUpdate: () => void;
     isOpen: boolean;
     onClose: () => void;
-    colors: ThemeColors;
 }
 
-export function EndOfDayReview({
-    date,
-    review,
-    incompletePriorities,
-    onUpdate,
-    isOpen,
-    onClose,
-    colors,
-}: EndOfDayReviewProps) {
+export function EndOfDayReview({ date, review, incompletePriorities, onUpdate, isOpen, onClose }: Props) {
+    const { colors } = useTheme();
     const [wentWell, setWentWell] = useState(review?.wentWell || '');
     const [didntGoWell, setDidntGoWell] = useState(review?.didntGoWell || '');
     const [isLoading, setIsLoading] = useState(false);
     const [isCarrying, setIsCarrying] = useState(false);
-    const [carryResult, setCarryResult] = useState<{
-        carried: number;
-        skipped: number;
-    } | null>(null);
+    const [carryResult, setCarryResult] = useState<{ carried: number; skipped: number } | null>(null);
 
-    // Sync local state when review changes
     useEffect(() => {
         setWentWell(review?.wentWell || '');
         setDidntGoWell(review?.didntGoWell || '');
     }, [review]);
 
-    // Reset carry result when modal opens
     useEffect(() => {
-        if (isOpen) {
-            setCarryResult(null);
-        }
+        if (isOpen) setCarryResult(null);
     }, [isOpen]);
 
     const handleSave = async () => {
@@ -79,11 +54,9 @@ export function EndOfDayReview({
     const handleCarryForward = async () => {
         const tomorrow = new Date(date);
         tomorrow.setDate(tomorrow.getDate() + 1);
-        const tomorrowStr = formatDate(tomorrow);
-
         setIsCarrying(true);
         try {
-            const result = await dailyReviewApi.carryForward(date, tomorrowStr);
+            const result = await dailyReviewApi.carryForward(date, formatDate(tomorrow));
             setCarryResult(result);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             onUpdate();
@@ -97,48 +70,40 @@ export function EndOfDayReview({
     if (!isOpen) return null;
 
     return (
-        <Modal
-            visible={isOpen}
-            transparent
-            animationType="slide"
-            onRequestClose={onClose}
-        >
-            <View style={[styles.overlay, { backgroundColor: colors.modalBackground }]}>
-                <View style={[styles.modal, { backgroundColor: colors.cardSolid }, shadows.lg]}>
+        <Modal visible={isOpen} transparent animationType="slide" onRequestClose={onClose}>
+            <View style={[styles.overlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+                <View style={[styles.modal, { backgroundColor: colors.card }]}>
                     {/* Header */}
                     <View style={styles.header}>
                         <View style={styles.headerLeft}>
-                            <View style={[styles.iconContainer, { backgroundColor: colors.backgroundSecondary }]}>
-                                <Ionicons name="moon-outline" size={20} color={colors.text} />
+                            <View style={[styles.iconContainer, { backgroundColor: colors.background }]}>
+                                <Text style={{ fontSize: 20 }}>🌙</Text>
                             </View>
                             <View>
-                                <Text style={[styles.title, { color: colors.text }]}>End of Day Review</Text>
-                                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                                <Text style={[styles.title, { color: colors.foreground }]}>End of Day Review</Text>
+                                <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
                                     Reflect on today and plan ahead
                                 </Text>
                             </View>
                         </View>
                         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                            <Ionicons name="close" size={24} color={colors.textSecondary} />
+                            <Text style={{ color: colors.mutedForeground, fontSize: 22 }}>✕</Text>
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView
-                        style={styles.scrollContent}
-                        showsVerticalScrollIndicator={false}
-                    >
+                    <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
                         {/* Carry Forward Section */}
                         {incompletePriorities.length > 0 && (
-                            <View style={[styles.carrySection, { backgroundColor: colors.warningLight }]}>
-                                <Text style={[styles.carrySectionTitle, { color: colors.warning }]}>
+                            <View style={[styles.carrySection, { backgroundColor: 'rgba(245,158,11,0.1)' }]}>
+                                <Text style={[styles.carrySectionTitle, { color: '#f59e0b' }]}>
                                     {incompletePriorities.length} incomplete{' '}
                                     {incompletePriorities.length === 1 ? 'priority' : 'priorities'} today
                                 </Text>
                                 <View style={styles.carryList}>
-                                    {incompletePriorities.map((p) => (
+                                    {incompletePriorities.map(p => (
                                         <View key={p.id} style={styles.carryItem}>
-                                            <View style={[styles.carryDot, { backgroundColor: colors.warning }]} />
-                                            <Text style={[styles.carryItemText, { color: colors.warning }]} numberOfLines={1}>
+                                            <View style={[styles.carryDot, { backgroundColor: '#f59e0b' }]} />
+                                            <Text style={[styles.carryItemText, { color: '#f59e0b' }]} numberOfLines={1}>
                                                 {p.title}
                                             </Text>
                                         </View>
@@ -147,39 +112,32 @@ export function EndOfDayReview({
                                 <TouchableOpacity
                                     onPress={handleCarryForward}
                                     disabled={isCarrying}
-                                    style={[styles.carryButton, { backgroundColor: colors.warning }]}
+                                    style={[styles.carryButton, { backgroundColor: '#f59e0b' }]}
                                 >
                                     {isCarrying ? (
                                         <ActivityIndicator color="#fff" size="small" />
                                     ) : (
-                                        <>
-                                            <Ionicons name="arrow-forward" size={16} color="#fff" />
-                                            <Text style={styles.carryButtonText}>Carry to tomorrow</Text>
-                                        </>
+                                        <Text style={styles.carryButtonText}>→ Carry to tomorrow</Text>
                                     )}
                                 </TouchableOpacity>
                                 {carryResult && (
-                                    <Text style={[styles.carryResult, { color: colors.warning }]}>
+                                    <Text style={[styles.carryResult, { color: '#f59e0b' }]}>
                                         ✓ Carried {carryResult.carried}{' '}
                                         {carryResult.carried === 1 ? 'priority' : 'priorities'}
-                                        {carryResult.skipped > 0 && ` (${carryResult.skipped} skipped - limit reached)`}
+                                        {carryResult.skipped > 0 && ` (${carryResult.skipped} skipped)`}
                                     </Text>
                                 )}
                             </View>
                         )}
 
-                        {/* What went well */}
                         <View style={styles.inputGroup}>
-                            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                            <Text style={[styles.inputLabel, { color: colors.mutedForeground }]}>
                                 What went well today?
                             </Text>
                             <TextInput
-                                style={[
-                                    styles.textArea,
-                                    { backgroundColor: colors.backgroundSecondary, color: colors.text },
-                                ]}
+                                style={[styles.textArea, { backgroundColor: colors.background, color: colors.foreground }]}
                                 placeholder="Celebrate your wins, big and small..."
-                                placeholderTextColor={colors.textTertiary}
+                                placeholderTextColor={colors.mutedForeground}
                                 value={wentWell}
                                 onChangeText={setWentWell}
                                 multiline
@@ -187,18 +145,14 @@ export function EndOfDayReview({
                             />
                         </View>
 
-                        {/* What didn't go well */}
                         <View style={styles.inputGroup}>
-                            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                            <Text style={[styles.inputLabel, { color: colors.mutedForeground }]}>
                                 What didn't go as planned?
                             </Text>
                             <TextInput
-                                style={[
-                                    styles.textArea,
-                                    { backgroundColor: colors.backgroundSecondary, color: colors.text },
-                                ]}
+                                style={[styles.textArea, { backgroundColor: colors.background, color: colors.foreground }]}
                                 placeholder="What would you do differently?"
-                                placeholderTextColor={colors.textTertiary}
+                                placeholderTextColor={colors.mutedForeground}
                                 value={didntGoWell}
                                 onChangeText={setDidntGoWell}
                                 multiline
@@ -207,17 +161,14 @@ export function EndOfDayReview({
                         </View>
                     </ScrollView>
 
-                    {/* Footer */}
                     <View style={[styles.footer, { borderTopColor: colors.border }]}>
                         <TouchableOpacity onPress={onClose} style={styles.cancelButton}>
-                            <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>
-                                Cancel
-                            </Text>
+                            <Text style={[styles.cancelButtonText, { color: colors.mutedForeground }]}>Cancel</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={handleSave}
                             disabled={isLoading}
-                            style={[styles.saveButton, { backgroundColor: colors.accent }]}
+                            style={[styles.saveButton, { backgroundColor: colors.primary }]}
                         >
                             {isLoading ? (
                                 <ActivityIndicator color="#fff" size="small" />
@@ -233,133 +184,30 @@ export function EndOfDayReview({
 }
 
 const styles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        justifyContent: 'flex-end',
-    },
-    modal: {
-        borderTopLeftRadius: radius.xl,
-        borderTopRightRadius: radius.xl,
-        maxHeight: '85%',
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        padding: spacing.lg,
-        paddingBottom: spacing.md,
-    },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.md,
-        flex: 1,
-    },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: radius.full,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    title: {
-        ...typography.headline,
-        marginBottom: 2,
-    },
-    subtitle: {
-        ...typography.subheadline,
-    },
-    closeButton: {
-        padding: spacing.xs,
-    },
-    scrollContent: {
-        paddingHorizontal: spacing.lg,
-    },
-    carrySection: {
-        padding: spacing.md,
-        borderRadius: radius.lg,
-        marginBottom: spacing.lg,
-    },
-    carrySectionTitle: {
-        ...typography.subheadline,
-        fontWeight: '600',
-        marginBottom: spacing.sm,
-    },
-    carryList: {
-        marginBottom: spacing.md,
-        gap: spacing.xs,
-    },
-    carryItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.sm,
-    },
-    carryDot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-    },
-    carryItemText: {
-        ...typography.subheadline,
-        flex: 1,
-    },
-    carryButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: spacing.xs,
-        paddingVertical: spacing.sm,
-        paddingHorizontal: spacing.md,
-        borderRadius: radius.md,
-        alignSelf: 'flex-start',
-    },
-    carryButtonText: {
-        ...typography.subheadline,
-        fontWeight: '600',
-        color: '#fff',
-    },
-    carryResult: {
-        ...typography.caption1,
-        marginTop: spacing.sm,
-    },
-    inputGroup: {
-        marginBottom: spacing.lg,
-    },
-    inputLabel: {
-        ...typography.subheadline,
-        fontWeight: '500',
-        marginBottom: spacing.sm,
-    },
-    textArea: {
-        minHeight: 100,
-        borderRadius: radius.lg,
-        padding: spacing.md,
-        ...typography.body,
-    },
-    footer: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-        gap: spacing.md,
-        padding: spacing.lg,
-        borderTopWidth: 1,
-    },
-    cancelButton: {
-        paddingVertical: spacing.sm,
-        paddingHorizontal: spacing.lg,
-    },
-    cancelButtonText: {
-        ...typography.body,
-    },
-    saveButton: {
-        paddingVertical: spacing.sm,
-        paddingHorizontal: spacing.lg,
-        borderRadius: radius.md,
-        minWidth: 120,
-        alignItems: 'center',
-    },
-    saveButtonText: {
-        ...typography.headline,
-        color: '#fff',
-    },
+    overlay: { flex: 1, justifyContent: 'flex-end' },
+    modal: { borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, maxHeight: '85%' },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: Spacing.lg, paddingBottom: Spacing.md },
+    headerLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, flex: 1 },
+    iconContainer: { width: 40, height: 40, borderRadius: Radius.full, alignItems: 'center', justifyContent: 'center' },
+    title: { ...Typography.h4, marginBottom: 2 },
+    subtitle: { ...Typography.bodySmall },
+    closeButton: { padding: Spacing.xs },
+    scrollContent: { paddingHorizontal: Spacing.lg },
+    carrySection: { padding: Spacing.md, borderRadius: Radius.lg, marginBottom: Spacing.lg },
+    carrySectionTitle: { ...Typography.bodySmall, fontWeight: '600', marginBottom: Spacing.sm },
+    carryList: { marginBottom: Spacing.md, gap: Spacing.xs },
+    carryItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+    carryDot: { width: 6, height: 6, borderRadius: 3 },
+    carryItemText: { ...Typography.bodySmall, flex: 1 },
+    carryButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.xs, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, borderRadius: Radius.md, alignSelf: 'flex-start' },
+    carryButtonText: { ...Typography.bodySmall, fontWeight: '600', color: '#fff' },
+    carryResult: { ...Typography.caption, marginTop: Spacing.sm },
+    inputGroup: { marginBottom: Spacing.lg },
+    inputLabel: { ...Typography.bodySmall, fontWeight: '500', marginBottom: Spacing.sm },
+    textArea: { minHeight: 100, borderRadius: Radius.lg, padding: Spacing.md, ...Typography.body },
+    footer: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: Spacing.md, padding: Spacing.lg, borderTopWidth: 1 },
+    cancelButton: { paddingVertical: Spacing.sm, paddingHorizontal: Spacing.lg },
+    cancelButtonText: { ...Typography.body },
+    saveButton: { paddingVertical: Spacing.sm, paddingHorizontal: Spacing.lg, borderRadius: Radius.md, minWidth: 120, alignItems: 'center' },
+    saveButtonText: { ...Typography.button, color: '#fff' },
 });

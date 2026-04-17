@@ -1,22 +1,27 @@
-"use client";
+"use client"
 
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Eye, EyeOff, ArrowLeft, Mail, CheckCircle } from "lucide-react";
+import { useState, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { AlertCircle, ArrowLeft, CheckCircle, Eye, EyeOff, Mail } from "lucide-react"
 
-import { AuthLayout } from "@/components/auth-layout";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { authClient } from "@/lib/auth-client";
+import { AuthLayout } from "@/components/auth-layout"
+import { LoadingButton } from "@/components/ui/loading-button"
+import { Button } from "@/components/ui/button"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Spinner } from "@/components/ui/spinner"
+import { authClient } from "@/lib/auth-client"
+
+import { PasswordStrengthMeter } from "@/components/password-strength-meter"
 
 const resetPasswordSchema = z
   .object({
-    otp: z.string().length(6, "Code must be 6 digits"),
+    otp: z.string().length(8, "Code must be 8 digits"),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")
@@ -26,115 +31,105 @@ const resetPasswordSchema = z
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
     path: ["confirmPassword"],
-  });
+  })
 
-type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
+type ResetPasswordForm = z.infer<typeof resetPasswordSchema>
 
 function ResetPasswordContent() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isResending, setIsResending] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
-  const [email, setEmail] = useState("");
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isResending, setIsResending] = useState(false)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState(false)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const router = useRouter()
+  const searchParams = useSearchParams()
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<ResetPasswordForm>({
+  const form = useForm<ResetPasswordForm>({
     resolver: zodResolver(resetPasswordSchema),
-  });
+    defaultValues: { otp: "", password: "", confirmPassword: "" },
+  })
 
   useEffect(() => {
-    const emailParam = searchParams.get("email");
+    const emailParam = searchParams.get("email")
     if (emailParam) {
-      setEmail(emailParam);
-    } else {
-      const storedEmail = sessionStorage.getItem("resetPasswordEmail");
-      if (storedEmail) {
-        setEmail(storedEmail);
-      }
+      setEmail(emailParam)
     }
-  }, [searchParams]);
+  }, [searchParams])
 
   const handleResendCode = async () => {
-    if (!email) return;
+    if (!email) return
 
-    setIsResending(true);
-    setError("");
+    setIsResending(true)
+    setError("")
 
     try {
       const result = await authClient.emailOtp.sendVerificationOtp({
         email,
         type: "forget-password",
-      });
+      })
 
       if (result.error) {
-        setError(result.error.message || "Failed to resend code");
-        return;
+        setError(result.error.message || "Failed to resend code")
+        return
       }
     } catch (err) {
-      setError("Failed to resend code. Please try again.");
-      console.error("Resend code error:", err);
+      setError("Failed to resend code. Please try again.")
+      console.error("Resend code error:", err)
     } finally {
-      setIsResending(false);
+      setIsResending(false)
     }
-  };
+  }
 
   const onSubmit = async (data: ResetPasswordForm) => {
     if (!email) {
-      setError("Email address is required. Please start over.");
-      return;
+      setError("Email address is required. Please start over.")
+      return
     }
 
-    setIsLoading(true);
-    setError("");
+    setIsLoading(true)
+    setError("")
 
     try {
       const result = await authClient.emailOtp.resetPassword({
         email,
         otp: data.otp,
         password: data.password,
-      });
+      })
 
       if (result.error) {
-        setError(result.error.message || "Failed to reset password");
-        return;
+        setError(result.error.message || "Failed to reset password")
+        return
       }
 
-      sessionStorage.removeItem("resetPasswordEmail");
-      setSuccess(true);
+      // Password reset successful
+      setSuccess(true)
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
-      console.error("Reset password error:", err);
+      setError("An unexpected error occurred. Please try again.")
+      console.error("Reset password error:", err)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
-  // Success state
   if (success) {
     return (
       <AuthLayout title="Password updated">
-        <div className="text-center space-y-8">
-          <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center mx-auto">
-            <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+        <div className="text-center space-y-6">
+          <div className="w-16 h-16 bg-success/20 rounded-2xl flex items-center justify-center mx-auto">
+            <CheckCircle className="w-8 h-8 text-success" />
           </div>
-          <div className="space-y-2">
-            <p className="text-gray-500 dark:text-gray-400">
-              Your password has been reset successfully.
-            </p>
-          </div>
-          <Button onClick={() => router.push("/login")} className="w-full">
+          <p className="text-muted-foreground">
+            Your password has been reset successfully.
+          </p>
+          <Button onClick={() => router.push("/login")} className="w-full" size="lg">
             Sign in with new password
           </Button>
         </div>
       </AuthLayout>
-    );
+    )
   }
 
   return (
@@ -142,131 +137,142 @@ function ResetPasswordContent() {
       <div className="space-y-6">
         <Link
           href="/forgot-password"
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Link>
 
-        {/* Email indicator */}
         {email && (
-          <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-            <Mail className="w-5 h-5 text-gray-400" />
+          <div className="flex items-center gap-3 p-4 bg-muted rounded-xl">
+            <Mail className="w-5 h-5 text-muted-foreground" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Code sent to</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{email}</p>
+              <p className="text-sm text-muted-foreground">Code sent to</p>
+              <p className="text-sm font-medium text-foreground truncate">{email}</p>
             </div>
           </div>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {error && (
-            <div className="p-4 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl">
-              {error}
-            </div>
-          )}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-          {/* OTP Input */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Verification code
-            </label>
-            <Input
-              {...register("otp")}
-              placeholder="Enter 6-digit code"
-              maxLength={6}
-              disabled={isLoading}
-              className="text-center text-lg tracking-widest font-mono"
+            <FormField
+              control={form.control}
+              name="otp"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Verification code</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Enter 8-digit code"
+                      maxLength={8}
+                      disabled={isLoading}
+                      className="text-center text-lg tracking-widest font-mono"
+                      autoComplete="one-time-code"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  <button
+                    type="button"
+                    onClick={handleResendCode}
+                    disabled={isResending || !email}
+                    className="text-sm text-muted-foreground hover:text-foreground disabled:opacity-50 transition-colors"
+                  >
+                    {isResending ? "Sending..." : "Didn't receive code? Resend"}
+                  </button>
+                </FormItem>
+              )}
             />
-            {errors.otp && (
-              <p className="mt-2 text-sm text-red-500">{errors.otp.message}</p>
-            )}
-            <button
-              type="button"
-              onClick={handleResendCode}
-              disabled={isResending || !email}
-              className="mt-2 text-sm text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 disabled:opacity-50"
+
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>New password</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Create a new password"
+                        disabled={isLoading}
+                        className="pr-10"
+                        autoComplete="new-password"
+                        onChange={(e) => {
+                          field.onChange(e)
+                          setPassword(e.target.value)
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                  <PasswordStrengthMeter password={password} />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm password</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Re-enter your password"
+                        disabled={isLoading}
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <LoadingButton
+              type="submit"
+              className="w-full"
+              size="lg"
+              isLoading={isLoading}
+              loadingText="Resetting..."
             >
-              {isResending ? "Sending..." : "Didn't receive code? Resend"}
-            </button>
-          </div>
-
-          {/* New Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              New password
-            </label>
-            <div className="relative">
-              <Input
-                {...register("password")}
-                type={showPassword ? "text" : "password"}
-                placeholder="At least 8 characters"
-                disabled={isLoading}
-              />
-              <button
-                type="button"
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-5 w-5" />
-                ) : (
-                  <Eye className="h-5 w-5" />
-                )}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="mt-2 text-sm text-red-500">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-
-          {/* Confirm Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Confirm password
-            </label>
-            <div className="relative">
-              <Input
-                {...register("confirmPassword")}
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="Re-enter your password"
-                disabled={isLoading}
-              />
-              <button
-                type="button"
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showConfirmPassword ? (
-                  <EyeOff className="h-5 w-5" />
-                ) : (
-                  <Eye className="h-5 w-5" />
-                )}
-              </button>
-            </div>
-            {errors.confirmPassword && (
-              <p className="mt-2 text-sm text-red-500">
-                {errors.confirmPassword.message}
-              </p>
-            )}
-          </div>
-
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Spinner size="sm" className="mr-2" />
-                Resetting...
-              </>
-            ) : (
-              "Reset password"
-            )}
-          </Button>
-        </form>
+              Reset password
+            </LoadingButton>
+          </form>
+        </Form>
       </div>
     </AuthLayout>
-  );
+  )
 }
 
 export default function ResetPasswordPage() {
@@ -282,5 +288,5 @@ export default function ResetPasswordPage() {
     >
       <ResetPasswordContent />
     </Suspense>
-  );
+  )
 }

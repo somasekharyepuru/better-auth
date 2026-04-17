@@ -1,133 +1,143 @@
-"use client";
+"use client"
 
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { ArrowLeft, Mail, CheckCircle } from "lucide-react";
+import { useState, useEffect, useRef, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { AlertCircle, ArrowLeft, CheckCircle, Mail } from "lucide-react"
+import { toast } from "sonner"
 
-import { AuthLayout } from "@/components/auth-layout";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { authClient } from "@/lib/auth-client";
-import { useToast } from "@/components/ui/toast";
+import { AuthLayout } from "@/components/auth-layout"
+import { LoadingButton } from "@/components/ui/loading-button"
+import { Button } from "@/components/ui/button"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Spinner } from "@/components/ui/spinner"
+import { authClient } from "@/lib/auth-client"
 
 const otpSchema = z.object({
-  otp: z.string().length(6, "Code must be 6 digits"),
-});
+  otp: z.string().length(8, "Code must be 8 digits").regex(/^\d+$/, "Code must contain only digits"),
+})
 
-type OTPForm = z.infer<typeof otpSchema>;
+type OTPForm = z.infer<typeof otpSchema>
 
 function VerifyEmailContent() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isResending, setIsResending] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
-  const [email, setEmail] = useState("");
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { addToast } = useToast();
+  const [isLoading, setIsLoading] = useState(false)
+  const [isResending, setIsResending] = useState(false)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState(false)
+  const [email, setEmail] = useState("")
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectUrl = searchParams.get("redirect")
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<OTPForm>({
+  const form = useForm<OTPForm>({
     resolver: zodResolver(otpSchema),
-  });
+    defaultValues: { otp: "" },
+  })
+
+  const hasAutoSent = useRef(false)
 
   useEffect(() => {
-    const emailParam = searchParams.get("email");
-    if (emailParam) {
-      setEmail(emailParam);
+    const emailParam = searchParams.get("email")
+    if (emailParam && !hasAutoSent.current) {
+      setEmail(emailParam)
+      const sendOTP = async () => {
+        try {
+          await authClient.emailOtp.sendVerificationOtp({
+            email: emailParam,
+            type: "email-verification",
+          })
+          hasAutoSent.current = true
+        } catch (error) {
+          console.error("Failed to auto-send verification OTP:", error)
+        }
+      }
+      sendOTP()
     }
-  }, [searchParams]);
+  }, [searchParams])
 
   const onSubmit = async (data: OTPForm) => {
     if (!email) {
-      setError("Email address is required");
-      return;
+      setError("Email address is required")
+      return
     }
 
-    setIsLoading(true);
-    setError("");
+    setIsLoading(true)
+    setError("")
 
     try {
       const result = await authClient.emailOtp.verifyEmail({
         email,
         otp: data.otp,
-      });
+      })
 
       if (result.error) {
-        setError(result.error.message || "Invalid code");
-        return;
+        setError(result.error.message || "Invalid code")
+        return
       }
 
-      setSuccess(true);
+      setSuccess(true)
+      const loginUrl = redirectUrl ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : "/login"
       setTimeout(() => {
-        router.push("/login");
-      }, 2000);
+        router.push(loginUrl)
+      }, 2000)
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
-      console.error("Email verification error:", err);
+      setError("An unexpected error occurred. Please try again.")
+      console.error("Email verification error:", err)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleResendOTP = async () => {
     if (!email) {
-      setError("Email address is required");
-      return;
+      setError("Email address is required")
+      return
     }
 
-    setIsResending(true);
-    setError("");
+    setIsResending(true)
+    setError("")
 
     try {
       const result = await authClient.emailOtp.sendVerificationOtp({
         email,
         type: "email-verification",
-      });
+      })
 
       if (result.error) {
-        setError(result.error.message || "Failed to resend code");
-        return;
+        setError(result.error.message || "Failed to resend code")
+        return
       }
 
-      // Toast for resend confirmation
-      addToast({
-        type: "success",
-        title: "Code sent",
-        duration: 3000,
-      });
+      toast.success("Code sent", { duration: 3000 })
     } catch (err) {
-      setError("Failed to resend code. Please try again.");
-      console.error("Resend OTP error:", err);
+      setError("Failed to resend code. Please try again.")
+      console.error("Resend OTP error:", err)
     } finally {
-      setIsResending(false);
+      setIsResending(false)
     }
-  };
+  }
 
   if (success) {
     return (
       <AuthLayout title="Email verified!">
-        <div className="text-center space-y-8">
-          <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center mx-auto">
-            <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+        <div className="text-center space-y-6">
+          <div className="w-16 h-16 bg-success/20 rounded-2xl flex items-center justify-center mx-auto">
+            <CheckCircle className="w-8 h-8 text-success" />
           </div>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-muted-foreground">
             Your email has been verified. Redirecting you to sign in...
           </p>
-          <Button onClick={() => router.push("/login")} className="w-full">
+          <Button onClick={() => router.push(redirectUrl ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : "/login")} className="w-full" size="lg">
             Continue to sign in
           </Button>
         </div>
       </AuthLayout>
-    );
+    )
   }
 
   return (
@@ -135,67 +145,77 @@ function VerifyEmailContent() {
       <div className="space-y-6">
         <Link
           href="/signup"
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Link>
 
         <div className="text-center space-y-4">
-          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto">
-            <Mail className="w-8 h-8 text-gray-600 dark:text-gray-400" />
+          <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto">
+            <Mail className="w-8 h-8 text-muted-foreground" />
           </div>
-          <div className="space-y-2">
-            <p className="text-gray-500 dark:text-gray-400">We sent a verification code to:</p>
-            <p className="font-medium text-gray-900 dark:text-white">{email}</p>
+          <div className="space-y-1">
+            <p className="text-muted-foreground text-sm">We sent a verification code to:</p>
+            <p className="font-medium text-foreground">{email}</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {error && (
-            <div className="p-4 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl">
-              {error}
-            </div>
-          )}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-          <div>
-            <Input
-              {...register("otp")}
-              placeholder="Enter 6-digit code"
-              maxLength={6}
-              disabled={isLoading}
-              className="text-center text-lg tracking-widest font-mono"
+            <FormField
+              control={form.control}
+              name="otp"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Verification code</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Enter 8-digit code"
+                      maxLength={8}
+                      disabled={isLoading}
+                      className="text-center text-lg tracking-widest font-mono"
+                      autoComplete="one-time-code"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.otp && (
-              <p className="mt-2 text-sm text-red-500">{errors.otp.message}</p>
-            )}
-          </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Spinner size="sm" className="mr-2" />
-                Verifying...
-              </>
-            ) : (
-              "Verify email"
-            )}
-          </Button>
-        </form>
+            <LoadingButton
+              type="submit"
+              className="w-full"
+              size="lg"
+              isLoading={isLoading}
+              loadingText="Verifying..."
+            >
+              Verify email
+            </LoadingButton>
+          </form>
+        </Form>
 
-        <div className="text-center">
-          <span className="text-gray-500 dark:text-gray-400">Didn&apos;t receive the code? </span>
+        <div className="text-center text-sm">
+          <span className="text-muted-foreground">Didn't receive the code? </span>
           <button
             onClick={handleResendOTP}
             disabled={isResending}
-            className="text-gray-900 dark:text-white font-medium hover:underline disabled:opacity-50"
+            className="text-foreground font-medium hover:underline disabled:opacity-50"
           >
             {isResending ? "Sending..." : "Resend"}
           </button>
         </div>
       </div>
     </AuthLayout>
-  );
+  )
 }
 
 export default function VerifyEmailPage() {
@@ -211,5 +231,5 @@ export default function VerifyEmailPage() {
     >
       <VerifyEmailContent />
     </Suspense>
-  );
+  )
 }

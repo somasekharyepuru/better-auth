@@ -1,130 +1,116 @@
 /**
- * Quick Notes Card component
- * Text area for daily notes
+ * Quick Notes Card — adapted from mobile-old for current mobile ThemeContext
+ * Auto-saves with 1 second debounce
  */
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
-    View,
-    Text,
-    StyleSheet,
-    TextInput,
-    ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useDebouncedCallback } from 'use-debounce';
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  ActivityIndicator,
+} from "react-native";
+import { useTheme } from "../../src/contexts/ThemeContext";
+import { Spacing, Radius, Typography } from "../../src/constants/Theme";
+import { QuickNote, quickNotesApi } from "../../src/lib/daymark-api";
 
-import { typography, spacing, radius, shadows } from '@/constants/Theme';
-import { ThemeColors } from '@/constants/Colors';
-import { QuickNote, quickNotesApi } from '@/lib/api';
-
-interface QuickNotesCardProps {
-    date: string;
-    note: QuickNote | null;
-    onUpdate: (note: QuickNote | null) => void;
-    colors: ThemeColors;
-    isLoading: boolean;
+interface Props {
+  date: string;
+  note: QuickNote | null;
+  onUpdate: (note: QuickNote | null) => void;
+  isLoading: boolean;
+  isPastDay?: boolean;
 }
 
 export function QuickNotesCard({
-    date,
-    note,
-    onUpdate,
-    colors,
-    isLoading,
-}: QuickNotesCardProps) {
-    const [content, setContent] = useState(note?.content || '');
-    const [isSaving, setIsSaving] = useState(false);
+  date,
+  note,
+  onUpdate,
+  isLoading,
+  isPastDay = false,
+}: Props) {
+  const { colors } = useTheme();
+  const [content, setContent] = useState(note?.content || "");
+  const [isSaving, setIsSaving] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Sync local state when note changes
-    useEffect(() => {
-        setContent(note?.content || '');
-    }, [note]);
+  useEffect(() => {
+    setContent(note?.content || "");
+  }, [note]);
 
-    // Debounced save
-    const saveNote = useDebouncedCallback(async (text: string) => {
-        if (text === note?.content) return;
-
-        setIsSaving(true);
-        try {
-            const updated = await quickNotesApi.upsert(date, text);
-            onUpdate(updated);
-        } catch (error) {
-            console.error('Failed to save note:', error);
-        } finally {
-            setIsSaving(false);
-        }
+  const handleChange = (text: string) => {
+    if (isPastDay) return;
+    setContent(text);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      if (text === note?.content) return;
+      setIsSaving(true);
+      try {
+        const updated = await quickNotesApi.upsert(date, text);
+        onUpdate(updated);
+      } catch (error) {
+        console.error("Failed to save note:", error);
+      } finally {
+        setIsSaving(false);
+      }
     }, 1000);
+  };
 
-    const handleChange = (text: string) => {
-        setContent(text);
-        saveNote(text);
-    };
-
-    return (
-        <View style={[styles.card, { backgroundColor: colors.cardSolid }]}>
-            {isSaving && (
-                <View style={styles.savingIndicator}>
-                    <ActivityIndicator size="small" color={colors.textTertiary} />
-                    <Text style={[styles.savingText, { color: colors.textTertiary }]}>
-                        Saving...
-                    </Text>
-                </View>
-            )}
-
-            {isLoading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator color={colors.accent} />
-                </View>
-            ) : (
-                <TextInput
-                    style={[
-                        styles.textArea,
-                        {
-                            backgroundColor: colors.backgroundSecondary,
-                            color: colors.text,
-                            borderColor: colors.border,
-                        },
-                    ]}
-                    placeholder="Jot down quick thoughts, reminders, or notes for the day..."
-                    placeholderTextColor={colors.textTertiary}
-                    value={content}
-                    onChangeText={handleChange}
-                    multiline
-                    textAlignVertical="top"
-                    scrollEnabled={false}
-                />
-            )}
+  return (
+    <View style={[styles.card, { backgroundColor: colors.card }]}>
+      {isSaving && (
+        <View style={styles.savingIndicator}>
+          <ActivityIndicator size="small" color={colors.mutedForeground} />
+          <Text style={[styles.savingText, { color: colors.mutedForeground }]}>
+            Saving...
+          </Text>
         </View>
-    );
+      )}
+      {isLoading ? (
+        <ActivityIndicator color={colors.primary} style={styles.loader} />
+      ) : (
+        <TextInput
+          style={[
+            styles.textArea,
+            {
+              backgroundColor: colors.background,
+              color: colors.foreground,
+              borderColor: colors.border,
+              opacity: isPastDay ? 0.7 : 1,
+            },
+          ]}
+          placeholder="Jot down quick thoughts, reminders, or notes for the day..."
+          placeholderTextColor={colors.mutedForeground}
+          value={content}
+          onChangeText={handleChange}
+          multiline
+          editable={!isPastDay}
+          textAlignVertical="top"
+          scrollEnabled={false}
+        />
+      )}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    card: {
-        flex: 1,
-        padding: spacing.lg,
-    },
-    savingIndicator: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-        gap: spacing.xs,
-        marginBottom: spacing.sm,
-    },
-    savingText: {
-        ...typography.caption1,
-    },
-    loadingContainer: {
-        paddingVertical: spacing.xl,
-        alignItems: 'center',
-    },
-    textArea: {
-        flex: 1,
-        minHeight: 200,
-        borderRadius: radius.md,
-        padding: spacing.md,
-        borderWidth: 1,
-        ...typography.body,
-        textAlignVertical: 'top',
-    },
+  card: { flex: 1, padding: Spacing.lg },
+  loader: { paddingVertical: Spacing.xl },
+  savingIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: Spacing.xs,
+    marginBottom: Spacing.sm,
+  },
+  savingText: { ...Typography.caption, fontSize: 12 },
+  textArea: {
+    flex: 1,
+    minHeight: 200,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    borderWidth: 1,
+    ...Typography.body,
+    textAlignVertical: "top",
+  },
 });

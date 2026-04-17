@@ -1,25 +1,23 @@
 /**
- * Day Progress Card component
- * Shows circular progress indicator for completed priorities
+ * Day Progress Card — adapted from mobile-old for current mobile ThemeContext
+ * Shows circular SVG progress ring for completed priorities
  */
-
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import { typography, spacing, radius, shadows } from '@/constants/Theme';
-import { ThemeColors } from '@/constants/Colors';
+import { useTheme } from '../../src/contexts/ThemeContext';
+import { Spacing, Radius, Typography } from '../../src/constants/Theme';
 
-interface DayProgressCardProps {
+interface Props {
     completed: number;
     total: number;
-    colors: ThemeColors;
 }
 
-export function DayProgressCard({ completed, total, colors }: DayProgressCardProps) {
+export function DayProgressCard({ completed, total }: Props) {
+    const { colors } = useTheme();
     const progress = total > 0 ? completed / total : 0;
     const percentage = Math.round(progress * 100);
 
-    // SVG circular progress parameters
     const size = 64;
     const strokeWidth = 5;
     const center = size / 2;
@@ -28,26 +26,19 @@ export function DayProgressCard({ completed, total, colors }: DayProgressCardPro
     const strokeDashoffset = circumference * (1 - progress);
 
     return (
-        <View style={[styles.card, { backgroundColor: colors.cardSolid }, shadows.sm]}>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.content}>
                 <View style={styles.progressContainer}>
-                    {/* SVG Circular Progress */}
-                    <Svg width={size} height={size} style={styles.svg}>
-                        {/* Background Circle */}
+                    <Svg width={size} height={size} style={StyleSheet.absoluteFillObject}>
                         <Circle
-                            cx={center}
-                            cy={center}
-                            r={r}
+                            cx={center} cy={center} r={r}
                             stroke={colors.border}
                             strokeWidth={strokeWidth}
                             fill="none"
                         />
-                        {/* Progress Circle */}
                         <Circle
-                            cx={center}
-                            cy={center}
-                            r={r}
-                            stroke={colors.accent}
+                            cx={center} cy={center} r={r}
+                            stroke={colors.primary}
                             strokeWidth={strokeWidth}
                             fill="none"
                             strokeDasharray={circumference}
@@ -56,24 +47,18 @@ export function DayProgressCard({ completed, total, colors }: DayProgressCardPro
                             transform={`rotate(-90 ${center} ${center})`}
                         />
                     </Svg>
-                    {/* Percentage Text */}
-                    <View style={styles.percentageContainer}>
-                        <Text style={[styles.percentageText, { color: colors.text }]}>
-                            {percentage}%
-                        </Text>
-                    </View>
+                    <Text style={[styles.percentage, { color: colors.foreground }]}>{percentage}%</Text>
                 </View>
 
                 <View style={styles.stats}>
-                    <Text style={[styles.statsTitle, { color: colors.text }]}>Daily Progress</Text>
-                    <Text style={[styles.statsSubtitle, { color: colors.textSecondary }]}>
+                    <Text style={[styles.statsTitle, { color: colors.foreground }]}>Daily Progress</Text>
+                    <Text style={[styles.statsSubtitle, { color: colors.mutedForeground }]}>
                         {total > 0
                             ? `${completed} of ${total} priorities completed`
-                            : 'No priorities yet'
-                        }
+                            : 'No priorities yet'}
                     </Text>
                     {total === 0 && (
-                        <Text style={[styles.hint, { color: colors.textTertiary }]}>
+                        <Text style={[styles.hint, { color: colors.mutedForeground }]}>
                             Add your top priorities to get started
                         </Text>
                     )}
@@ -84,46 +69,12 @@ export function DayProgressCard({ completed, total, colors }: DayProgressCardPro
 }
 
 const styles = StyleSheet.create({
-    card: {
-        borderRadius: radius.lg,
-        padding: spacing.lg,
-    },
-    content: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.lg,
-    },
-    progressContainer: {
-        position: 'relative',
-        width: 64,
-        height: 64,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    svg: {
-        position: 'absolute',
-    },
-    percentageContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    percentageText: {
-        ...typography.headline,
-        fontSize: 16,
-    },
-    stats: {
-        flex: 1,
-    },
-    statsTitle: {
-        ...typography.headline,
-        marginBottom: spacing.xs,
-    },
-    statsSubtitle: {
-        ...typography.subheadline,
-    },
-    hint: {
-        ...typography.caption1,
-        marginTop: spacing.xs,
-    },
+    card: { borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: StyleSheet.hairlineWidth },
+    content: { flexDirection: 'row', alignItems: 'center', gap: Spacing.lg },
+    progressContainer: { width: 64, height: 64, alignItems: 'center', justifyContent: 'center' },
+    percentage: { ...Typography.body, fontWeight: '700', fontSize: 14 },
+    stats: { flex: 1 },
+    statsTitle: { ...Typography.h4, marginBottom: Spacing.xs },
+    statsSubtitle: { ...Typography.bodySmall },
+    hint: { ...Typography.caption, marginTop: Spacing.xs },
 });
-

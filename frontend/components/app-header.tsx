@@ -23,7 +23,11 @@ interface User {
   name: string;
   email: string;
   emailVerified: boolean;
-  role?: string;
+  role?: string | null;
+  banned?: boolean | null;
+  banReason?: string | null;
+  banExpires?: Date | null;
+  twoFactorEnabled?: boolean | null;
   createdAt: Date;
   updatedAt: Date;
   image?: string | null;

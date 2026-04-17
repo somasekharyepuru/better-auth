@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLifeAreas } from "@/lib/life-areas-context";
 import { lifeAreasApi, LifeArea } from "@/lib/daymark-api";
 import { useToast } from "@/components/ui/toast";
-import { Tooltip } from "@/components/ui/tooltip";
+import { SimpleTooltip as Tooltip } from "@/components/ui/tooltip";
 import {
   X,
   Pencil,

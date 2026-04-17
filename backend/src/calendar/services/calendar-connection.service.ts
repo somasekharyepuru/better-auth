@@ -29,6 +29,19 @@ export class CalendarConnectionService {
   ): Promise<{ authUrl: string; state: string }> {
     const state = randomBytes(16).toString("hex");
 
+    // Apple CalDAV uses app-specific passwords (completeAppleConnection), not OAuth URLs.
+    if (provider === "APPLE") {
+      await this.prisma.calendarConnection.create({
+        data: {
+          userId,
+          provider,
+          providerAccountId: state,
+          status: ConnectionStatus.CONNECTING,
+        },
+      });
+      return { authUrl: "", state };
+    }
+
     const calendarProvider = this.providerFactory.getProvider(provider);
     const authUrl = calendarProvider.getAuthorizationUrl(state, redirectUri);
 

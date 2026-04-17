@@ -33,6 +33,10 @@ export const APP_CONFIG = {
     },
 
     // Feature Highlights
+    featuresHeadline: {
+        part1: "Everything you need.",
+        part2: "Nothing you don't."
+    },
     features: [
         {
             title: "Your day, at a glance",

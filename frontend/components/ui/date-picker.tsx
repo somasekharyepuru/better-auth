@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { DayPicker } from "react-day-picker";
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
-import { Tooltip } from "@/components/ui/tooltip";
+import { SimpleTooltip as Tooltip } from "@/components/ui/tooltip";
 import dayjs from "dayjs";
 
 interface DatePickerProps {
