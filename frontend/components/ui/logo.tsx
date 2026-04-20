@@ -1,3 +1,4 @@
+import { APP_CONFIG } from "@/config/app.constants";
 import { cn } from "@/lib/utils";
 
 type LogoSize = "sm" | "md" | "lg";
@@ -44,7 +45,7 @@ export function Logo({ size = "md", showText = true, className }: LogoProps) {
                         config.text
                     )}
                 >
-                    Auth
+                    {APP_CONFIG.name}
                 </span>
             )}
         </div>

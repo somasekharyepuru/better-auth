@@ -18,9 +18,13 @@ export function useAuthCheck({
   const router = useRouter()
 
   useEffect(() => {
+    let cancelled = false
+
     const checkAuth = async () => {
       try {
         const session = await authClient.getSession()
+        if (cancelled) return
+
         const authenticated = !!session?.data?.user
         setIsAuthenticated(authenticated)
 
@@ -31,10 +35,16 @@ export function useAuthCheck({
           router.replace(destination)
         }
       } finally {
-        setIsChecking(false)
+        if (!cancelled) {
+          setIsChecking(false)
+        }
       }
     }
-    checkAuth()
+    void checkAuth()
+
+    return () => {
+      cancelled = true
+    }
   }, [router, redirectIfAuthenticated, redirectTo])
 
   return { isChecking, isAuthenticated }

@@ -36,7 +36,7 @@ export default function PrivacyPolicyPage() {
           <div className="prose prose-neutral dark:prose-invert max-w-none">
             <section className="space-y-4">
               <p className="text-lg text-muted-foreground">
-                At Auth Service, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our authentication service.
+                At Daymark, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our service.
               </p>
             </section>
 
@@ -102,7 +102,7 @@ export default function PrivacyPolicyPage() {
             <Link href="/" className="hover:text-foreground transition-colors">
               <Logo size="sm" />
             </Link>
-            <span>© {new Date().getFullYear()} Auth Service</span>
+            <span>© {new Date().getFullYear()} Daymark</span>
           </div>
         </div>
       </footer>

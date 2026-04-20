@@ -55,9 +55,9 @@ describe('AuthLayout', () => {
             expect(screen.getByText('Terms')).toBeInTheDocument()
         })
 
-        it('displays Home link', () => {
+        it('displays Help link', () => {
             render(<AuthLayout title="Test">Content</AuthLayout>)
-            expect(screen.getByText('Home')).toBeInTheDocument()
+            expect(screen.getByText('Help')).toBeInTheDocument()
         })
 
         it('Privacy link has correct href', () => {

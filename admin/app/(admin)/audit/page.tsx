@@ -427,37 +427,50 @@ export default function AuditLogsPage() {
     const endRecord = Math.min(currentPage * LOGS_PER_PAGE, total);
 
     return (
-        <div className="min-h-screen bg-background">
-            <div className="max-w-7xl mx-auto p-6 space-y-6">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+        <div className="w-full min-h-0 bg-background">
+            <div className="max-w-7xl mx-auto space-y-4 px-3 py-4 sm:space-y-5 sm:px-4 sm:py-5 md:space-y-6 md:p-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex min-w-0 flex-1 items-start gap-2 sm:gap-4">
                         {(userIdFilter || orgIdFilter) && (
                             <Button
                                 variant="ghost"
                                 size="icon"
+                                className="mt-0.5 shrink-0"
                                 onClick={() => router.push("/audit")}
                             >
                                 <ArrowLeft className="h-4 w-4" />
                             </Button>
                         )}
-                        <div>
-                            <h1 className="text-3xl font-bold">
+                        <div className="min-w-0">
+                            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                                 {userIdFilter ? "User Audit Logs" : orgIdFilter ? "Organization Audit Logs" : "Audit Logs"}
                             </h1>
-                            <p className="text-muted-foreground">
-                                {userIdFilter
-                                    ? `Activity for user ID: ${userIdFilter.slice(0, 8)}...`
-                                    : orgIdFilter
-                                        ? `Activity for organization ID: ${orgIdFilter.slice(0, 8)}...`
-                                        : "View all system activity and security events"}
+                            <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+                                {userIdFilter ? (
+                                    <>
+                                        Activity for user ID:{" "}
+                                        <span className="break-all font-mono text-xs sm:text-sm">
+                                            {userIdFilter.slice(0, 8)}…
+                                        </span>
+                                    </>
+                                ) : orgIdFilter ? (
+                                    <>
+                                        Activity for organization ID:{" "}
+                                        <span className="break-all font-mono text-xs sm:text-sm">
+                                            {orgIdFilter.slice(0, 8)}…
+                                        </span>
+                                    </>
+                                ) : (
+                                    "View all system activity and security events"
+                                )}
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center sm:gap-3">
                         <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
                             <SheetTrigger asChild>
-                                <Button variant="outline" className="relative gap-2">
-                                    <SlidersHorizontal className="h-4 w-4" />
+                                <Button variant="outline" className="relative w-full gap-2 sm:w-auto">
+                                    <SlidersHorizontal className="h-4 w-4 shrink-0" />
                                     Filters
                                     {getActiveFilterCount() > 0 && (
                                         <span className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
@@ -498,7 +511,7 @@ export default function AuditLogsPage() {
                                     </SheetHeader>
                                 </div>
 
-                                <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+                                <div className="flex-1 overflow-y-auto px-6 py-2 space-y-6">
                                     {/* User Filter - Multi-select */}
                                     <div className="space-y-3">
                                         <label className="text-sm font-medium flex items-center gap-2">
@@ -755,76 +768,76 @@ export default function AuditLogsPage() {
                             </SheetContent>
                         </Sheet>
 
-                        <Button onClick={handleExport} variant="outline">
-                            <Download className="mr-2 h-4 w-4" />
-                            Export CSV
+                        <Button onClick={handleExport} variant="outline" className="w-full sm:w-auto">
+                            <Download className="mr-2 h-4 w-4 shrink-0" />
+                            <span className="truncate">Export CSV</span>
                         </Button>
                     </div>
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-5">
                     <Card className="border-border bg-card/80 backdrop-blur">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-chart-2/20 rounded-lg">
-                                    <Activity className="h-5 w-5 text-chart-2" />
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                                <div className="shrink-0 rounded-lg bg-chart-2/20 p-1.5 sm:p-2">
+                                    <Activity className="h-4 w-4 text-chart-2 sm:h-5 sm:w-5" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Total Logs</p>
-                                    <p className="text-2xl font-bold">{stats.total}</p>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">Total Logs</p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">{stats.total}</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="border-border bg-card/80 backdrop-blur">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-chart-1/20 rounded-lg">
-                                    <CheckCircle2 className="h-5 w-5 text-chart-1" />
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                                <div className="shrink-0 rounded-lg bg-chart-1/20 p-1.5 sm:p-2">
+                                    <CheckCircle2 className="h-4 w-4 text-chart-1 sm:h-5 sm:w-5" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Successful</p>
-                                    <p className="text-2xl font-bold">{stats.success}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-border bg-card/80 backdrop-blur">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-accent/20 rounded-lg">
-                                    <ShieldAlert className="h-5 w-5 text-accent-foreground" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Failed</p>
-                                    <p className="text-2xl font-bold">{stats.failed}</p>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">Successful</p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">{stats.success}</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="border-border bg-card/80 backdrop-blur">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-primary/20 rounded-lg">
-                                    <Clock className="h-5 w-5 text-primary" />
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                                <div className="shrink-0 rounded-lg bg-accent/20 p-1.5 sm:p-2">
+                                    <ShieldAlert className="h-4 w-4 text-accent-foreground sm:h-5 sm:w-5" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Today</p>
-                                    <p className="text-2xl font-bold">{stats.today}</p>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">Failed</p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">{stats.failed}</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="border-border bg-card/80 backdrop-blur">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-chart-3/20 rounded-lg">
-                                    <TrendingUp className="h-5 w-5 text-chart-3" />
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                                <div className="shrink-0 rounded-lg bg-primary/20 p-1.5 sm:p-2">
+                                    <Clock className="h-4 w-4 text-primary sm:h-5 sm:w-5" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">This Week</p>
-                                    <p className="text-2xl font-bold">{stats.thisWeek}</p>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">Today</p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">{stats.today}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="border-border bg-card/80 backdrop-blur">
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                                <div className="shrink-0 rounded-lg bg-chart-3/20 p-1.5 sm:p-2">
+                                    <TrendingUp className="h-4 w-4 text-chart-3 sm:h-5 sm:w-5" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">This Week</p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">{stats.thisWeek}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -832,9 +845,9 @@ export default function AuditLogsPage() {
                 </div>
 
                 {/* Logs Table */}
-                <Card className="border-border shadow-sm overflow-hidden">
+                <Card className="overflow-hidden border-border shadow-sm">
                     <div className="overflow-x-auto">
-                        <Table>
+                        <Table className="min-w-[880px]">
                             <TableHeader className="bg-muted/50">
                                 <TableRow className="border-border hover:bg-muted/50">
                                     <TableHead className="font-semibold text-foreground">Timestamp</TableHead>
@@ -880,30 +893,33 @@ export default function AuditLogsPage() {
                                             key={log.id}
                                             className="border-border hover:bg-muted/50 transition-colors"
                                         >
-                                            <TableCell className="py-4">
-                                                <div className="text-xs">
+                                            <TableCell className="max-w-[140px] py-4 sm:max-w-none">
+                                                <div className="truncate text-xs">
                                                     {formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })}
                                                 </div>
-                                                <div className="text-[10px] text-muted-foreground">
+                                                <div className="truncate text-[10px] text-muted-foreground">
                                                     {new Date(log.createdAt).toLocaleString()}
                                                 </div>
                                             </TableCell>
-                                            <TableCell>
-                                                <Badge variant={getActionBadgeVariant(log.action)}>
+                                            <TableCell className="max-w-[160px] sm:max-w-none">
+                                                <Badge
+                                                    variant={getActionBadgeVariant(log.action)}
+                                                    className="inline-flex max-w-full truncate font-normal"
+                                                >
                                                     {ACTION_LABELS[log.action] || log.action}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell>
-                                                <div className="group flex items-center gap-1">
+                                            <TableCell className="max-w-[180px] sm:max-w-[220px]">
+                                                <div className="group flex min-w-0 items-center gap-1">
                                                     {log.userId === 'anonymous' || log.userId === 'unknown' ? (
                                                         <span className="text-muted-foreground italic text-xs">{log.userId}</span>
                                                     ) : (
                                                         <>
-                                                            <div className="flex-1">
-                                                                <div className="text-sm font-medium">
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="truncate text-sm font-medium">
                                                                     {userNames[log.userId] || '-'}
                                                                 </div>
-                                                                <div className="text-[10px] text-muted-foreground font-mono">
+                                                                <div className="truncate font-mono text-[10px] text-muted-foreground">
                                                                     {log.userId.slice(0, 8)}...
                                                                 </div>
                                                             </div>
@@ -922,19 +938,21 @@ export default function AuditLogsPage() {
                                                     )}
                                                 </div>
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="max-w-[140px] sm:max-w-[180px]">
                                                 {log.resourceType && (
-                                                    <div>
-                                                        <div className="text-xs font-medium capitalize">{log.resourceType}</div>
+                                                    <div className="min-w-0">
+                                                        <div className="truncate text-xs font-medium capitalize">
+                                                            {log.resourceType}
+                                                        </div>
                                                         {log.resourceId && (
-                                                            <div className="text-[10px] text-muted-foreground font-mono">
+                                                            <div className="truncate font-mono text-[10px] text-muted-foreground">
                                                                 {log.resourceId.slice(0, 8)}...
                                                             </div>
                                                         )}
                                                     </div>
                                                 )}
                                             </TableCell>
-                                            <TableCell className="text-xs text-muted-foreground">
+                                            <TableCell className="max-w-[120px] truncate text-xs text-muted-foreground sm:max-w-none">
                                                 {log.ipAddress || "-"}
                                             </TableCell>
                                             <TableCell>
@@ -969,11 +987,11 @@ export default function AuditLogsPage() {
 
                     {/* Pagination */}
                     {totalPages > 1 && (
-                        <div className="border-t border-border px-4 py-3 flex items-center justify-between">
-                            <p className="text-sm text-muted-foreground">
+                        <div className="flex flex-col gap-3 border-t border-border px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+                            <p className="text-center text-xs text-muted-foreground sm:text-left sm:text-sm">
                                 Showing {startRecord} to {endRecord} of {total} logs
                             </p>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -982,9 +1000,9 @@ export default function AuditLogsPage() {
                                     className="gap-1"
                                 >
                                     <ChevronLeft className="h-4 w-4" />
-                                    Previous
+                                    <span className="hidden min-[380px]:inline">Previous</span>
                                 </Button>
-                                <div className="flex items-center gap-1 px-3">
+                                <div className="flex items-center gap-1 px-1 sm:px-3">
                                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                         let pageNum;
                                         if (totalPages <= 5) {
@@ -1019,7 +1037,7 @@ export default function AuditLogsPage() {
                                     disabled={currentPage === totalPages || isLoading}
                                     className="gap-1"
                                 >
-                                    Next
+                                    <span className="hidden min-[380px]:inline">Next</span>
                                     <ChevronRight className="h-4 w-4" />
                                 </Button>
                             </div>

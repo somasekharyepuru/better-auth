@@ -67,7 +67,7 @@ export default function DashboardPage() {
         <div className="space-y-8">
             <div>
                 <h1 className="text-3xl font-bold">Dashboard</h1>
-                <p className="text-muted-foreground">Welcome to the Auth Admin Dashboard</p>
+                <p className="text-muted-foreground">Welcome to the Daymark admin dashboard</p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

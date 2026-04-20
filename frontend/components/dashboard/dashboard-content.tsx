@@ -73,13 +73,6 @@ export function DashboardContent({ user }: DashboardContentProps) {
   const isToday = currentDate === formatDate(new Date());
   const isPastDay = dayjs(currentDate).isBefore(dayjs().startOf('day'));
 
-  // Format display date
-  const displayDate = new Date(currentDate).toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-
   if (isLifeAreasLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -115,6 +108,8 @@ export function DashboardContent({ user }: DashboardContentProps) {
     year: "numeric",
   });
 
+  const firstName = user.name.split(" ")[0] || user.name;
+
   // Check which sections to show
   const showProgress = isSectionEnabled("progress");
   const showPriorities = isSectionEnabled("priorities");
@@ -124,76 +119,78 @@ export function DashboardContent({ user }: DashboardContentProps) {
   const showReviewButton = settings.endOfDayReviewEnabled;
 
   return (
-    <div className="bg-premium">
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="space-y-4">
-          {/* Premium Date Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-            <div className="flex items-center gap-2 sm:gap-6">
-              {/* Date Navigation */}
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={goToPreviousDay}
-                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-all"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={goToNextDay}
-                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-all"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
+    <>
+      <div className="space-y-4">
+          {/* Premium Date Header — greeting separated from date controls for clearer hierarchy */}
+          <section
+            className="rounded-2xl border border-gray-200/70 bg-white/70 px-4 py-4 shadow-sm dark:border-gray-700/70 dark:bg-gray-900/35 sm:px-5 sm:py-5"
+            aria-label="Selected day"
+          >
+            {isToday && user && (
+              <p className="mb-4 text-[15px] leading-snug text-gray-600 dark:text-gray-400 sm:text-base">
+                {getGreeting()},{" "}
+                <span className="font-semibold text-gray-900 dark:text-gray-100">{firstName}</span>
+              </p>
+            )}
 
-              {/* Premium Date Display */}
-              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl sm:text-4xl font-bold text-gray-900 dark:text-white tracking-tight leading-none">
-                    {dayNumber}
-                  </span>
-                  <div className="flex flex-col justify-center">
-                    <span className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white leading-tight">
-                      {dayOfWeek}
-                    </span>
-                    <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">
-                      {monthYear}
-                    </span>
-                  </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+              <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-5">
+                <div
+                  className="flex shrink-0 items-center rounded-full border border-gray-200/90 bg-gray-50/90 p-0.5 dark:border-gray-600/80 dark:bg-gray-800/60"
+                  role="group"
+                  aria-label="Change day"
+                >
+                  <button
+                    type="button"
+                    onClick={goToPreviousDay}
+                    className="rounded-full p-1.5 text-gray-500 transition-colors hover:bg-white hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100"
+                    aria-label="Previous day"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={goToNextDay}
+                    className="rounded-full p-1.5 text-gray-500 transition-colors hover:bg-white hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100"
+                    aria-label="Next day"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
                 </div>
 
-                {/* Today indicator or Back to Today */}
+                <div className="flex min-w-0 items-center gap-2.5 sm:gap-4">
+                  <span className="shrink-0 text-3xl font-bold tabular-nums leading-none tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+                    {dayNumber}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold leading-tight text-gray-900 dark:text-white sm:text-base">
+                      {dayOfWeek}
+                    </p>
+                    <p className="mt-1 text-xs leading-snug text-gray-500 dark:text-gray-400 sm:text-sm">
+                      {monthYear}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex shrink-0 items-center justify-end gap-2 border-t border-gray-100 pt-3 dark:border-gray-700/80 sm:border-t-0 sm:pt-0 sm:pl-2">
                 {isToday ? (
-                  <span className="px-2.5 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 rounded-full">
+                  <span className="px-3 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 rounded-full">
                     Today
                   </span>
                 ) : (
                   <button
+                    type="button"
                     onClick={goToToday}
-                    className="px-2.5 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
+                    className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100"
                   >
                     ← Today
                   </button>
                 )}
-
-                {/* Date Picker */}
-                <DatePickerIcon
-                  value={currentDate}
-                  onChange={(date) => setCurrentDate(date)}
-                />
+                <DatePickerIcon value={currentDate} onChange={(date) => setCurrentDate(date)} />
               </div>
             </div>
-
-            {/* Greeting (right side on desktop, below on mobile) */}
-            {isToday && user && (
-              <p className="text-sm sm:text-lg text-gray-500 dark:text-gray-400 ml-0 sm:ml-auto">
-                {getGreeting()},{" "}
-                <span className="text-gray-700 dark:text-gray-300 font-medium">
-                  {user.name.split(" ")[0]}
-                </span>
-              </p>
-            )}
-          </div>
+          </section>
 
           {/* Secondary Toolbar: Life Areas + Actions */}
           <div className="flex items-center justify-between py-2 border-t border-gray-200 dark:border-gray-700">
@@ -327,7 +324,6 @@ export function DashboardContent({ user }: DashboardContentProps) {
             </div>
           )}
         </div>
-      </main>
 
       {/* End of Day Review Modal */}
       <EndOfDayReview
@@ -339,6 +335,6 @@ export function DashboardContent({ user }: DashboardContentProps) {
         onClose={() => setShowReview(false)}
         lifeAreaId={selectedLifeArea?.id}
       />
-    </div>
+    </>
   );
 }

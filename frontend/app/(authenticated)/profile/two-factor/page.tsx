@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
-import { SettingsSidebar } from "@/components/settings-sidebar"
 import {
   Card,
   CardContent,
@@ -30,7 +29,6 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { authClient } from "@/lib/auth-client"
-import { profileSettingsItems } from "@/lib/profile-settings"
 import { useSession } from "@/components/session-provider"
 
 interface SetupData {
@@ -209,15 +207,11 @@ export default function TwoFactorPage() {
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Spinner size="lg" />
-      </div>
-    )
-  }
-
-  const content = (
+  const content = isLoading ? (
+    <div className="flex min-h-[50vh] items-center justify-center">
+      <Spinner size="lg" />
+    </div>
+  ) : (
     <div className="space-y-6">
       {/* Password Prompt */}
       {showPasswordPrompt && (
@@ -432,7 +426,7 @@ export default function TwoFactorPage() {
         Two-factor authentication adds an extra layer of security by requiring a code from your phone in addition to your password.
       </p>
     </div>
-  )
+  );
 
   return (
     <>
@@ -456,13 +450,9 @@ export default function TwoFactorPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <SettingsSidebar
-        items={profileSettingsItems}
-        basePath="/profile"
-        title="Two-Factor Authentication"
-      >
+      <>
         {content}
-      </SettingsSidebar>
+      </>
     </>
   )
 }

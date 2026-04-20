@@ -7,7 +7,7 @@
 
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { toast } from 'sonner'
+import { ToastProvider } from '@/components/ui/toast'
 
 const mockPush = jest.fn()
 
@@ -56,6 +56,14 @@ jest.mock('@/hooks/use-auth-check', () => ({
 import SignUpPage from '../signup/page'
 import { authClient } from '@/lib/auth-client'
 
+function renderSignUpPage() {
+  return render(
+    <ToastProvider>
+      <SignUpPage />
+    </ToastProvider>
+  )
+}
+
 describe('Signup Page', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -69,42 +77,42 @@ describe('Signup Page', () => {
 
   describe('Rendering', () => {
     it('renders without crashing', () => {
-      render(<SignUpPage />)
+      renderSignUpPage()
       expect(document.body.textContent).toMatch(/create|account|sign.?up/i)
     })
 
     it('contains name input', () => {
-      render(<SignUpPage />)
+      renderSignUpPage()
       expect(screen.getByPlaceholderText(/john doe/i)).toBeInTheDocument()
     })
 
     it('contains email input', () => {
-      render(<SignUpPage />)
+      renderSignUpPage()
       expect(screen.getByPlaceholderText(/name@example.com/i)).toBeInTheDocument()
     })
 
     it('contains password input', () => {
-      render(<SignUpPage />)
-      expect(screen.getByPlaceholderText(/create a password/i)).toBeInTheDocument()
+      renderSignUpPage()
+      expect(screen.getByPlaceholderText(/create a strong password/i)).toBeInTheDocument()
     })
 
     it('shows create account button', () => {
-      render(<SignUpPage />)
+      renderSignUpPage()
       expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument()
     })
 
     it('has sign in link', () => {
-      render(<SignUpPage />)
+      renderSignUpPage()
       expect(screen.getByText(/sign in/i)).toBeInTheDocument()
     })
 
     it('shows social auth buttons', () => {
-      render(<SignUpPage />)
-      expect(document.body.textContent).toMatch(/google|microsoft/i)
+      renderSignUpPage()
+      expect(document.body.textContent).toMatch(/google|apple/i)
     })
 
     it('shows terms and privacy links', () => {
-      render(<SignUpPage />)
+      renderSignUpPage()
       expect(document.body.textContent).toMatch(/terms|privacy|agree/i)
     })
   })
@@ -112,9 +120,9 @@ describe('Signup Page', () => {
   describe('Password Visibility Toggle', () => {
     it('toggles password visibility when clicking the eye icon', async () => {
       const user = userEvent.setup()
-      render(<SignUpPage />)
+      renderSignUpPage()
 
-      const passwordInput = screen.getByPlaceholderText(/create a password/i)
+      const passwordInput = screen.getByPlaceholderText(/create a strong password/i)
       expect(passwordInput).toHaveAttribute('type', 'password')
 
       const toggleButton = passwordInput.parentElement?.querySelector('button[type="button"]')
@@ -131,7 +139,7 @@ describe('Signup Page', () => {
   describe('Form Validation', () => {
     it('prevents submission with empty form', async () => {
       const user = userEvent.setup()
-      render(<SignUpPage />)
+      renderSignUpPage()
 
       const submitButton = screen.getByRole('button', { name: /create account/i })
       await user.click(submitButton)
@@ -142,9 +150,9 @@ describe('Signup Page', () => {
 
     it('shows password requirements when typing', async () => {
       const user = userEvent.setup()
-      render(<SignUpPage />)
+      renderSignUpPage()
 
-      const passwordInput = screen.getByPlaceholderText(/create a password/i)
+      const passwordInput = screen.getByPlaceholderText(/create a strong password/i)
       await user.type(passwordInput, 'test')
 
       // Password strength indicator should appear
@@ -155,10 +163,10 @@ describe('Signup Page', () => {
 
     it('shows validation error for missing name', async () => {
       const user = userEvent.setup()
-      render(<SignUpPage />)
+      renderSignUpPage()
 
       const emailInput = screen.getByPlaceholderText(/name@example.com/i)
-      const passwordInput = screen.getByPlaceholderText(/create a password/i)
+      const passwordInput = screen.getByPlaceholderText(/create a strong password/i)
       const submitButton = screen.getByRole('button', { name: /create account/i })
 
       await user.type(emailInput, 'test@example.com')
@@ -179,11 +187,11 @@ describe('Signup Page', () => {
           error: null,
         })
 
-      render(<SignUpPage />)
+      renderSignUpPage()
 
       const nameInput = screen.getByPlaceholderText(/john doe/i)
       const emailInput = screen.getByPlaceholderText(/name@example.com/i)
-      const passwordInput = screen.getByPlaceholderText(/create a password/i)
+      const passwordInput = screen.getByPlaceholderText(/create a strong password/i)
       const submitButton = screen.getByRole('button', { name: /create account/i })
 
       await user.type(nameInput, 'Test User')
@@ -213,11 +221,11 @@ describe('Signup Page', () => {
           error: { message: 'Email already exists', code: 'USER_ALREADY_EXISTS' },
         })
 
-      render(<SignUpPage />)
+      renderSignUpPage()
 
       const nameInput = screen.getByPlaceholderText(/john doe/i)
       const emailInput = screen.getByPlaceholderText(/name@example.com/i)
-      const passwordInput = screen.getByPlaceholderText(/create a password/i)
+      const passwordInput = screen.getByPlaceholderText(/create a strong password/i)
       const submitButton = screen.getByRole('button', { name: /create account/i })
 
       await user.type(nameInput, 'Test User')
@@ -235,11 +243,11 @@ describe('Signup Page', () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation()
         ; (authClient.signUp.email as jest.Mock).mockRejectedValue(new Error('Network error'))
 
-      render(<SignUpPage />)
+      renderSignUpPage()
 
       const nameInput = screen.getByPlaceholderText(/john doe/i)
       const emailInput = screen.getByPlaceholderText(/name@example.com/i)
-      const passwordInput = screen.getByPlaceholderText(/create a password/i)
+      const passwordInput = screen.getByPlaceholderText(/create a strong password/i)
       const submitButton = screen.getByRole('button', { name: /create account/i })
 
       await user.type(nameInput, 'Test User')
@@ -263,11 +271,11 @@ describe('Signup Page', () => {
           () => new Promise((resolve) => { resolveSignUp = resolve })
         )
 
-      render(<SignUpPage />)
+      renderSignUpPage()
 
       const nameInput = screen.getByPlaceholderText(/john doe/i)
       const emailInput = screen.getByPlaceholderText(/name@example.com/i)
-      const passwordInput = screen.getByPlaceholderText(/create a password/i)
+      const passwordInput = screen.getByPlaceholderText(/create a strong password/i)
       const submitButton = screen.getByRole('button', { name: /create account/i })
 
       await user.type(nameInput, 'Test User')

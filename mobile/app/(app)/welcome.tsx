@@ -1,26 +1,34 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  Dimensions,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  Sparkles,
+  Building2,
+  Shield,
+  Smartphone,
+  Rocket,
+  type LucideIcon,
+} from "lucide-react-native";
 import { useAuth } from "../../src/contexts/AuthContext";
 import { useTheme } from "../../src/contexts/ThemeContext";
-import { Typography, Spacing, Radius } from "../../src/constants/Theme";
+import {
+  Typography,
+  Spacing,
+  Radius,
+  Gradients,
+  DecorativeElements,
+} from "../../src/constants/Theme";
 import { Button } from "../../components/ui";
 
-const { width } = Dimensions.get("window");
 const ONBOARDING_COMPLETE_KEY = "@app_onboarding_complete";
 
 interface OnboardingStep {
   id: string;
-  icon: string;
+  icon: LucideIcon;
   title: string;
   description: string;
   features?: string[];
@@ -29,50 +37,53 @@ interface OnboardingStep {
 const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: "welcome",
-    icon: "👋",
-    title: "Welcome to\nAuth Service",
+    icon: Sparkles,
+    title: "Welcome to\nDaymark",
     description:
-      "Your secure authentication and organization management platform. Let's get you started with a quick tour.",
+      "Your hub for organizations, secure sign-in, and daily productivity. Here is a quick tour of what you can do next.",
   },
   {
     id: "organizations",
-    icon: "🏢",
-    title: "Manage\nOrganizations",
-    description: "Create and join organizations to collaborate with teams.",
+    icon: Building2,
+    title: "Organizations\nthat scale",
+    description:
+      "Create and join organizations so your team shares context, access, and settings in one place.",
     features: [
-      "Create multiple organizations",
-      "Invite members via email",
-      "Custom roles and permissions",
+      "Multiple organizations per account",
+      "Invite members by email",
+      "Roles tuned to how teams work",
     ],
   },
   {
     id: "security",
-    icon: "🔒",
-    title: "Your Security\nMatters",
-    description: "Keep your account secure with advanced protection.",
+    icon: Shield,
+    title: "Security\nby default",
+    description:
+      "Protect your account with modern auth patterns and visibility into how it is used.",
     features: [
-      "TOTP-based 2FA",
-      "Manage active sessions",
-      "Full activity audit log",
+      "TOTP-based two-factor authentication",
+      "Active session management",
+      "Activity you can audit when you need to",
     ],
   },
   {
     id: "mobile",
-    icon: "📱",
-    title: "Stay\nConnected",
-    description: "Access your account on the go with modern mobile features.",
+    icon: Smartphone,
+    title: "Built for\nyour phone",
+    description:
+      "Daymark is designed for quick actions on the go—without sacrificing clarity or control.",
     features: [
-      "Biometric authentication",
-      "Deep link support",
-      "Push notifications",
+      "Biometric sign-in when your device supports it",
+      "Deep links into invitations and flows",
+      "Notifications when your team needs you",
     ],
   },
   {
     id: "ready",
-    icon: "🚀",
-    title: "You're\nAll Set!",
+    icon: Rocket,
+    title: "You are\nready to go",
     description:
-      "Start by creating your first organization or explore the dashboard.",
+      "Head to your dashboard, create an organization, or explore settings at your own pace.",
   },
 ];
 
@@ -85,6 +96,13 @@ export default function WelcomeScreen() {
 
   const isLastStep = currentStep === ONBOARDING_STEPS.length - 1;
   const step = ONBOARDING_STEPS[currentStep];
+  const StepIcon = step.icon;
+
+  const gradientColors = isDark ? Gradients.dark : Gradients.light;
+  const circleOpacity = isDark
+    ? DecorativeElements.circle.opacity.dark
+    : DecorativeElements.circle.opacity.light;
+  const dotColor = isDark ? colors.warning : "#E8836F";
 
   const completeOnboarding = async () => {
     try {
@@ -96,7 +114,7 @@ export default function WelcomeScreen() {
 
   const handleNext = () => {
     if (isLastStep) {
-      completeOnboarding();
+      void completeOnboarding();
       router.replace("/(app)/(tabs)/dashboard");
     } else {
       setCurrentStep((prev) => prev + 1);
@@ -104,7 +122,7 @@ export default function WelcomeScreen() {
   };
 
   const handleSkip = () => {
-    completeOnboarding();
+    void completeOnboarding();
     router.replace("/(app)/(tabs)/dashboard");
   };
 
@@ -114,180 +132,206 @@ export default function WelcomeScreen() {
     }
   };
 
-  const gradientColors = isDark
-    ? (["#16162A", "#1E1E38", "#2A2650"] as const)
-    : (["#FBF8F4", "#F0ECF6", "#DDD5EE"] as const);
-
   return (
-    <LinearGradient colors={gradientColors} style={styles.container}>
-      {/* Decorative elements */}
-      <View
-        style={[
-          styles.decorCircle,
-          { backgroundColor: colors.primary, opacity: isDark ? 0.15 : 0.25 },
-        ]}
-      />
-      <View
-        style={[
-          styles.decorDot,
-          styles.dot1,
-          { backgroundColor: isDark ? colors.warning : "#E8836F" },
-        ]}
-      />
-      <View
-        style={[
-          styles.decorDot,
-          styles.dot2,
-          { backgroundColor: isDark ? colors.warning : "#E8836F" },
-        ]}
-      />
-      <View
-        style={[
-          styles.decorDot,
-          styles.dot3,
-          { backgroundColor: isDark ? colors.warning : "#E8836F" },
-        ]}
-      />
+    <View style={styles.root}>
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <LinearGradient colors={gradientColors} style={styles.container}>
+        <View
+          style={[
+            styles.decorCircle,
+            {
+              backgroundColor: colors.primary,
+              opacity: circleOpacity,
+            },
+          ]}
+        />
+        <View
+          style={[
+            styles.decorCircleSoft,
+            { backgroundColor: colors.accent, opacity: isDark ? 0.35 : 0.45 },
+          ]}
+        />
+        {DecorativeElements.dots.positions.map((pos, index) => (
+          <View
+            key={index}
+            style={[
+              styles.decorDot,
+              { backgroundColor: dotColor },
+              { top: pos.top, left: pos.left },
+            ]}
+          />
+        ))}
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Progress Dots */}
-        <View style={styles.progressContainer}>
-          {ONBOARDING_STEPS.map((_, index) => (
+        <SafeAreaView style={styles.safe} edges={["top"]}>
+          <ScrollView
+            contentContainerStyle={styles.content}
+            showsVerticalScrollIndicator={false}
+          >
             <View
-              key={index}
               style={[
-                styles.progressDot,
+                styles.progressTrack,
+                { backgroundColor: colors.muted },
+              ]}
+            >
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${((currentStep + 1) / ONBOARDING_STEPS.length) * 100}%`,
+                    backgroundColor: colors.primary,
+                  },
+                ]}
+              />
+            </View>
+
+            <View
+              style={[
+                styles.iconWrap,
                 {
-                  backgroundColor:
-                    index === currentStep ? colors.primary : colors.muted,
+                  backgroundColor: `${colors.primary}22`,
+                  borderColor: colors.border,
                 },
               ]}
-            />
-          ))}
-        </View>
+            >
+              <StepIcon
+                size={32}
+                color={colors.primary}
+                strokeWidth={2.2}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+              />
+            </View>
 
-        {/* Icon */}
-        <View style={styles.iconContainer}>
-          <Text style={styles.icon}>{step.icon}</Text>
-        </View>
+            <Text style={[styles.title, { color: colors.foreground }]}>
+              {step.title}
+            </Text>
 
-        {/* Title - left aligned, large */}
-        <Text style={[styles.title, { color: colors.foreground }]}>
-          {step.title}
-        </Text>
+            <Text style={[styles.description, { color: colors.mutedForeground }]}>
+              {step.description}
+            </Text>
 
-        <Text style={[styles.description, { color: colors.mutedForeground }]}>
-          {step.description}
-        </Text>
-
-        {/* Feature list */}
-        {step.features && (
-          <View style={styles.featureList}>
-            {step.features.map((feature, index) => (
-              <View
-                key={index}
-                style={[styles.featureItem, { backgroundColor: colors.card }]}
-              >
-                <View
-                  style={[
-                    styles.featureDot,
-                    { backgroundColor: colors.primary },
-                  ]}
-                />
-                <Text
-                  style={[styles.featureText, { color: colors.foreground }]}
-                >
-                  {feature}
-                </Text>
+            {step.features && (
+              <View style={styles.featureList}>
+                {step.features.map((feature, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.featureItem,
+                      {
+                        backgroundColor: colors.card,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.featureBullet,
+                        { backgroundColor: colors.primary },
+                      ]}
+                    />
+                    <Text
+                      style={[styles.featureText, { color: colors.foreground }]}
+                    >
+                      {feature}
+                    </Text>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
-        )}
+            )}
 
-        {/* User greeting on first step */}
-        {currentStep === 0 && user && (
-          <View style={[styles.userCard, { backgroundColor: colors.card }]}>
-            <Text style={[styles.welcomeName, { color: colors.foreground }]}>
-              Welcome, {user.name || "User"}!
-            </Text>
-            <Text style={[styles.userEmail, { color: colors.mutedForeground }]}>
-              {user.email}
-            </Text>
-          </View>
-        )}
-      </ScrollView>
-
-      {/* Navigation */}
-      <View style={styles.footer}>
-        <View style={styles.footerRow}>
-          {currentStep > 0 && !isLastStep ? (
-            <Pressable onPress={handleBack} style={styles.textButton}>
-              <Text
+            {currentStep === 0 && user && (
+              <View
                 style={[
-                  styles.textButtonLabel,
-                  { color: colors.mutedForeground },
-                ]}
-              >
-                Back
-              </Text>
-            </Pressable>
-          ) : (
-            <View style={styles.textButton} />
-          )}
-
-          {!isLastStep && (
-            <Pressable onPress={handleSkip} style={styles.textButton}>
-              <Text
-                style={[
-                  styles.textButtonLabel,
+                  styles.userCard,
                   {
-                    color: colors.mutedForeground,
-                    textDecorationLine: "underline",
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
                   },
                 ]}
               >
-                Skip
-              </Text>
-            </Pressable>
-          )}
-        </View>
+                <Text style={[styles.welcomeName, { color: colors.foreground }]}>
+                  Nice to meet you, {user.name || "there"}!
+                </Text>
+                <Text style={[styles.userEmail, { color: colors.mutedForeground }]}>
+                  {user.email}
+                </Text>
+              </View>
+            )}
+          </ScrollView>
+        </SafeAreaView>
 
-        <Pressable
-          onPress={handleNext}
-          style={({ pressed }) => [
-            styles.nextButton,
-            { backgroundColor: isDark ? "#F5F1EC" : "#1A1A2E" },
-            pressed && { transform: [{ scale: 0.97 }] },
-          ]}
-        >
-          <Text
-            style={[
-              styles.nextButtonText,
-              { color: isDark ? "#1A1A2E" : "#FFFFFF" },
-            ]}
-          >
-            {isLastStep ? "Get Started" : "Next"}
-          </Text>
-        </Pressable>
-      </View>
-    </LinearGradient>
+        <SafeAreaView edges={["bottom"]} style={styles.footerSafe}>
+          <View style={styles.footer}>
+            <View style={styles.footerRow}>
+              {currentStep > 0 && !isLastStep ? (
+                <Pressable onPress={handleBack} style={styles.textButton}>
+                  <Text
+                    style={[
+                      styles.textButtonLabel,
+                      { color: colors.mutedForeground },
+                    ]}
+                  >
+                    Back
+                  </Text>
+                </Pressable>
+              ) : (
+                <View style={styles.textButton} />
+              )}
+
+              {!isLastStep && (
+                <Pressable onPress={handleSkip} style={styles.textButton}>
+                  <Text
+                    style={[
+                      styles.textButtonLabel,
+                      {
+                        color: colors.mutedForeground,
+                        textDecorationLine: "underline",
+                      },
+                    ]}
+                  >
+                    Skip
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+
+            <Button
+              size="lg"
+              fullWidth
+              onPress={handleNext}
+              accessibilityLabel={isLastStep ? "Finish onboarding" : "Next step"}
+            >
+              {isLastStep ? "Get started" : "Next"}
+            </Button>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   container: {
     flex: 1,
   },
   decorCircle: {
     position: "absolute",
-    top: -30,
-    right: -30,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
+    top: -36,
+    right: -40,
+    width: DecorativeElements.circle.size,
+    height: DecorativeElements.circle.size,
+    borderRadius: DecorativeElements.circle.size / 2,
+  },
+  decorCircleSoft: {
+    position: "absolute",
+    bottom: "22%",
+    left: -72,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
   },
   decorDot: {
     position: "absolute",
@@ -295,45 +339,43 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
   },
-  dot1: {
-    top: 100,
-    left: "32%",
-  },
-  dot2: {
-    top: 118,
-    left: "48%",
-  },
-  dot3: {
-    top: 108,
-    left: "58%",
+  safe: {
+    flex: 1,
   },
   content: {
     flexGrow: 1,
     paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing["4xl"],
-    paddingBottom: Spacing.xl,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.md,
+    maxWidth: 520,
+    width: "100%",
+    alignSelf: "center",
   },
-  progressContainer: {
-    flexDirection: "row",
-    justifyContent: "flex-start",
+  progressTrack: {
+    height: 4,
+    borderRadius: 2,
     marginBottom: Spacing["3xl"],
-    gap: Spacing.sm,
+    overflow: "hidden",
   },
-  progressDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  progressFill: {
+    height: "100%",
+    borderRadius: 2,
   },
-  iconContainer: {
+  iconWrap: {
+    alignSelf: "flex-start",
+    width: 64,
+    height: 64,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: Spacing.xl,
   },
-  icon: {
-    fontSize: 56,
-  },
   title: {
-    fontSize: 34,
+    fontSize: 32,
     fontWeight: "700",
-    lineHeight: 42,
+    lineHeight: 40,
+    letterSpacing: -0.5,
     marginBottom: Spacing.md,
   },
   description: {
@@ -351,13 +393,14 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
     borderRadius: Radius.lg,
+    borderWidth: 1,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 1,
   },
-  featureDot: {
+  featureBullet: {
     width: 8,
     height: 8,
     borderRadius: 4,
@@ -366,11 +409,13 @@ const styles = StyleSheet.create({
   featureText: {
     ...Typography.body,
     fontWeight: "500",
+    flex: 1,
   },
   userCard: {
     padding: Spacing.lg,
     borderRadius: Radius.xl,
     alignItems: "center",
+    borderWidth: 1,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -380,14 +425,18 @@ const styles = StyleSheet.create({
   welcomeName: {
     ...Typography.h4,
     marginBottom: Spacing.xs,
+    textAlign: "center",
   },
   userEmail: {
     ...Typography.bodySmall,
+    textAlign: "center",
+  },
+  footerSafe: {
+    paddingTop: Spacing.sm,
   },
   footer: {
     paddingHorizontal: Spacing.xl,
-    paddingBottom: Spacing["2xl"],
-    paddingTop: Spacing.md,
+    paddingBottom: Spacing.md,
   },
   footerRow: {
     flexDirection: "row",
@@ -401,16 +450,5 @@ const styles = StyleSheet.create({
   textButtonLabel: {
     ...Typography.body,
     fontWeight: "500",
-  },
-  nextButton: {
-    width: "100%",
-    paddingVertical: 18,
-    borderRadius: Radius.full,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  nextButtonText: {
-    fontSize: 17,
-    fontWeight: "600",
   },
 });

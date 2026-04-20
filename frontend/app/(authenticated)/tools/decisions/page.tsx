@@ -7,7 +7,8 @@ import { useSettings } from "@/lib/settings-context";
 import { useLifeAreas } from "@/lib/life-areas-context";
 import { Spinner } from "@/components/ui/spinner";
 import { DatePicker } from "@/components/ui/date-picker";
-import { SimpleBreadcrumb as Breadcrumb, BREADCRUMB_ROUTES } from "@/components/ui/breadcrumb";
+import { AuthenticatedPageShell } from "@/components/layout/authenticated-page-shell";
+import { PageHeader } from "@/components/page-header";
 import {
   ChevronLeft,
   ChevronRight,
@@ -21,8 +22,6 @@ import {
   ArrowUpDown,
   Tag,
   FileText,
-  Wrench,
-  BookOpen,
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_AUTH_URL || "http://localhost:3002";
@@ -279,44 +278,28 @@ export default function DecisionLogPage() {
   }
 
   return (
-    <div className="bg-premium min-h-screen">
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        {/* Breadcrumb */}
-        <Breadcrumb
-          items={[
-            BREADCRUMB_ROUTES.dashboard,
-            {
-              label: "Tools",
-              href: "/tools",
-              icon: <Wrench className="w-3.5 h-3.5" />,
-            },
-            {
-              label: "Decision Log",
-              icon: <BookOpen className="w-3.5 h-3.5" />,
-            },
-          ]}
-          className="mb-6"
-        />
-
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <div className="flex-1">
-            <h1 className="text-2xl text-heading">Decision Log</h1>
-            <p className="text-sm text-muted">
-              Track important decisions across life areas • {pagination.total}{" "}
-              total
-            </p>
-          </div>
-          {!isAdding && (
+    <AuthenticatedPageShell>
+      <PageHeader
+        title="Decision Log"
+        description={`Track important decisions across life areas • ${pagination.total} total`}
+        breadcrumbs={[
+          { label: "Tools", href: "/tools" },
+          { label: "Decision Log" },
+        ]}
+        className="mb-8"
+        actions={
+          !isAdding ? (
             <button
+              type="button"
               onClick={() => setIsAdding(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-gray-800 to-gray-900 dark:from-gray-700 dark:to-gray-800 text-white rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg shadow-gray-900/20"
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-br from-gray-800 to-gray-900 px-4 py-2 text-white shadow-lg shadow-gray-900/20 transition-all hover:from-gray-700 hover:to-gray-800 dark:from-gray-700 dark:to-gray-800"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="h-4 w-4" />
               New Decision
             </button>
-          )}
-        </div>
+          ) : undefined
+        }
+      />
 
         {/* Add/Edit Form */}
         {isAdding && (
@@ -736,7 +719,6 @@ export default function DecisionLogPage() {
             )}
           </div>
         )}
-      </main>
-    </div>
+    </AuthenticatedPageShell>
   );
 }

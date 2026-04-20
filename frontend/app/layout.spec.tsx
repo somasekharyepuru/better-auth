@@ -26,12 +26,12 @@ describe('RootLayout Metadata', () => {
     // In Jest environment with Next.js 15, we can verify the module exports
     const layoutModule = require('./layout')
     expect(layoutModule.metadata).toBeDefined()
-    expect(layoutModule.metadata.title).toBe('Auth Service')
+    expect(layoutModule.metadata.title).toBe('Daymark — A better way to plan your day')
   })
 
   it('exports metadata with correct description', () => {
     const layoutModule = require('./layout')
-    expect(layoutModule.metadata.description).toBe('Authentication service powered by Better Auth')
+    expect(layoutModule.metadata.description).toBe('A calm, distraction-free productivity app that helps you plan your day, focus on top priorities, capture notes, track habits, and reflect daily.')
   })
 })
 

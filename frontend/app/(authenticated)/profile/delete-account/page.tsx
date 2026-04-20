@@ -15,9 +15,6 @@ import {
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
-import { SettingsSidebar } from "@/components/settings-sidebar"
-import { profileSettingsItems } from "@/lib/profile-settings"
-
 interface DeletionStatus {
   hasActiveRequest: boolean
   status?: string
@@ -136,16 +133,16 @@ export default function DeleteAccountPage() {
 
   if (loading) {
     return (
-      <SettingsSidebar items={profileSettingsItems} basePath="/profile" title="Profile">
+      <>
         <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
           <Spinner size="lg" />
         </div>
-      </SettingsSidebar>
+      </>
     )
   }
 
   return (
-    <SettingsSidebar items={profileSettingsItems} basePath="/profile" title="Profile">
+    <>
       <div className="space-y-6">
           {status?.hasActiveRequest && status.status !== "deleted" && (
             <div className="p-4 bg-warning/10 border border-warning/20 rounded-lg">
@@ -341,6 +338,6 @@ export default function DeleteAccountPage() {
             After deletion, your account and all personal data are permanently removed. You cannot recover your account after the grace period.
           </div>
         </div>
-    </SettingsSidebar>
+    </>
   )
 }

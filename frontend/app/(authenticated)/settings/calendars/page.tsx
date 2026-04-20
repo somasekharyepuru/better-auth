@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { SimpleBreadcrumb as Breadcrumb, BREADCRUMB_ROUTES } from "@/components/ui/breadcrumb";
+import { CALENDAR_UI_ENABLED } from "@/lib/feature-flags";
 import { Calendar, Plus, AlertCircle, Settings, User } from "lucide-react";
 
 function CalendarSettingsContent() {
@@ -43,10 +44,15 @@ function CalendarSettingsContent() {
   };
 
   useEffect(() => {
+    if (!CALENDAR_UI_ENABLED) {
+      router.replace("/profile/preferences");
+      return;
+    }
     loadConnections();
-  }, []);
+  }, [router]);
 
   useEffect(() => {
+    if (!CALENDAR_UI_ENABLED) return;
     const success = searchParams.get("success");
     const error = searchParams.get("error");
     const provider = searchParams.get("provider");
@@ -138,6 +144,14 @@ function CalendarSettingsContent() {
 
   const getProviderCount = (provider: CalendarProvider) =>
     connections.filter((c) => c.provider === provider).length;
+
+  if (!CALENDAR_UI_ENABLED) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">

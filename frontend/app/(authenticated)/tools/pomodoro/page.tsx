@@ -8,8 +8,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { SimpleTooltip as Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { useFocus } from "@/lib/focus-context";
-import { SimpleBreadcrumb as Breadcrumb, BREADCRUMB_ROUTES } from "@/components/ui/breadcrumb";
-import { Play, Pause, RotateCcw, Coffee, Brain, Sunset, X, Volume2, VolumeX, CheckCircle, Timer, Wrench } from "lucide-react";
+import { AuthenticatedPageShell } from "@/components/layout/authenticated-page-shell";
+import { PageHeader } from "@/components/page-header";
+import { Play, Pause, RotateCcw, Coffee, Brain, Sunset, X, Volume2, VolumeX, CheckCircle, Timer } from "lucide-react";
 
 type TimerMode = "focus" | "shortBreak" | "longBreak";
 
@@ -243,42 +244,36 @@ export default function PomodoroPage() {
     const progress = totalDuration > 0 ? (remainingSeconds / totalDuration) * 100 : 0;
 
     return (
-        <div className="bg-premium relative">
-            <main className="max-w-lg mx-auto px-4 sm:px-6 py-8">
-                {/* Breadcrumb */}
-                <Breadcrumb
-                    items={[
-                        BREADCRUMB_ROUTES.dashboard,
-                        { label: "Tools", href: "/tools", icon: <Wrench className="w-3.5 h-3.5" /> },
-                        { label: "Pomodoro Timer", icon: <Timer className="w-3.5 h-3.5" /> },
+        <>
+            <AuthenticatedPageShell narrow className="relative">
+                <PageHeader
+                    title="Pomodoro Timer"
+                    description="Focus on what matters"
+                    breadcrumbs={[
+                        { label: "Tools", href: "/tools" },
+                        { label: "Pomodoro Timer" },
                     ]}
-                    className="mb-6"
-                />
-
-                {/* Header */}
-                <div className="flex items-center gap-4 mb-8">
-                    <div className="flex-1">
-                        <h1 className="text-2xl text-heading">Pomodoro Timer</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Focus on what matters</p>
-                    </div>
-                    {/* Session Counter */}
-                    {completedSessions > 0 && (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
-                            <CheckCircle className="w-4 h-4" />
-                            {completedSessions}
-                        </div>
-                    )}
-                    {/* Sound indicator */}
-                    <Tooltip content={settings.pomodoroSoundEnabled ? "Sound on" : "Sound off"}>
-                        <div className="text-gray-400">
-                            {settings.pomodoroSoundEnabled ? (
-                                <Volume2 className="w-5 h-5" />
-                            ) : (
-                                <VolumeX className="w-5 h-5" />
+                    className="mb-8"
+                    actions={
+                        <div className="flex items-center gap-3">
+                            {completedSessions > 0 && (
+                                <div className="flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1.5 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                    <CheckCircle className="h-4 w-4" />
+                                    {completedSessions}
+                                </div>
                             )}
+                            <Tooltip content={settings.pomodoroSoundEnabled ? "Sound on" : "Sound off"}>
+                                <div className="text-gray-400">
+                                    {settings.pomodoroSoundEnabled ? (
+                                        <Volume2 className="h-5 w-5" />
+                                    ) : (
+                                        <VolumeX className="h-5 w-5" />
+                                    )}
+                                </div>
+                            </Tooltip>
                         </div>
-                    </Tooltip>
-                </div>
+                    }
+                />
 
                 {/* Active session info banner */}
                 {hasActiveSession && focus.activePriorityTitle && (
@@ -400,7 +395,7 @@ export default function PomodoroPage() {
                     Short: {settings.pomodoroShortBreak}min •
                     Long: {settings.pomodoroLongBreak}min
                 </div>
-            </main>
+            </AuthenticatedPageShell>
 
             {/* Completion Modal */}
             {showCompleteModal && (
@@ -445,6 +440,6 @@ export default function PomodoroPage() {
                     </div>
                 </div>
             )}
-        </div>
+        </>
     );
 }

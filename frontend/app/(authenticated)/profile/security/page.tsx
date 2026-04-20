@@ -21,8 +21,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { profileSettingsItems } from "@/lib/profile-settings"
-import { SettingsSidebar } from "@/components/settings-sidebar"
 import { useRequireAuth } from "@/hooks/use-require-auth"
 
 export default function ProfileSecurityPage() {
@@ -150,12 +148,8 @@ export default function ProfileSecurityPage() {
   )
 
   return (
-    <SettingsSidebar
-      items={profileSettingsItems}
-      basePath="/profile"
-      title="Security"
-    >
+    <>
       {securityContent}
-    </SettingsSidebar>
+    </>
   )
 }

@@ -20,8 +20,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { authClient } from "@/lib/auth-client"
-import { profileSettingsItems } from "@/lib/profile-settings"
-import { SettingsSidebar } from "@/components/settings-sidebar"
 import { PasswordStrengthMeter } from "@/components/password-strength-meter"
 
 const changePasswordSchema = z
@@ -213,12 +211,8 @@ export default function ChangePasswordPage() {
   )
 
   return (
-    <SettingsSidebar
-      items={profileSettingsItems}
-      basePath="/profile"
-      title="Change Password"
-    >
+    <>
       {content}
-    </SettingsSidebar>
+    </>
   )
 }

@@ -547,19 +547,21 @@ export default function UsersPage() {
     const isSelfUser = (userId: string) => currentAdminId === userId;
 
     return (
-        <div className="min-h-screen bg-background">
-            <div className="max-w-7xl mx-auto p-6 space-y-6">
+        <div className="w-full min-h-0 bg-background">
+            <div className="max-w-7xl mx-auto space-y-4 px-3 py-4 sm:space-y-5 sm:px-4 sm:py-5 md:space-y-6 md:p-6">
                 {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-foreground">Users</h1>
-                        <p className="text-muted-foreground mt-1">Manage all registered users</p>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Users</h1>
+                        <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+                            Manage all registered users
+                        </p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center sm:gap-3">
                         <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
                             <SheetTrigger asChild>
-                                <Button variant="outline" className="relative gap-2">
-                                    <SlidersHorizontal className="h-4 w-4" />
+                                <Button variant="outline" className="relative w-full gap-2 sm:w-auto">
+                                    <SlidersHorizontal className="h-4 w-4 shrink-0" />
                                     Filters
                                     {getActiveFilterCount() > 0 && (
                                         <span className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
@@ -600,7 +602,7 @@ export default function UsersPage() {
                                     </SheetHeader>
                                 </div>
 
-                                <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+                                <div className="flex-1 overflow-y-auto px-6 py-2 space-y-6">
                                     {/* Role Filter */}
                                     <div className="space-y-3">
                                         <label className="text-sm font-medium">Role</label>
@@ -752,8 +754,8 @@ export default function UsersPage() {
 
                         <Sheet open={addUserOpen} onOpenChange={setAddUserOpen}>
                             <SheetTrigger asChild>
-                                <Button className="shadow-lg shadow-primary/20">
-                                    <UserPlus className="mr-2 h-4 w-4" />
+                                <Button className="w-full shadow-lg shadow-primary/20 sm:w-auto">
+                                    <UserPlus className="mr-2 h-4 w-4 shrink-0" />
                                     Add User
                                 </Button>
                             </SheetTrigger>
@@ -765,7 +767,7 @@ export default function UsersPage() {
                                     </SheetDescription>
                                 </SheetHeader>
 
-                                <form onSubmit={handleCreateUser} className="space-y-6 py-6">
+                                <form onSubmit={handleCreateUser} className="space-y-6 py-2">
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium leading-none">Full Name</label>
                                         <Input
@@ -878,94 +880,110 @@ export default function UsersPage() {
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
                     <Card className="border-border bg-card/80 backdrop-blur">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-chart-2/20 rounded-lg">
-                                    <UsersIcon className="h-5 w-5 text-chart-2" />
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                                <div className="shrink-0 rounded-lg bg-chart-2/20 p-1.5 sm:p-2">
+                                    <UsersIcon className="h-4 w-4 text-chart-2 sm:h-5 sm:w-5" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Total Users</p>
-                                    <p className="text-2xl font-bold text-foreground">{stats.totalUsers}</p>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">Total Users</p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">
+                                        {stats.totalUsers}
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="border-border bg-card/80 backdrop-blur">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-chart-4/20 rounded-lg">
-                                    <Crown className="h-5 w-5 text-chart-4" />
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                                <div className="shrink-0 rounded-lg bg-chart-4/20 p-1.5 sm:p-2">
+                                    <Crown className="h-4 w-4 text-chart-4 sm:h-5 sm:w-5" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Admins</p>
-                                    <p className="text-2xl font-bold text-foreground">{stats.adminUsers}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-border bg-card/80 backdrop-blur">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-chart-1/20 rounded-lg">
-                                    <CheckCircle2 className="h-5 w-5 text-chart-1" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Active</p>
-                                    <p className="text-2xl font-bold text-foreground">{stats.activeUsers}</p>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">Admins</p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">
+                                        {stats.adminUsers}
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="border-border bg-card/80 backdrop-blur">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-accent/20 rounded-lg">
-                                    <ShieldAlert className="h-5 w-5 text-accent-foreground" />
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                                <div className="shrink-0 rounded-lg bg-chart-1/20 p-1.5 sm:p-2">
+                                    <CheckCircle2 className="h-4 w-4 text-chart-1 sm:h-5 sm:w-5" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Banned</p>
-                                    <p className="text-2xl font-bold text-foreground">{stats.bannedUsers}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-border bg-card/80 backdrop-blur">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-chart-3/20 rounded-lg">
-                                    <Mail className="h-5 w-5 text-chart-3" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Verified</p>
-                                    <p className="text-2xl font-bold text-foreground">{stats.verifiedUsers}</p>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">Active</p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">
+                                        {stats.activeUsers}
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="border-border bg-card/80 backdrop-blur">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-accent/20 rounded-lg">
-                                    <RefreshCw className="h-5 w-5 text-accent-foreground" />
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                                <div className="shrink-0 rounded-lg bg-accent/20 p-1.5 sm:p-2">
+                                    <ShieldAlert className="h-4 w-4 text-accent-foreground sm:h-5 sm:w-5" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Unverified</p>
-                                    <p className="text-2xl font-bold text-foreground">{stats.unverifiedUsers}</p>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">Banned</p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">
+                                        {stats.bannedUsers}
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="border-border bg-card/80 backdrop-blur">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-primary/20 rounded-lg">
-                                    <Clock className="h-5 w-5 text-primary" />
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                                <div className="shrink-0 rounded-lg bg-chart-3/20 p-1.5 sm:p-2">
+                                    <Mail className="h-4 w-4 text-chart-3 sm:h-5 sm:w-5" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">New This Month</p>
-                                    <p className="text-2xl font-bold text-foreground">{stats.newThisMonth}</p>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">Verified</p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">
+                                        {stats.verifiedUsers}
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="border-border bg-card/80 backdrop-blur">
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                                <div className="shrink-0 rounded-lg bg-accent/20 p-1.5 sm:p-2">
+                                    <RefreshCw className="h-4 w-4 text-accent-foreground sm:h-5 sm:w-5" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">Unverified</p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">
+                                        {stats.unverifiedUsers}
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="border-border bg-card/80 backdrop-blur">
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                                <div className="shrink-0 rounded-lg bg-primary/20 p-1.5 sm:p-2">
+                                    <Clock className="h-4 w-4 text-primary sm:h-5 sm:w-5" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">
+                                        New This Month
+                                    </p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">
+                                        {stats.newThisMonth}
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>
@@ -974,9 +992,9 @@ export default function UsersPage() {
 
                 {/* Search Bar */}
                 <Card className="border-border shadow-sm">
-                    <CardContent className="p-4">
+                    <CardContent className="p-3 sm:p-4">
                         <div className="relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground sm:left-4" />
                             <Input
                                 placeholder="Search by name, email, or ID..."
                                 value={searchQuery}
@@ -984,30 +1002,35 @@ export default function UsersPage() {
                                     setSearchQuery(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className="pl-11 pr-11 h-12 bg-muted border-border focus-visible:ring-primary"
+                                className="h-11 border-border bg-muted pl-10 pr-10 focus-visible:ring-primary sm:h-12 sm:pl-11 sm:pr-11"
                             />
                             {searchQuery && (
                                 <button
                                     onClick={handleClearSearch}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground sm:right-4"
                                 >
                                     <X className="h-4 w-4" />
                                 </button>
                             )}
                         </div>
-                        <div className="flex items-center justify-between mt-4">
-                            <p className="text-sm text-muted-foreground">
+                        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <p className="min-w-0 text-sm text-muted-foreground">
                                 {searchQuery ? (
-                                    <>Found {totalCount} {totalCount === 1 ? "result" : "results"} for "{searchQuery}"</>
+                                    <>
+                                        Found {totalCount} {totalCount === 1 ? "result" : "results"} for{" "}
+                                        <span className="break-all font-medium text-foreground">"{searchQuery}"</span>
+                                    </>
                                 ) : (
-                                    <>Showing {totalCount} {totalCount === 1 ? "user" : "total users"}</>
+                                    <>
+                                        Showing {totalCount} {totalCount === 1 ? "user" : "total users"}
+                                    </>
                                 )}
                             </p>
                             <Button
                                 onClick={() => fetchUsers(currentPage)}
                                 variant="outline"
                                 size="sm"
-                                className="gap-2"
+                                className="w-full shrink-0 gap-2 sm:w-auto"
                             >
                                 <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
                                 Refresh
@@ -1017,9 +1040,9 @@ export default function UsersPage() {
                 </Card>
 
                 {/* Users Table */}
-                <Card className="border-border shadow-sm overflow-hidden">
+                <Card className="overflow-hidden border-border shadow-sm">
                     <div className="overflow-x-auto">
-                        <Table>
+                        <Table className="min-w-[720px]">
                             <TableHeader className="bg-muted/50">
                                 <TableRow className="border-border hover:bg-muted/50">
                                     <TableHead className="font-semibold text-foreground">User</TableHead>
@@ -1115,12 +1138,12 @@ export default function UsersPage() {
                                                     </Badge>
                                                 )}
                                             </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-2 text-muted-foreground">
-                                                    <Mail className="h-3.5 w-3.5" />
-                                                    <span className="text-sm">{user.email}</span>
+                                            <TableCell className="max-w-[200px] sm:max-w-none">
+                                                <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
+                                                    <Mail className="h-3.5 w-3.5 shrink-0" />
+                                                    <span className="truncate text-sm">{user.email}</span>
                                                     {user.emailVerified && (
-                                                        <CheckCircle2 className="h-3.5 w-3.5 text-chart-2" />
+                                                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-chart-2" />
                                                     )}
                                                 </div>
                                             </TableCell>
@@ -1225,11 +1248,11 @@ export default function UsersPage() {
 
                     {/* Pagination */}
                     {totalPages > 1 && (
-                        <div className="border-t border-border px-4 py-3 flex items-center justify-between">
-                            <p className="text-sm text-muted-foreground">
+                        <div className="flex flex-col gap-3 border-t border-border px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+                            <p className="text-center text-xs text-muted-foreground sm:text-left sm:text-sm">
                                 Showing {startRecord} to {endRecord} of {totalCount} users
                             </p>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -1238,9 +1261,9 @@ export default function UsersPage() {
                                     className="gap-1"
                                 >
                                     <ChevronLeft className="h-4 w-4" />
-                                    Previous
+                                    <span className="hidden min-[380px]:inline">Previous</span>
                                 </Button>
-                                <div className="flex items-center gap-1 px-3">
+                                <div className="flex items-center gap-1 px-1 sm:px-3">
                                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                         let pageNum;
                                         if (totalPages <= 5) {
@@ -1275,7 +1298,7 @@ export default function UsersPage() {
                                     disabled={currentPage === totalPages || isLoading}
                                     className="gap-1"
                                 >
-                                    Next
+                                    <span className="hidden min-[380px]:inline">Next</span>
                                     <ChevronRight className="h-4 w-4" />
                                 </Button>
                             </div>

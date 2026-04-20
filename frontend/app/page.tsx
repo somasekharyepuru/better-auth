@@ -1,15 +1,10 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { LandingPage } from "@/components/landing/landing-page";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
-import { UnifiedHeader } from "@/components/unified-header";
-import { SettingsProvider } from "@/lib/settings-context";
-import { LifeAreasProvider } from "@/lib/life-areas-context";
-import { FocusProvider } from "@/lib/focus-context";
-import { FloatingFocusTimer } from "@/components/focus/floating-focus-timer";
-import { ThemeSyncer } from "@/components/theme-syncer";
+import { AuthenticatedShell } from "@/components/authenticated-shell";
 
 interface User {
   id: string;
@@ -21,26 +16,18 @@ export default function HomePage() {
   const [user, setUser] = useState<User | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  // Try to get cached auth state from localStorage to prevent flash
-  const cachedAuth = useMemo(() => {
-    if (typeof window === 'undefined') return null;
+  // Restore cached user only after mount so the first client paint matches SSR
+  // (reading localStorage during render causes hydration mismatches).
+  useEffect(() => {
     try {
-      const cached = localStorage.getItem('auth_user');
+      const cached = localStorage.getItem("auth_user");
       if (cached) {
-        return JSON.parse(cached) as User;
+        setUser(JSON.parse(cached) as User);
       }
     } catch {
       // Ignore parse errors
     }
-    return null;
   }, []);
-
-  // Initialize with cached user if available
-  useEffect(() => {
-    if (cachedAuth) {
-      setUser(cachedAuth);
-    }
-  }, [cachedAuth]);
 
   // Check if user is authenticated
   useEffect(() => {
@@ -74,29 +61,19 @@ export default function HomePage() {
     checkAuth();
   }, []);
 
-  // If we have cached user, show dashboard immediately (no flash)
-  // Otherwise show minimal loading
-  if (isCheckingAuth && !cachedAuth) {
+  // Same initial shell on server and first client paint; cache applies after mount via useEffect.
+  if (isCheckingAuth && user === null) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900" />
     );
   }
 
-  // If authenticated, show dashboard with providers
+  // Same shell as (authenticated) routes: UnifiedHeader, padding, TimeBlockTypes, etc.
   if (user) {
     return (
-      <SettingsProvider>
-        <ThemeSyncer />
-        <LifeAreasProvider>
-          <FocusProvider>
-            <UnifiedHeader />
-            <div className="pt-16">
-              <DashboardContent user={user} />
-            </div>
-            <FloatingFocusTimer />
-          </FocusProvider>
-        </LifeAreasProvider>
-      </SettingsProvider>
+      <AuthenticatedShell>
+        <DashboardContent user={user} />
+      </AuthenticatedShell>
     );
   }
 

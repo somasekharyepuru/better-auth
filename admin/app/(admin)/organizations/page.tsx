@@ -369,19 +369,21 @@ export default function OrganizationsPage() {
     const endRecord = Math.min(currentPage * ORGANIZATIONS_PER_PAGE, pagination.total);
 
     return (
-        <div className="min-h-screen bg-background">
-            <div className="max-w-7xl mx-auto p-6 space-y-6">
+        <div className="w-full min-h-0 bg-background">
+            <div className="max-w-7xl mx-auto space-y-4 px-3 py-4 sm:space-y-5 sm:px-4 sm:py-5 md:space-y-6 md:p-6">
                 {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-foreground">Organizations</h1>
-                        <p className="text-muted-foreground mt-1">Manage all organizations in the system</p>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Organizations</h1>
+                        <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+                            Manage all organizations in the system
+                        </p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="w-full sm:w-auto">
                         <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
                             <SheetTrigger asChild>
-                                <Button variant="outline" className="relative gap-2">
-                                    <SlidersHorizontal className="h-4 w-4" />
+                                <Button variant="outline" className="relative w-full gap-2 sm:w-auto">
+                                    <SlidersHorizontal className="h-4 w-4 shrink-0" />
                                     Filters
                                     {getActiveFilterCount() > 0 && (
                                         <span className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
@@ -422,7 +424,7 @@ export default function OrganizationsPage() {
                                     </SheetHeader>
                                 </div>
 
-                                <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+                                <div className="flex-1 overflow-y-auto px-6 py-2 space-y-6">
                                     {/* Banned Status Filter */}
                                     <div className="space-y-3">
                                         <label className="text-sm font-medium">Status</label>
@@ -544,68 +546,78 @@ export default function OrganizationsPage() {
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-5">
                     <Card className="border-border bg-card/80 backdrop-blur">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-chart-2/20 rounded-lg">
-                                    <Building2 className="h-5 w-5 text-chart-2" />
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                                <div className="shrink-0 rounded-lg bg-chart-2/20 p-1.5 sm:p-2">
+                                    <Building2 className="h-4 w-4 text-chart-2 sm:h-5 sm:w-5" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Total Organizations</p>
-                                    <p className="text-2xl font-bold text-foreground">{stats.totalOrganizations}</p>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">Total Organizations</p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">
+                                        {stats.totalOrganizations}
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="border-border bg-card/80 backdrop-blur">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-chart-1/20 rounded-lg">
-                                    <CheckCircle2 className="h-5 w-5 text-chart-1" />
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                                <div className="shrink-0 rounded-lg bg-chart-1/20 p-1.5 sm:p-2">
+                                    <CheckCircle2 className="h-4 w-4 text-chart-1 sm:h-5 sm:w-5" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Active</p>
-                                    <p className="text-2xl font-bold text-foreground">{stats.activeOrganizations}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-border bg-card/80 backdrop-blur">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-accent/20 rounded-lg">
-                                    <Ban className="h-5 w-5 text-accent-foreground" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Banned</p>
-                                    <p className="text-2xl font-bold text-foreground">{stats.bannedOrganizations}</p>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">Active</p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">
+                                        {stats.activeOrganizations}
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="border-border bg-card/80 backdrop-blur">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-primary/20 rounded-lg">
-                                    <Calendar className="h-5 w-5 text-primary" />
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                                <div className="shrink-0 rounded-lg bg-accent/20 p-1.5 sm:p-2">
+                                    <Ban className="h-4 w-4 text-accent-foreground sm:h-5 sm:w-5" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">New This Month</p>
-                                    <p className="text-2xl font-bold text-foreground">{stats.newThisMonth}</p>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">Banned</p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">
+                                        {stats.bannedOrganizations}
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="border-border bg-card/80 backdrop-blur">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-chart-3/20 rounded-lg">
-                                    <Users className="h-5 w-5 text-chart-3" />
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                                <div className="shrink-0 rounded-lg bg-primary/20 p-1.5 sm:p-2">
+                                    <Calendar className="h-4 w-4 text-primary sm:h-5 sm:w-5" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Total Members</p>
-                                    <p className="text-2xl font-bold text-foreground">{stats.totalMembers}</p>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">New This Month</p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">
+                                        {stats.newThisMonth}
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="border-border bg-card/80 backdrop-blur">
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                                <div className="shrink-0 rounded-lg bg-chart-3/20 p-1.5 sm:p-2">
+                                    <Users className="h-4 w-4 text-chart-3 sm:h-5 sm:w-5" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">Total Members</p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">
+                                        {stats.totalMembers}
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>
@@ -614,9 +626,9 @@ export default function OrganizationsPage() {
 
                 {/* Search Bar */}
                 <Card className="border-border shadow-sm">
-                    <CardContent className="p-4">
+                    <CardContent className="p-3 sm:p-4">
                         <div className="relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground sm:left-4" />
                             <Input
                                 placeholder="Search by name, slug, or ID..."
                                 value={searchQuery}
@@ -624,30 +636,36 @@ export default function OrganizationsPage() {
                                     setSearchQuery(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className="pl-11 pr-11 h-12 bg-muted border-border focus-visible:ring-primary"
+                                className="h-11 border-border bg-muted pl-10 pr-10 focus-visible:ring-primary sm:h-12 sm:pl-11 sm:pr-11"
                             />
                             {searchQuery && (
                                 <button
                                     onClick={handleClearSearch}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground sm:right-4"
                                 >
                                     <X className="h-4 w-4" />
                                 </button>
                             )}
                         </div>
-                        <div className="flex items-center justify-between mt-4">
-                            <p className="text-sm text-muted-foreground">
+                        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <p className="min-w-0 text-sm text-muted-foreground">
                                 {searchQuery ? (
-                                    <>Found {pagination.total} {pagination.total === 1 ? "result" : "results"} for "{searchQuery}"</>
+                                    <>
+                                        Found {pagination.total} {pagination.total === 1 ? "result" : "results"} for{" "}
+                                        <span className="break-all font-medium text-foreground">"{searchQuery}"</span>
+                                    </>
                                 ) : (
-                                    <>Showing {pagination.total} {pagination.total === 1 ? "organization" : "total organizations"}</>
+                                    <>
+                                        Showing {pagination.total}{" "}
+                                        {pagination.total === 1 ? "organization" : "total organizations"}
+                                    </>
                                 )}
                             </p>
                             <Button
                                 onClick={() => fetchOrganizations(currentPage)}
                                 variant="outline"
                                 size="sm"
-                                className="gap-2"
+                                className="w-full shrink-0 gap-2 sm:w-auto"
                             >
                                 <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
                                 Refresh
@@ -657,9 +675,9 @@ export default function OrganizationsPage() {
                 </Card>
 
                 {/* Organizations Table */}
-                <Card className="border-border shadow-sm overflow-hidden">
+                <Card className="overflow-hidden border-border shadow-sm">
                     <div className="overflow-x-auto">
-                        <Table>
+                        <Table className="min-w-[720px]">
                             <TableHeader className="bg-muted/50">
                                 <TableRow className="border-border hover:bg-muted/50">
                                     <TableHead className="font-semibold text-foreground">Organization</TableHead>
@@ -704,13 +722,13 @@ export default function OrganizationsPage() {
                                             key={org.id}
                                             className="border-border hover:bg-muted/50 transition-colors"
                                         >
-                                            <TableCell className="py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${org.banned ? 'bg-destructive/20' : 'bg-primary/10'} ring-2 ring-slate-100 dark:ring-slate-800`}>
+                                            <TableCell className="max-w-[220px] py-4 sm:max-w-none">
+                                                <div className="flex min-w-0 items-center gap-3">
+                                                    <div className={`h-10 w-10 shrink-0 rounded-lg flex items-center justify-center ${org.banned ? 'bg-destructive/20' : 'bg-primary/10'} ring-2 ring-slate-100 dark:ring-slate-800`}>
                                                         <Building2 className={`h-5 w-5 ${org.banned ? 'text-destructive' : 'text-primary'}`} />
                                                     </div>
-                                                    <div className="flex-1">
-                                                        <p className="font-medium text-foreground">{org.name}</p>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="truncate font-medium text-foreground">{org.name}</p>
                                                         <div className="group flex items-center gap-1">
                                                             <span className="text-xs text-muted-foreground font-mono">
                                                                 {org.id.slice(0, 8)}...
@@ -730,8 +748,11 @@ export default function OrganizationsPage() {
                                                     </div>
                                                 </div>
                                             </TableCell>
-                                            <TableCell>
-                                                <Badge variant="secondary" className="bg-muted text-muted-foreground hover:bg-muted/80 font-mono text-xs">
+                                            <TableCell className="max-w-[120px] sm:max-w-none">
+                                                <Badge
+                                                    variant="secondary"
+                                                    className="max-w-full truncate bg-muted font-mono text-xs text-muted-foreground hover:bg-muted/80"
+                                                >
                                                     {org.slug}
                                                 </Badge>
                                             </TableCell>
@@ -828,11 +849,11 @@ export default function OrganizationsPage() {
 
                     {/* Pagination */}
                     {totalPages > 1 && (
-                        <div className="border-t border-border px-4 py-3 flex items-center justify-between">
-                            <p className="text-sm text-muted-foreground">
+                        <div className="flex flex-col gap-3 border-t border-border px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+                            <p className="text-center text-xs text-muted-foreground sm:text-left sm:text-sm">
                                 Showing {startRecord} to {endRecord} of {pagination.total} organizations
                             </p>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -841,9 +862,9 @@ export default function OrganizationsPage() {
                                     className="gap-1"
                                 >
                                     <ChevronLeft className="h-4 w-4" />
-                                    Previous
+                                    <span className="hidden min-[380px]:inline">Previous</span>
                                 </Button>
-                                <div className="flex items-center gap-1 px-3">
+                                <div className="flex items-center gap-1 px-1 sm:px-3">
                                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                         let pageNum;
                                         if (totalPages <= 5) {
@@ -878,7 +899,7 @@ export default function OrganizationsPage() {
                                     disabled={currentPage === totalPages || isLoading}
                                     className="gap-1"
                                 >
-                                    Next
+                                    <span className="hidden min-[380px]:inline">Next</span>
                                     <ChevronRight className="h-4 w-4" />
                                 </Button>
                             </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { calendarApi } from "@/lib/daymark-api";
+import { CALENDAR_UI_ENABLED } from "@/lib/feature-flags";
 import { Spinner } from "@/components/ui/spinner";
 
 function CalendarCallbackContent() {
@@ -21,7 +21,11 @@ function CalendarCallbackContent() {
                 setStatus("error");
                 setError(errorParam.replace(/_/g, " "));
                 setTimeout(() => {
-                    router.push(`/settings/calendars?error=${errorParam}`);
+                    router.push(
+                        CALENDAR_UI_ENABLED
+                            ? `/settings/calendars?error=${errorParam}`
+                            : "/profile/preferences",
+                    );
                 }, 2000);
                 return;
             }
@@ -30,7 +34,11 @@ function CalendarCallbackContent() {
                 setStatus("error");
                 setError("Missing authorization code or state");
                 setTimeout(() => {
-                    router.push("/settings/calendars?error=missing_parameters");
+                    router.push(
+                        CALENDAR_UI_ENABLED
+                            ? "/settings/calendars?error=missing_parameters"
+                            : "/profile/preferences",
+                    );
                 }, 2000);
                 return;
             }
@@ -56,14 +64,21 @@ function CalendarCallbackContent() {
                 }
 
                 setStatus("success");
-                // Redirect to calendars page with success message
-                router.push("/settings/calendars?success=true&provider=GOOGLE");
+                router.push(
+                    CALENDAR_UI_ENABLED
+                        ? "/settings/calendars?success=true&provider=GOOGLE"
+                        : "/profile/preferences",
+                );
             } catch (err) {
                 console.error("OAuth callback error:", err);
                 setStatus("error");
                 setError(err instanceof Error ? err.message : "Connection failed");
                 setTimeout(() => {
-                    router.push(`/settings/calendars?error=connection_failed`);
+                    router.push(
+                        CALENDAR_UI_ENABLED
+                            ? "/settings/calendars?error=connection_failed"
+                            : "/profile/preferences",
+                    );
                 }, 2000);
             }
         };

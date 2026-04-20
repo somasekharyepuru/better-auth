@@ -8,12 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
-import { SettingsSidebar } from "@/components/settings-sidebar";
-import { profileSettingsItems } from "@/lib/profile-settings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { CALENDAR_UI_ENABLED } from "@/lib/feature-flags";
 import {
   Moon,
   Sun,
@@ -160,7 +159,7 @@ export default function PreferencesPage() {
   };
 
   return (
-    <SettingsSidebar items={profileSettingsItems} basePath="/profile" title="Profile">
+    <>
       <div className="space-y-6">
         {/* Appearance */}
         <Card>
@@ -338,13 +337,15 @@ export default function PreferencesPage() {
                 </div>
                 <Checkbox checked={pomodoroSoundEnabled} onCheckedChange={(v) => setPomodoroSoundEnabled(!!v)} />
               </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-sm font-medium">Block Calendar During Focus</Label>
-                  <p className="text-xs text-muted-foreground">Mark focus time on calendar</p>
+              {CALENDAR_UI_ENABLED && (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">Block Calendar During Focus</Label>
+                    <p className="text-xs text-muted-foreground">Mark focus time on calendar</p>
+                  </div>
+                  <Checkbox checked={focusBlocksCalendar} onCheckedChange={(v) => setFocusBlocksCalendar(!!v)} />
                 </div>
-                <Checkbox checked={focusBlocksCalendar} onCheckedChange={(v) => setFocusBlocksCalendar(!!v)} />
-              </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -479,6 +480,6 @@ export default function PreferencesPage() {
           </Button>
         </div>
       </div>
-    </SettingsSidebar>
+    </>
   );
 }

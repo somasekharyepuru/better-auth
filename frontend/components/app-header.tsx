@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { useSettings } from "@/lib/settings-context";
+import { CALENDAR_UI_ENABLED } from "@/lib/feature-flags";
 import { HeaderCalendarWidget } from "@/components/calendar/header-calendar-widget";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 
@@ -81,7 +82,8 @@ export function AppHeader() {
     pathname === "/profile" || pathname.startsWith("/profile/");
   const isToolsPage = pathname === "/tools" || pathname.startsWith("/tools/");
   const isCalendarPage =
-    pathname === "/calendar" || pathname.startsWith("/calendar/");
+    CALENDAR_UI_ENABLED &&
+    (pathname === "/calendar" || pathname.startsWith("/calendar/"));
   const isDashboard = pathname === "/";
   const showToolsLink =
     settings.toolsTabEnabled &&
@@ -115,8 +117,9 @@ export function AppHeader() {
 
           {/* Desktop Navigation */}
           <div className="hidden sm:flex items-center gap-3">
-            {/* Calendar Widget - Premium Feature */}
-            {showNavLinks && <HeaderCalendarWidget variant="full" />}
+            {CALENDAR_UI_ENABLED && showNavLinks && (
+              <HeaderCalendarWidget variant="full" />
+            )}
             {showNavLinks && showToolsLink && (
               <button
                 onClick={() => router.push("/tools")}
@@ -176,7 +179,9 @@ export function AppHeader() {
           {/* Mobile Menu Button */}
           <div className="sm:hidden flex items-center gap-2">
             {/* Mobile Calendar Widget (compact) */}
-            {showNavLinks && <HeaderCalendarWidget variant="compact" />}
+            {CALENDAR_UI_ENABLED && showNavLinks && (
+              <HeaderCalendarWidget variant="compact" />
+            )}
             {showNavLinks && (
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -201,17 +206,20 @@ export function AppHeader() {
         {isMobileMenuOpen && showNavLinks && (
           <div className="sm:hidden py-3 border-t border-gray-100 dark:border-gray-800 animate-in slide-in-from-top-2 duration-200">
             <div className="flex flex-col gap-1">
-              <button
-                onClick={() => router.push("/calendar")}
-                className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-colors ${
-                  isCalendarPage
-                    ? "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-800"
-                }`}
-              >
-                <Calendar className="w-5 h-5" />
-                Full Calendar View
-              </button>
+              {CALENDAR_UI_ENABLED && (
+                <button
+                  type="button"
+                  onClick={() => router.push("/calendar")}
+                  className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-colors ${
+                    isCalendarPage
+                      ? "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  <Calendar className="w-5 h-5" />
+                  Full Calendar View
+                </button>
+              )}
               {showToolsLink && (
                 <button
                   onClick={() => router.push("/tools")}

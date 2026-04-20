@@ -24,8 +24,6 @@ import {
   Building2,
   ChevronRight,
 } from "lucide-react";
-import { SettingsSidebar } from "@/components/settings-sidebar";
-import { profileSettingsItems } from "@/lib/profile-settings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -108,7 +106,7 @@ function ProfileContent() {
   }
 
   return (
-    <SettingsSidebar items={profileSettingsItems} basePath="/profile" title="Profile">
+    <>
       <div className="space-y-6">
         {/* Profile Info */}
         <Card>
@@ -212,7 +210,7 @@ function ProfileContent() {
           </CardHeader>
           <CardContent>
             <Link
-              href="/organizations"
+              href="/profile/organizations"
               className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted transition-colors"
             >
               <span className="font-medium text-sm">View Organizations</span>
@@ -221,7 +219,7 @@ function ProfileContent() {
           </CardContent>
         </Card>
       </div>
-    </SettingsSidebar>
+    </>
   );
 }
 

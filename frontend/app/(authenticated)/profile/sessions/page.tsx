@@ -30,9 +30,6 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { profileSettingsItems } from "@/lib/profile-settings"
-import { SettingsSidebar } from "@/components/settings-sidebar"
-
 interface Session {
   id: string
   token: string
@@ -307,12 +304,8 @@ export default function SessionsPage() {
   }
 
   return (
-    <SettingsSidebar
-      items={profileSettingsItems}
-      basePath="/profile"
-      title="Sessions"
-    >
+    <>
       {sessionsContent}
-    </SettingsSidebar>
+    </>
   )
 }

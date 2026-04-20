@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { useSettings } from "@/lib/settings-context";
 import { Spinner } from "@/components/ui/spinner";
-import { SimpleBreadcrumb as Breadcrumb, BREADCRUMB_ROUTES } from "@/components/ui/breadcrumb";
-import { Timer, Grid3X3, BookOpen, Wrench } from "lucide-react";
+import { AuthenticatedPageShell } from "@/components/layout/authenticated-page-shell";
+import { PageHeader } from "@/components/page-header";
+import { Timer, Grid3X3, BookOpen } from "lucide-react";
 
 const TOOLS = [
   {
@@ -61,66 +62,52 @@ export default function ToolsPage() {
 
   if (isLoading || settingsLoading || !isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="flex min-h-[50vh] items-center justify-center bg-gray-50 dark:bg-gray-900">
         <Spinner size="lg" />
       </div>
     );
   }
 
-  // Filter tools based on settings
   const enabledTools = TOOLS.filter((tool) => settings[tool.settingsKey]);
 
   return (
-    <div className="bg-premium">
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        {/* Breadcrumb */}
-        <Breadcrumb
-          items={[
-            BREADCRUMB_ROUTES.dashboard,
-            { label: "Tools", icon: <Wrench className="w-3.5 h-3.5" /> },
-          ]}
-          className="mb-6"
-        />
+    <AuthenticatedPageShell>
+      <PageHeader
+        title="Tools"
+        description="Productivity utilities"
+        breadcrumbs={[{ label: "Tools" }]}
+        className="mb-8"
+      />
 
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl text-heading">Tools</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Productivity utilities
-          </p>
+      {enabledTools.length === 0 ? (
+        <div className="card-subtle py-16 text-center">
+          <p className="text-muted">No tools enabled</p>
+          <button
+            type="button"
+            onClick={() => router.push("/profile?tab=preferences")}
+            className="text-body mt-4 underline underline-offset-2 hover:text-gray-900"
+          >
+            Enable tools in preferences
+          </button>
         </div>
-
-        {/* Tools Grid */}
-        {enabledTools.length === 0 ? (
-          <div className="card-subtle text-center py-16">
-            <p className="text-muted">No tools enabled</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {enabledTools.map((tool) => (
             <button
-              onClick={() => router.push("/profile?tab=preferences")}
-              className="mt-4 text-body hover:text-gray-900 underline underline-offset-2"
+              key={tool.key}
+              type="button"
+              onClick={() => router.push(tool.href)}
+              className="card-premium group text-left"
             >
-              Enable tools in preferences
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-100/80 transition-colors group-hover:bg-gray-200/80 dark:bg-gray-800 dark:group-hover:bg-gray-700">
+                <tool.icon className="text-body h-6 w-6 dark:text-gray-300" />
+              </div>
+              <h3 className="text-subheading mb-1 text-lg">{tool.name}</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{tool.description}</p>
             </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {enabledTools.map((tool) => (
-              <button
-                key={tool.key}
-                onClick={() => router.push(tool.href)}
-                className="card-premium text-left group"
-              >
-                <div className="w-12 h-12 rounded-2xl bg-gray-100/80 dark:bg-gray-800 flex items-center justify-center mb-4 group-hover:bg-gray-200/80 dark:group-hover:bg-gray-700 transition-colors">
-                  <tool.icon className="w-6 h-6 text-body dark:text-gray-300" />
-                </div>
-                <h3 className="text-lg text-subheading mb-1">{tool.name}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {tool.description}
-                </p>
-              </button>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
+          ))}
+        </div>
+      )}
+    </AuthenticatedPageShell>
   );
 }

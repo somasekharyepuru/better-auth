@@ -6,6 +6,7 @@ import {
   History,
   KeyRound,
   Trash2,
+  Building2,
 } from "lucide-react"
 
 export interface SettingsNavItem {
@@ -16,6 +17,7 @@ export interface SettingsNavItem {
 
 export const profileSettingsItems: SettingsNavItem[] = [
   { title: "Profile", href: "/profile", icon: User },
+  { title: "Organizations", href: "/profile/organizations", icon: Building2 },
   { title: "Preferences", href: "/profile/preferences", icon: Settings },
   { title: "Two-Factor Auth", href: "/profile/two-factor", icon: Shield },
   { title: "Active Sessions", href: "/profile/sessions", icon: MonitorPlay },

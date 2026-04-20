@@ -47,6 +47,7 @@ import {
   CommandShortcut,
 } from "@/components/ui/command";
 import { useSettings } from "@/lib/settings-context";
+import { CALENDAR_UI_ENABLED } from "@/lib/feature-flags";
 import { HeaderCalendarWidget } from "@/components/calendar/header-calendar-widget";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { cn, getAvatarFallback } from "@/lib/utils";
@@ -110,75 +111,85 @@ export function UnifiedHeader() {
     command();
   };
 
-  const isCalendarPage = pathname === "/calendar" || pathname.startsWith("/calendar/");
-  const isOrgPage = pathname?.startsWith("/organizations/");
+  const isCalendarPage =
+    CALENDAR_UI_ENABLED &&
+    (pathname === "/calendar" || pathname.startsWith("/calendar/"));
   const isDashboard = pathname === "/";
+  const isToolsPage = pathname === "/tools" || pathname.startsWith("/tools/");
   const showToolsLink = settings.toolsTabEnabled && (settings.pomodoroEnabled || settings.eisenhowerEnabled || settings.decisionLogEnabled);
-  const showNavLinks = isDashboard || isCalendarPage || isOrgPage;
   const userInitials = getAvatarFallback(user?.name, user?.email);
 
   return (
     <>
       <header className="fixed top-0 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="flex justify-between items-center h-14 sm:h-16">
-            {/* Left side */}
-            <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 h-14 sm:h-16 min-w-0">
+            {/* Logo + desktop date strip when calendar is enabled */}
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               <Link href="/" className="transition-opacity hover:opacity-80">
                 <Logo size="sm" />
               </Link>
+              {CALENDAR_UI_ENABLED && (
+                <div className="hidden sm:block">
+                  <HeaderCalendarWidget variant="full" />
+                </div>
+              )}
             </div>
 
-            {/* Desktop Navigation - Left */}
-            <div className="hidden sm:flex items-center gap-2">
-              {/* Calendar Widget */}
-              {showNavLinks && <HeaderCalendarWidget variant="full" />}
-            </div>
-
-            {/* Center - Search / Command Palette Trigger */}
-            <div className="flex-1 flex justify-center">
+            {/* Single command palette trigger — was duplicated on mobile (center + mobile-only row) */}
+            <div className="flex flex-1 justify-center min-w-0 px-1 sm:px-2">
               <button
+                type="button"
                 onClick={() => setIsCommandOpen(true)}
-                className="flex items-center gap-2 px-4 py-1.5 text-sm text-gray-500 hover:text-gray-900 bg-gray-100 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors min-w-[200px] justify-center"
+                className={cn(
+                  "flex h-9 w-full max-w-[15rem] min-[480px]:max-w-xs sm:max-w-sm md:max-w-md items-center gap-2 rounded-full border border-transparent px-3 text-sm transition-colors",
+                  "bg-gray-100 text-gray-500 hover:border-gray-200 hover:bg-gray-100/80 hover:text-gray-900",
+                  "dark:bg-gray-800 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:bg-gray-800/80 dark:hover:text-gray-200",
+                  "sm:justify-center sm:px-4",
+                  "justify-start",
+                )}
               >
-                <Search className="w-4 h-4" />
-                <span className="hidden sm:inline">Search...</span>
-                <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-1.5 font-mono text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                <Search className="h-4 w-4 shrink-0 opacity-70" />
+                <span className="hidden min-[400px]:inline sm:inline truncate text-left">Search…</span>
+                <kbd className="ml-auto inline-flex h-5 shrink-0 items-center gap-1 rounded border border-gray-200 bg-white px-1.5 font-mono text-[10px] font-medium text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
                   ⌘K
                 </kbd>
               </button>
             </div>
 
-            {/* Right side */}
-            <div className="flex items-center gap-2">
-              {/* Tools Link */}
-              {showNavLinks && showToolsLink && (
+            {/* Trailing actions — Tools lives in the hamburger on small screens to reduce crowding */}
+            <div className="flex shrink-0 items-center gap-0.5 sm:gap-2">
+              {showToolsLink && (
                 <button
+                  type="button"
                   onClick={() => router.push("/tools")}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  className={cn(
+                    "hidden sm:flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors lg:px-3",
+                    isToolsPage
+                      ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
+                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200",
+                  )}
                 >
-                  <Wrench className="w-4 h-4" />
+                  <Wrench className="h-4 w-4" />
                   <span className="hidden lg:inline">Tools</span>
                 </button>
               )}
 
-              {/* Theme Switcher */}
-              {showNavLinks && <ThemeSwitcher />}
+              <ThemeSwitcher />
 
-              {/* User Dropdown */}
               {user && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center gap-2 px-2 hover:bg-muted">
+                    <Button variant="ghost" className="h-9 gap-1.5 px-1.5 hover:bg-muted sm:px-2">
                       <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                        <AvatarFallback className="bg-primary/10 text-sm font-medium text-primary">
                           {userInitials}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="hidden md:inline-block text-sm font-medium max-w-[100px] truncate">
+                      <span className="hidden max-w-[7rem] truncate text-sm font-medium md:inline-block">
                         {user.name || user.email}
                       </span>
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      <ChevronDown className="h-4 w-4 text-muted-foreground max-md:hidden" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -196,44 +207,31 @@ export function UnifiedHeader() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive cursor-pointer">
+                    <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive">
                       <LogOut className="mr-2 h-4 w-4" />
                       Sign out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
-            </div>
 
-            {/* Mobile Menu Button */}
-            <div className="sm:hidden flex items-center gap-2">
-              {showNavLinks && <HeaderCalendarWidget variant="compact" />}
-              {showNavLinks && (
-                <button
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                >
-                  {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                </button>
-              )}
-            </div>
-
-            {/* Mobile Center - Search */}
-            <button
-              onClick={() => setIsCommandOpen(true)}
-              className="sm:hidden flex-1 flex justify-center"
-            >
-              <div className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500 bg-gray-100 dark:bg-gray-800 dark:text-gray-400 rounded-full">
-                <Search className="w-4 h-4" />
-                <kbd className="inline-flex h-5 items-center gap-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-1.5 font-mono text-[10px] font-medium text-gray-500 dark:text-gray-400">
-                  ⌘K
-                </kbd>
+              <div className="flex items-center sm:hidden">
+                  {CALENDAR_UI_ENABLED && <HeaderCalendarWidget variant="compact" />}
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                    aria-expanded={isMobileMenuOpen}
+                    aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                  >
+                    {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                  </button>
               </div>
-            </button>
+            </div>
           </div>
 
           {/* Mobile Dropdown Menu */}
-          {isMobileMenuOpen && showNavLinks && (
+          {isMobileMenuOpen && (
             <div className="sm:hidden py-3 border-t border-gray-100 dark:border-gray-800 animate-in slide-in-from-top-2 duration-200">
               <div className="flex flex-col gap-1">
                 <button
@@ -248,22 +246,34 @@ export function UnifiedHeader() {
                   <Home className="w-5 h-5" />
                   Dashboard
                 </button>
-                <button
-                  onClick={() => { router.push("/calendar"); setIsMobileMenuOpen(false); }}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-colors",
-                    isCalendarPage
-                      ? "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-800"
-                  )}
-                >
-                  <Calendar className="w-5 h-5" />
-                  Calendar
-                </button>
+                {CALENDAR_UI_ENABLED && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      router.push("/calendar");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-colors",
+                      isCalendarPage
+                        ? "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-800",
+                    )}
+                  >
+                    <Calendar className="w-5 h-5" />
+                    Calendar
+                  </button>
+                )}
                 {showToolsLink && (
                   <button
+                    type="button"
                     onClick={() => { router.push("/tools"); setIsMobileMenuOpen(false); }}
-                    className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-colors",
+                      isToolsPage
+                        ? "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-800",
+                    )}
                   >
                     <Wrench className="w-5 h-5" />
                     Tools
@@ -323,11 +333,13 @@ export function UnifiedHeader() {
               <span>Dashboard</span>
               <CommandShortcut>⌘D</CommandShortcut>
             </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => router.push("/calendar"))}>
-              <Calendar className="mr-2 h-4 w-4" />
-              <span>Calendar</span>
-              <CommandShortcut>⌘C</CommandShortcut>
-            </CommandItem>
+            {CALENDAR_UI_ENABLED && (
+              <CommandItem onSelect={() => runCommand(() => router.push("/calendar"))}>
+                <Calendar className="mr-2 h-4 w-4" />
+                <span>Calendar</span>
+                <CommandShortcut>⌘C</CommandShortcut>
+              </CommandItem>
+            )}
             <CommandItem onSelect={() => runCommand(() => router.push("/tools"))}>
               <Wrench className="mr-2 h-4 w-4" />
               <span>Tools</span>
@@ -355,10 +367,12 @@ export function UnifiedHeader() {
               <Wrench className="mr-2 h-4 w-4" />
               <span>Decision Log</span>
             </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => router.push("/settings/calendars"))}>
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Calendar Settings</span>
-            </CommandItem>
+            {CALENDAR_UI_ENABLED && (
+              <CommandItem onSelect={() => runCommand(() => router.push("/settings/calendars"))}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Calendar Settings</span>
+              </CommandItem>
+            )}
           </CommandGroup>
 
           <CommandSeparator />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CALENDAR_UI_ENABLED } from "@/lib/feature-flags";
 import Link from "next/link";
 import {
   Calendar,
@@ -133,6 +134,10 @@ function FeatureCard({
 }
 
 export default function HelpPage() {
+  const quickLinkGridClass = CALENDAR_UI_ENABLED
+    ? "grid grid-cols-2 md:grid-cols-4 gap-3"
+    : "grid grid-cols-2 md:grid-cols-3 gap-3";
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header with Breadcrumb */}
@@ -179,35 +184,37 @@ export default function HelpPage() {
           </div>
 
           {/* Quick Links */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <a
+          <div className={quickLinkGridClass}>
+            <Link
               href="#dashboard"
               className="bg-white/10 hover:bg-white/20 rounded-lg p-3 text-center transition-colors"
             >
               <LayoutDashboard className="w-5 h-5 mx-auto mb-1" />
               <span className="text-sm">Dashboard</span>
-            </a>
-            <a
-              href="#calendar"
-              className="bg-white/10 hover:bg-white/20 rounded-lg p-3 text-center transition-colors"
-            >
-              <Calendar className="w-5 h-5 mx-auto mb-1" />
-              <span className="text-sm">Calendar</span>
-            </a>
-            <a
+            </Link>
+            {CALENDAR_UI_ENABLED && (
+              <Link
+                href="#calendar"
+                className="bg-white/10 hover:bg-white/20 rounded-lg p-3 text-center transition-colors"
+              >
+                <Calendar className="w-5 h-5 mx-auto mb-1" />
+                <span className="text-sm">Calendar</span>
+              </Link>
+            )}
+            <Link
               href="#tools"
               className="bg-white/10 hover:bg-white/20 rounded-lg p-3 text-center transition-colors"
             >
               <Grid3X3 className="w-5 h-5 mx-auto mb-1" />
               <span className="text-sm">Tools</span>
-            </a>
-            <a
+            </Link>
+            <Link
               href="#shortcuts"
               className="bg-white/10 hover:bg-white/20 rounded-lg p-3 text-center transition-colors"
             >
               <Keyboard className="w-5 h-5 mx-auto mb-1" />
               <span className="text-sm">Shortcuts</span>
-            </a>
+            </Link>
           </div>
         </div>
       </div>
@@ -239,13 +246,19 @@ export default function HelpPage() {
               </div>
               <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl text-center">
                 <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Calendar className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                  {CALENDAR_UI_ENABLED ? (
+                    <Calendar className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                  ) : (
+                    <Clock className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                  )}
                 </div>
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
                   2. Block Time
                 </h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Create focus blocks for deep work on your calendar
+                  {CALENDAR_UI_ENABLED
+                    ? "Create focus blocks for deep work on your calendar"
+                    : "Plan your day with time blocks on the dashboard"}
                 </p>
               </div>
               <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl text-center">
@@ -337,88 +350,89 @@ export default function HelpPage() {
           </CollapsibleSection>
         </div>
 
-        {/* Calendar */}
-        <div id="calendar">
-          <CollapsibleSection
-            title="Calendar & Time Blocks"
-            icon={<Calendar className="w-5 h-5 text-purple-500" />}
-          >
-            <div className="space-y-4">
-              <p className="text-gray-600 dark:text-gray-400">
-                Unified calendar aggregating all your connected calendars with
-                focus time blocking.
-              </p>
-
-              <h4 className="font-medium text-gray-900 dark:text-white">
-                Time Block Categories:
-              </h4>
-              <div className="grid md:grid-cols-2 gap-3">
-                <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border-l-4 border-purple-500">
-                  <span className="font-medium text-purple-900 dark:text-purple-100">
-                    Focus
-                  </span>
-                  <p className="text-xs text-purple-700 dark:text-purple-300">
-                    Deep work sessions, blocks external calendars
-                  </p>
-                </div>
-                <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border-l-4 border-indigo-500">
-                  <span className="font-medium text-indigo-900 dark:text-indigo-100">
-                    Deep Work
-                  </span>
-                  <p className="text-xs text-indigo-700 dark:text-indigo-300">
-                    Extended focus for complex tasks
-                  </p>
-                </div>
-                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-500">
-                  <span className="font-medium text-blue-900 dark:text-blue-100">
-                    Meeting
-                  </span>
-                  <p className="text-xs text-blue-700 dark:text-blue-300">
-                    Scheduled meetings and calls
-                  </p>
-                </div>
-                <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border-l-4 border-green-500">
-                  <span className="font-medium text-green-900 dark:text-green-100">
-                    Break
-                  </span>
-                  <p className="text-xs text-green-700 dark:text-green-300">
-                    Rest periods between sessions
-                  </p>
-                </div>
-              </div>
-
-              <h4 className="font-medium text-gray-900 dark:text-white mt-4">
-                Create Focus Blocks:
-              </h4>
-              <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
-                <li>
-                  • <strong>Click</strong> any time slot to create a block
-                </li>
-                <li>
-                  • <strong>Shift+N</strong> for quick focus block at 9 AM
-                </li>
-                <li>
-                  • <strong>Drag priorities</strong> from dashboard onto
-                  calendar
-                </li>
-              </ul>
-
-              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                <p className="text-sm text-purple-800 dark:text-purple-200">
-                  <strong>External Blocking:</strong> Focus blocks automatically
-                  mark you as &quot;busy&quot; in Google, Microsoft, and Apple calendars.
+        {CALENDAR_UI_ENABLED && (
+          <div id="calendar">
+            <CollapsibleSection
+              title="Calendar & Time Blocks"
+              icon={<Calendar className="w-5 h-5 text-purple-500" />}
+            >
+              <div className="space-y-4">
+                <p className="text-gray-600 dark:text-gray-400">
+                  Unified calendar aggregating all your connected calendars with
+                  focus time blocking.
                 </p>
-              </div>
 
-              <Link
-                href="/calendar/help"
-                className="inline-flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:underline text-sm mt-2"
-              >
-                View full calendar guide <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </CollapsibleSection>
-        </div>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Time Block Categories:
+                </h4>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border-l-4 border-purple-500">
+                    <span className="font-medium text-purple-900 dark:text-purple-100">
+                      Focus
+                    </span>
+                    <p className="text-xs text-purple-700 dark:text-purple-300">
+                      Deep work sessions, blocks external calendars
+                    </p>
+                  </div>
+                  <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border-l-4 border-indigo-500">
+                    <span className="font-medium text-indigo-900 dark:text-indigo-100">
+                      Deep Work
+                    </span>
+                    <p className="text-xs text-indigo-700 dark:text-indigo-300">
+                      Extended focus for complex tasks
+                    </p>
+                  </div>
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-500">
+                    <span className="font-medium text-blue-900 dark:text-blue-100">
+                      Meeting
+                    </span>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      Scheduled meetings and calls
+                    </p>
+                  </div>
+                  <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border-l-4 border-green-500">
+                    <span className="font-medium text-green-900 dark:text-green-100">
+                      Break
+                    </span>
+                    <p className="text-xs text-green-700 dark:text-green-300">
+                      Rest periods between sessions
+                    </p>
+                  </div>
+                </div>
+
+                <h4 className="font-medium text-gray-900 dark:text-white mt-4">
+                  Create Focus Blocks:
+                </h4>
+                <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                  <li>
+                    • <strong>Click</strong> any time slot to create a block
+                  </li>
+                  <li>
+                    • <strong>Shift+N</strong> for quick focus block at 9 AM
+                  </li>
+                  <li>
+                    • <strong>Drag priorities</strong> from dashboard onto
+                    calendar
+                  </li>
+                </ul>
+
+                <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                  <p className="text-sm text-purple-800 dark:text-purple-200">
+                    <strong>External Blocking:</strong> Focus blocks automatically
+                    mark you as &quot;busy&quot; in Google, Microsoft, and Apple calendars.
+                  </p>
+                </div>
+
+                <Link
+                  href="/calendar/help"
+                  className="inline-flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:underline text-sm mt-2"
+                >
+                  View full calendar guide <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </CollapsibleSection>
+          </div>
+        )}
 
         {/* Tools */}
         <div id="tools">
@@ -461,7 +475,12 @@ export default function HelpPage() {
                   <li>Work for 25 minutes (1 Pomodoro)</li>
                   <li>Take a 5-minute break</li>
                   <li>After 4 Pomodoros, take a 15-30 min break</li>
-                  <li>Repeat! Track sessions in calendar</li>
+                  <li>
+                    Repeat!{" "}
+                    {CALENDAR_UI_ENABLED
+                      ? "Track sessions in calendar"
+                      : "Build sustainable focus habits"}
+                  </li>
                 </ol>
               </div>
             </div>
@@ -476,51 +495,66 @@ export default function HelpPage() {
             defaultOpen={true}
           >
             <div className="space-y-4">
-              <h4 className="font-medium text-gray-900 dark:text-white">
-                Calendar Navigation
-              </h4>
-              <KeyboardShortcut
-                keys={["←"]}
-                description="Go to previous day/week/month"
-              />
-              <KeyboardShortcut
-                keys={["→"]}
-                description="Go to next day/week/month"
-              />
-              <KeyboardShortcut keys={["T"]} description="Jump to today" />
+              {CALENDAR_UI_ENABLED ? (
+                <>
+                  <h4 className="font-medium text-gray-900 dark:text-white">
+                    Calendar Navigation
+                  </h4>
+                  <KeyboardShortcut
+                    keys={["←"]}
+                    description="Go to previous day/week/month"
+                  />
+                  <KeyboardShortcut
+                    keys={["→"]}
+                    description="Go to next day/week/month"
+                  />
+                  <KeyboardShortcut keys={["T"]} description="Jump to today" />
 
-              <h4 className="font-medium text-gray-900 dark:text-white pt-2">
-                View Modes
-              </h4>
-              <KeyboardShortcut keys={["D"]} description="Switch to Day view" />
-              <KeyboardShortcut
-                keys={["W"]}
-                description="Switch to Week view"
-              />
-              <KeyboardShortcut
-                keys={["M"]}
-                description="Switch to Month view"
-              />
-              <KeyboardShortcut keys={["S"]} description="Toggle sidebar" />
+                  <h4 className="font-medium text-gray-900 dark:text-white pt-2">
+                    View Modes
+                  </h4>
+                  <KeyboardShortcut keys={["D"]} description="Switch to Day view" />
+                  <KeyboardShortcut
+                    keys={["W"]}
+                    description="Switch to Week view"
+                  />
+                  <KeyboardShortcut
+                    keys={["M"]}
+                    description="Switch to Month view"
+                  />
+                  <KeyboardShortcut keys={["S"]} description="Toggle sidebar" />
 
-              <h4 className="font-medium text-gray-900 dark:text-white pt-2">
-                Actions
-              </h4>
-              <KeyboardShortcut keys={["N"]} description="Create new event" />
-              <KeyboardShortcut
-                keys={["⇧", "N"]}
-                description="Quick focus block (9 AM)"
-              />
-              <KeyboardShortcut keys={["R"]} description="Refresh calendars" />
-              <KeyboardShortcut keys={["F"]} description="Toggle Focus Mode" />
-              <KeyboardShortcut
-                keys={["?"]}
-                description="Show keyboard shortcuts"
-              />
-              <KeyboardShortcut
-                keys={["Esc"]}
-                description="Close modal/dialog"
-              />
+                  <h4 className="font-medium text-gray-900 dark:text-white pt-2">
+                    Actions
+                  </h4>
+                  <KeyboardShortcut keys={["N"]} description="Create new event" />
+                  <KeyboardShortcut
+                    keys={["⇧", "N"]}
+                    description="Quick focus block (9 AM)"
+                  />
+                  <KeyboardShortcut keys={["R"]} description="Refresh calendars" />
+                  <KeyboardShortcut keys={["F"]} description="Toggle Focus Mode" />
+                  <KeyboardShortcut
+                    keys={["?"]}
+                    description="Show keyboard shortcuts"
+                  />
+                  <KeyboardShortcut
+                    keys={["Esc"]}
+                    description="Close modal/dialog"
+                  />
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Day and week grid shortcuts will be listed here when Calendar
+                    is available again.
+                  </p>
+                  <KeyboardShortcut
+                    keys={["Esc"]}
+                    description="Close modal/dialog"
+                  />
+                </>
+              )}
             </div>
           </CollapsibleSection>
         </div>
@@ -558,12 +592,14 @@ export default function HelpPage() {
           icon={<Settings className="w-5 h-5 text-gray-500" />}
         >
           <div className="space-y-4">
-            <FeatureCard
-              icon={<Wifi className="w-5 h-5 text-green-500" />}
-              title="Calendar Connections"
-              description="Connect Google, Microsoft, or Apple calendars."
-              link="/settings/calendars"
-            />
+            {CALENDAR_UI_ENABLED && (
+              <FeatureCard
+                icon={<Wifi className="w-5 h-5 text-green-500" />}
+                title="Calendar Connections"
+                description="Connect Google, Microsoft, or Apple calendars."
+                link="/settings/calendars"
+              />
+            )}
             <FeatureCard
               icon={<Shield className="w-5 h-5 text-blue-500" />}
               title="Two-Factor Authentication"
@@ -584,7 +620,7 @@ export default function HelpPage() {
           <p className="text-gray-600 dark:text-gray-400">
             Ready to take control of your time?
           </p>
-          <div className="flex justify-center gap-4">
+          <div className="flex flex-wrap justify-center gap-4">
             <Link href="/">
               <Button
                 size="lg"
@@ -594,12 +630,14 @@ export default function HelpPage() {
                 Go to Dashboard
               </Button>
             </Link>
-            <Link href="/calendar">
-              <Button size="lg" variant="outline" className="px-8">
-                <Calendar className="w-5 h-5 mr-2" />
-                Open Calendar
-              </Button>
-            </Link>
+            {CALENDAR_UI_ENABLED && (
+              <Link href="/calendar">
+                <Button size="lg" variant="outline" className="px-8">
+                  <Calendar className="w-5 h-5 mr-2" />
+                  Open Calendar
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>

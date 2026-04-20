@@ -36,7 +36,7 @@ export default function TermsOfServicePage() {
           <div className="prose prose-neutral dark:prose-invert max-w-none">
             <section className="space-y-4">
               <p className="text-lg text-muted-foreground">
-                Welcome to Auth Service. These Terms of Service govern your access to and use of our authentication service. By accessing or using our service, you agree to be bound by these Terms.
+                Welcome to Daymark. These Terms of Service govern your access to and use of our service. By accessing or using our service, you agree to be bound by these Terms.
               </p>
             </section>
 
@@ -49,7 +49,7 @@ export default function TermsOfServicePage() {
 
             <section className="space-y-4">
               <h2 className="text-2xl font-semibold">2. Description of Services</h2>
-              <p className="text-muted-foreground">Auth Service provides:</p>
+              <p className="text-muted-foreground">Daymark provides:</p>
               <ul className="list-disc pl-6 text-muted-foreground space-y-2">
                 <li>User authentication and account management</li>
                 <li>Two-factor authentication (2FA)</li>
@@ -101,7 +101,7 @@ export default function TermsOfServicePage() {
             <Link href="/" className="hover:text-foreground transition-colors">
               <Logo size="sm" />
             </Link>
-            <span>© {new Date().getFullYear()} Auth Service</span>
+            <span>© {new Date().getFullYear()} Daymark</span>
           </div>
         </div>
       </footer>

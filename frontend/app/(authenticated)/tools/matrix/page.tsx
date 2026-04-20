@@ -7,7 +7,8 @@ import { useSettings } from "@/lib/settings-context";
 import { useLifeAreas } from "@/lib/life-areas-context";
 import { useToast } from "@/components/ui/toast";
 import { Spinner } from "@/components/ui/spinner";
-import { SimpleBreadcrumb as Breadcrumb, BREADCRUMB_ROUTES } from "@/components/ui/breadcrumb";
+import { AuthenticatedPageShell } from "@/components/layout/authenticated-page-shell";
+import { PageHeader } from "@/components/page-header";
 import {
   Plus,
   X,
@@ -18,8 +19,6 @@ import {
   Info,
   HelpCircle,
   Circle,
-  Wrench,
-  Grid3X3,
 } from "lucide-react";
 import { SimpleTooltip as Tooltip } from "@/components/ui/tooltip";
 
@@ -258,44 +257,30 @@ export default function EisenhowerPage() {
   }
 
   return (
-    <div className="bg-premium relative">
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        {/* Breadcrumb */}
-        <Breadcrumb
-          items={[
-            BREADCRUMB_ROUTES.dashboard,
-            {
-              label: "Tools",
-              href: "/tools",
-              icon: <Wrench className="w-3.5 h-3.5" />,
-            },
-            {
-              label: "Eisenhower Matrix",
-              icon: <Grid3X3 className="w-3.5 h-3.5" />,
-            },
-          ]}
-          className="mb-6"
-        />
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl text-heading">Eisenhower Matrix</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Prioritize by urgency and importance
-            </p>
-          </div>
+    <>
+    <AuthenticatedPageShell className="relative">
+      <PageHeader
+        title="Eisenhower Matrix"
+        description="Prioritize by urgency and importance"
+        breadcrumbs={[
+          { label: "Tools", href: "/tools" },
+          { label: "Eisenhower Matrix" },
+        ]}
+        className="mb-8"
+        actions={
           <Tooltip content="How to use">
             <button
+              type="button"
               onClick={() => setShowInfo(true)}
-              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
             >
-              <HelpCircle className="w-6 h-6" />
+              <HelpCircle className="h-6 w-6" />
             </button>
           </Tooltip>
-        </div>
+        }
+      />
 
-        {/* Matrix Grid */}
+      {/* Matrix Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {QUADRANTS.map((quadrant) => {
             const quadrantTasks = getTasksForQuadrant(quadrant.id);
@@ -484,7 +469,7 @@ export default function EisenhowerPage() {
             );
           })}
         </div>
-      </main>
+    </AuthenticatedPageShell>
 
       {/* Info Modal */}
       {showInfo && (
@@ -654,6 +639,6 @@ export default function EisenhowerPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

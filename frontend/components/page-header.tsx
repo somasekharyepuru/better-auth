@@ -44,7 +44,7 @@ export function PageHeader({ title, description, breadcrumbs, actions, backHref,
             <Breadcrumb className="mb-2">
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/dashboard" className="flex items-center gap-1">
+                  <BreadcrumbLink href="/" className="flex items-center gap-1" aria-label="Home">
                     <Home className="h-3.5 w-3.5" />
                   </BreadcrumbLink>
                 </BreadcrumbItem>

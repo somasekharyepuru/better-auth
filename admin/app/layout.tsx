@@ -25,8 +25,8 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
-  title: "Auth Admin Dashboard",
-  description: "Admin dashboard for Better Auth user management",
+  title: "Daymark Admin",
+  description: "Admin dashboard for Daymark user management",
 };
 
 export default function RootLayout({

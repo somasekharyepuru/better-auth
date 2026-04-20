@@ -43,9 +43,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { profileSettingsItems } from "@/lib/profile-settings"
-import { SettingsSidebar } from "@/components/settings-sidebar"
-
 interface AuditLog {
   id: string
   userId: string
@@ -208,11 +205,7 @@ export default function ActivityPage() {
 
   if (error && logs.length === 0) {
     return (
-      <SettingsSidebar
-        items={profileSettingsItems}
-        basePath="/profile"
-        title="Activity"
-      >
+      <>
         <div className="space-y-6">
           <Card className="border-destructive/50">
             <CardContent className="pt-6">
@@ -239,7 +232,7 @@ export default function ActivityPage() {
             </CardContent>
           </Card>
         </div>
-      </SettingsSidebar>
+      </>
     )
   }
 
@@ -513,12 +506,8 @@ export default function ActivityPage() {
   )
 
   return (
-    <SettingsSidebar
-      items={profileSettingsItems}
-      basePath="/profile"
-      title="Activity"
-    >
+    <>
       {activityContent}
-    </SettingsSidebar>
+    </>
   )
 }

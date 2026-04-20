@@ -29,7 +29,7 @@ describe('Landing Page', () => {
       render(<LandingPage />)
 
       await waitFor(() => {
-        expect(screen.getAllByText('Auth').length).toBeGreaterThan(0)
+        expect(screen.getAllByText('Daymark').length).toBeGreaterThan(0)
       })
     })
 
@@ -187,7 +187,7 @@ describe('Landing Page', () => {
       render(<LandingPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('© 2025 Auth Service')).toBeInTheDocument()
+        expect(screen.getByText(new RegExp(`© ${new Date().getFullYear()} Daymark`))).toBeInTheDocument()
       })
     })
 
