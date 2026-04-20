@@ -199,25 +199,26 @@ function ProfileContent() {
           </CardContent>
         </Card>
 
-        {/* Organizations */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Organizations
-            </CardTitle>
-            <CardDescription>Manage your team workspaces</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link
-              href="/profile/organizations"
-              className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted transition-colors"
-            >
-              <span className="font-medium text-sm">View Organizations</span>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </Link>
-          </CardContent>
-        </Card>
+        {user?.role === "admin" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Organizations
+              </CardTitle>
+              <CardDescription>Manage your team workspaces</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link
+                href="/profile/organizations"
+                className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted transition-colors"
+              >
+                <span className="font-medium text-sm">View Organizations</span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </Link>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </>
   );

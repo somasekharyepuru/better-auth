@@ -252,7 +252,7 @@ describe('Activity Page', () => {
       const { container } = render(<ActivityPage />)
 
       await waitFor(() => {
-        expect(container.textContent).toContain('unknown.action')
+        expect(container.textContent).toContain('Unknown Action')
       })
     })
   })

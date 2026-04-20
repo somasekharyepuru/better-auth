@@ -16,16 +16,18 @@ import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Spinner } from "@/components/ui/spinner"
 import { SocialAuthButtons } from "@/components/social-auth-buttons"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
 import { authClient } from "@/lib/auth-client"
 import { useAuthCheck } from "@/hooks/use-auth-check"
 import { cn } from "@/lib/utils"
 
 const signInSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Please enter a valid email address")
+    .trim()
+    .toLowerCase(),
   password: z.string().min(1, "Password is required"),
-  rememberMe: z.boolean().optional(),
 })
 
 type SignInForm = z.infer<typeof signInSchema>
@@ -72,7 +74,8 @@ function LoginPageContent() {
 
   const form = useForm<SignInForm>({
     resolver: zodResolver(signInSchema),
-    defaultValues: { email: "", password: "", rememberMe: false },
+    defaultValues: { email: "", password: "" },
+    mode: "onChange",
   })
 
   const onSubmit = async (data: SignInForm) => {
@@ -83,7 +86,6 @@ function LoginPageContent() {
       const result = await authClient.signIn.email({
         email: data.email,
         password: data.password,
-        rememberMe: data.rememberMe,
       })
 
       if (result.error) {
@@ -220,36 +222,13 @@ function LoginPageContent() {
                     />
                   </div>
 
-                  <FormField
-                    control={form.control}
-                    name="rememberMe"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            id="rememberMe"
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            disabled={isLoading}
-                            className="border-border/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                          />
-                        </FormControl>
-                        <Label
-                          htmlFor="rememberMe"
-                          className="text-sm text-muted-foreground cursor-pointer select-none"
-                        >
-                          Keep me signed in for 30 days
-                        </Label>
-                      </FormItem>
-                    )}
-                  />
-
                   <LoadingButton
                     type="submit"
                     className="w-full h-11 font-medium shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200"
                     size="lg"
                     isLoading={isLoading}
                     loadingText="Signing in..."
+                    disabled={!form.formState.isValid || isLoading}
                   >
                     <span className="flex items-center gap-2">
                       Sign in

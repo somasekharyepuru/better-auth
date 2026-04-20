@@ -8,6 +8,7 @@ import QRCode from "react-qr-code"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { OtpInput } from "@/components/ui/otp-input"
 import { Spinner } from "@/components/ui/spinner"
 import {
   Card,
@@ -215,7 +216,7 @@ export default function TwoFactorPage() {
     <div className="space-y-6">
       {/* Password Prompt */}
       {showPasswordPrompt && (
-        <Card className="animate-fade-in-scale border-primary/20">
+        <Card className="border-primary/20">
           <CardHeader>
             <CardTitle className="text-base">Confirm your password</CardTitle>
             <CardDescription>Enter your password to continue</CardDescription>
@@ -252,10 +253,10 @@ export default function TwoFactorPage() {
 
       {/* 2FA Status Cards */}
       {user?.twoFactorEnabled ? (
-        <Card variant="elevated" className="animate-fade-in-up delay-100">
+        <Card variant="elevated">
           <CardContent className="p-8">
             <div className="text-center space-y-4">
-              <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mx-auto animate-fade-in-scale">
+              <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mx-auto">
                 <ShieldCheck className="w-10 h-10 text-success" />
               </div>
               <div>
@@ -279,7 +280,7 @@ export default function TwoFactorPage() {
           </CardContent>
         </Card>
       ) : setupData ? (
-        <Card variant="elevated" className="animate-fade-in-up delay-100">
+        <Card variant="elevated">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Smartphone className="w-5 h-5 text-primary" />
@@ -375,15 +376,18 @@ export default function TwoFactorPage() {
 
             {/* Verification */}
             <div className="space-y-3">
-              <Label htmlFor="verificationCode">Enter code from app</Label>
-              <Input
-                id="verificationCode"
-                value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="000000"
-                maxLength={6}
-                className="text-center text-2xl tracking-[0.5em] font-mono h-14"
-              />
+              <Label htmlFor="verificationCode" className="block text-center">
+                Enter code from app
+              </Label>
+              <div className="flex justify-center">
+                <OtpInput
+                  length={6}
+                  value={verificationCode}
+                  onChange={setVerificationCode}
+                  autoFocus
+                  ariaLabel="6-digit authenticator verification code"
+                />
+              </div>
             </div>
 
             <Button
@@ -398,7 +402,7 @@ export default function TwoFactorPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card variant="elevated" className="animate-fade-in-up delay-100">
+        <Card variant="elevated">
           <CardContent className="p-8">
             <div className="text-center space-y-4">
               <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto">
@@ -422,7 +426,7 @@ export default function TwoFactorPage() {
       )}
 
       {/* Info text */}
-      <p className="text-sm text-muted-foreground text-center animate-fade-in delay-200">
+      <p className="text-sm text-muted-foreground text-center">
         Two-factor authentication adds an extra layer of security by requiring a code from your phone in addition to your password.
       </p>
     </div>

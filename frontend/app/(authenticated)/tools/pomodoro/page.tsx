@@ -245,7 +245,7 @@ export default function PomodoroPage() {
 
     return (
         <>
-            <AuthenticatedPageShell narrow className="relative">
+            <AuthenticatedPageShell className="relative">
                 <PageHeader
                     title="Pomodoro Timer"
                     description="Focus on what matters"
@@ -275,6 +275,8 @@ export default function PomodoroPage() {
                     }
                 />
 
+                {/* Narrow content wrapper — keeps timer centered without constraining the header */}
+                <div className="mx-auto max-w-lg">
                 {/* Active session info banner */}
                 {hasActiveSession && focus.activePriorityTitle && (
                     <div className="mb-6 flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl">
@@ -394,6 +396,7 @@ export default function PomodoroPage() {
                     Focus: {settings.pomodoroFocusDuration}min •
                     Short: {settings.pomodoroShortBreak}min •
                     Long: {settings.pomodoroLongBreak}min
+                </div>
                 </div>
             </AuthenticatedPageShell>
 

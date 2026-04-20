@@ -105,7 +105,41 @@ export class SessionsController {
     }
 
     const headers = fromNodeHeaders(req.headers);
-    const result = await this.sessionsService.revokeAllSessions(userId, currentSessionId, headers);
+    const result = await this.sessionsService.revokeAllOtherSessions(userId, currentSessionId, headers);
+
+    const ipAddress = req.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
+      req.headers?.['x-real-ip'] || 'unknown';
+    const userAgent = req.headers?.['user-agent'] || 'unknown';
+
+    await this.auditService.logUserAction(
+      userId,
+      'session.revoked.all.others',
+      { revokedCount: result.count },
+      currentSessionId,
+      ipAddress,
+      userAgent,
+    );
+
+    return { success: true, message: 'All other sessions revoked' };
+  }
+
+  @Delete('me/all')
+  @ApiOperation({ summary: 'Revoke all sessions', description: 'Revokes all sessions including the current one' })
+  @ApiResponse({ status: 200, description: 'All sessions revoked', type: SuccessResponseDto })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  async revokeAllSessionsIncludingCurrent(
+    @Session() session: AuthenticatedUserSession,
+    @Req() req: any,
+  ): Promise<SuccessResponseDto> {
+    const userId = session?.user?.id;
+    const currentSessionId = session?.session?.id;
+
+    if (!userId) {
+      throw new ForbiddenException('Not authenticated');
+    }
+
+    const headers = fromNodeHeaders(req.headers);
+    const result = await this.sessionsService.revokeAllSessions(userId, headers);
 
     const ipAddress = req.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
       req.headers?.['x-real-ip'] || 'unknown';

@@ -679,20 +679,20 @@ export const auth = betterAuth({
         // Stricter limits for sensitive endpoints
         customRules: {
             '/sign-in/email': {
-                window: 30,
-                max: 1, // Reduced from 3/10s to 1/30s
+                window: 60,
+                max: 5, // Allow normal retries without frequent lockouts
             },
             '/sign-up/email': {
                 window: 60,
-                max: 5,
+                max: 6,
             },
             '/forgot-password': {
                 window: 60,
-                max: 3,
+                max: 5,
             },
             '/verify-otp': {
                 window: 30,
-                max: 3, // Reduced from 5/10s to 3/30s
+                max: 5, // Keep protection while reducing false rate-limit hits
             },
         },
         // Use database for persistent rate limiting across restarts

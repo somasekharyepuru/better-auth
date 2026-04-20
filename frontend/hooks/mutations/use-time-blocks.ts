@@ -1,12 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { timeBlocksApi, EnhancedTimeBlock, CreateTimeBlockInput, UpdateTimeBlockInput, Day } from "@/lib/daymark-api";
-import { dayKeys } from "../queries/use-day";
+import { invalidateDayCaches } from "../queries/use-day";
 
 export function useTimeBlockMutations(date: string, lifeAreaId?: string | null) {
   const queryClient = useQueryClient();
-  const queryKey = dayKeys.day(date, lifeAreaId);
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey });
+  const invalidate = () => invalidateDayCaches(queryClient, date, lifeAreaId);
 
   const createBlock = useMutation({
     mutationFn: (data: CreateTimeBlockInput) => timeBlocksApi.create(date, data, lifeAreaId || undefined),

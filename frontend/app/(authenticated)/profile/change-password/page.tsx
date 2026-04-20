@@ -9,6 +9,7 @@ import { Eye, EyeOff } from "lucide-react"
 import { toast } from "sonner"
 
 import { LoadingButton } from "@/components/ui/loading-button"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -21,6 +22,15 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { authClient } from "@/lib/auth-client"
 import { PasswordStrengthMeter } from "@/components/password-strength-meter"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { sessionManagementApi } from "@/lib/session-management-api"
 
 const changePasswordSchema = z
   .object({
@@ -47,6 +57,8 @@ export default function ChangePasswordPage() {
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isSessionActionLoading, setIsSessionActionLoading] = useState(false)
+  const [isRevokeSessionsDialogOpen, setIsRevokeSessionsDialogOpen] = useState(false)
   const [newPassword, setNewPassword] = useState("")
   const router = useRouter()
 
@@ -73,11 +85,47 @@ export default function ChangePasswordPage() {
 
       toast.success("Password changed successfully")
       form.reset()
-      router.push("/profile")
+      setIsRevokeSessionsDialogOpen(true)
     } catch {
       toast.error("An error occurred")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleKeepSessions = () => {
+    setIsRevokeSessionsDialogOpen(false)
+    router.push("/profile")
+  }
+
+  const handleRevokeAllExceptThis = async () => {
+    setIsSessionActionLoading(true)
+    try {
+      await sessionManagementApi.revokeAllExceptCurrent()
+      toast.success("All other sessions were revoked")
+      setIsRevokeSessionsDialogOpen(false)
+      router.push("/profile")
+    } catch (error) {
+      toast.error("Failed to revoke other sessions", {
+        description: error instanceof Error ? error.message : "Please try again.",
+      })
+    } finally {
+      setIsSessionActionLoading(false)
+    }
+  }
+
+  const handleRevokeAllSessions = async () => {
+    setIsSessionActionLoading(true)
+    try {
+      await sessionManagementApi.revokeAllIncludingCurrent()
+      toast.success("All sessions were revoked. Please sign in again.")
+      setIsRevokeSessionsDialogOpen(false)
+      window.location.href = "/login"
+    } catch (error) {
+      toast.error("Failed to revoke all sessions", {
+        description: error instanceof Error ? error.message : "Please try again.",
+      })
+      setIsSessionActionLoading(false)
     }
   }
 
@@ -213,6 +261,56 @@ export default function ChangePasswordPage() {
   return (
     <>
       {content}
+      <Dialog
+        open={isRevokeSessionsDialogOpen}
+        onOpenChange={(open) => {
+          if (!isSessionActionLoading) {
+            setIsRevokeSessionsDialogOpen(open)
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Password changed</DialogTitle>
+            <DialogDescription>
+              For better account security, do you want to sign out other devices now?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col gap-2 sm:flex-col sm:space-x-0">
+            <LoadingButton
+              type="button"
+              variant="destructive"
+              className="w-full"
+              isLoading={isSessionActionLoading}
+              loadingText="Revoking sessions..."
+              onClick={handleRevokeAllSessions}
+              disabled={isSessionActionLoading}
+            >
+              Revoke all sessions
+            </LoadingButton>
+            <LoadingButton
+              type="button"
+              variant="outline"
+              className="w-full"
+              isLoading={isSessionActionLoading}
+              loadingText="Revoking sessions..."
+              onClick={handleRevokeAllExceptThis}
+              disabled={isSessionActionLoading}
+            >
+              Revoke all except this device
+            </LoadingButton>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={handleKeepSessions}
+              disabled={isSessionActionLoading}
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

@@ -2,21 +2,20 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { AlertCircle, ArrowLeft, CheckCircle, Eye, EyeOff, Mail } from "lucide-react"
+import { AlertCircle, CheckCircle, Eye, EyeOff, Mail } from "lucide-react"
 
 import { AuthLayout } from "@/components/auth-layout"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { OtpInput } from "@/components/ui/otp-input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Spinner } from "@/components/ui/spinner"
 import { authClient } from "@/lib/auth-client"
-
 import { PasswordStrengthMeter } from "@/components/password-strength-meter"
 
 const resetPasswordSchema = z
@@ -50,6 +49,7 @@ function ResetPasswordContent() {
   const form = useForm<ResetPasswordForm>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: { otp: "", password: "", confirmPassword: "" },
+    mode: "onChange",
   })
 
   useEffect(() => {
@@ -133,15 +133,8 @@ function ResetPasswordContent() {
   }
 
   return (
-    <AuthLayout title="Reset your password">
+    <AuthLayout title="Reset your password" backLink={{ href: "/forgot-password", label: "Back" }}>
       <div className="space-y-6">
-        <Link
-          href="/forgot-password"
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Link>
 
         {email && (
           <div className="flex items-center gap-3 p-4 bg-muted rounded-xl">
@@ -167,23 +160,25 @@ function ResetPasswordContent() {
               name="otp"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Verification code</FormLabel>
+                  <FormLabel className="sr-only">Verification code</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Enter 8-digit code"
-                      maxLength={8}
-                      disabled={isLoading}
-                      className="text-center text-lg tracking-widest font-mono"
-                      autoComplete="one-time-code"
-                    />
+                    <div className="flex justify-center">
+                      <OtpInput
+                        length={8}
+                        value={field.value}
+                        onChange={field.onChange}
+                        disabled={isLoading}
+                        autoFocus
+                        ariaLabel="8-digit password reset code"
+                      />
+                    </div>
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-center" />
                   <button
                     type="button"
                     onClick={handleResendCode}
                     disabled={isResending || !email}
-                    className="text-sm text-muted-foreground hover:text-foreground disabled:opacity-50 transition-colors"
+                    className="text-sm text-muted-foreground hover:text-foreground disabled:opacity-50 transition-colors w-full text-center"
                   >
                     {isResending ? "Sending..." : "Didn't receive code? Resend"}
                   </button>
@@ -265,6 +260,7 @@ function ResetPasswordContent() {
               size="lg"
               isLoading={isLoading}
               loadingText="Resetting..."
+              disabled={!form.formState.isValid || isLoading}
             >
               Reset password
             </LoadingButton>

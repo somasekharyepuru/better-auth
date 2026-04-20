@@ -65,6 +65,105 @@ type SortOrder = "desc" | "asc"
 const PAGE_SIZE_OPTIONS = [10, 20, 50] as const
 const DEFAULT_PAGE_SIZE = 20
 
+const ACTION_LABELS: Record<string, string> = {
+  "user.signup": "Account Created",
+  "user.update": "Profile Updated",
+  "user.profile.update": "Profile Updated",
+  "user.login": "Signed In",
+  "user.login.failed": "Sign-In Failed",
+  "user.logout": "Signed Out",
+  "user.logout.completed": "Signed Out",
+  "user.email.verify": "Email Verified",
+  "user.2fa": "Two-Factor Updated",
+  "user.2fa.enable": "Two-Factor Enabled",
+  "user.2fa.disable": "Two-Factor Disabled",
+  "user.2fa.authenticate": "Two-Factor Authenticated",
+  "user.otp.verify": "OTP Verified",
+  "user.otp.verify.failed": "OTP Verification Failed",
+  "user.password.change": "Password Changed",
+  "user.password.update": "Password Changed",
+  "user.password.reset.request": "Password Reset Requested",
+  "user.password.reset.otp.request": "Password Reset OTP Requested",
+  "user.password.reset.otp": "Password Reset via OTP",
+  "user.password.reset.otp.failed": "Password Reset OTP Failed",
+  "user.password.reset": "Password Reset",
+  "user.password.reset.failed": "Password Reset Failed",
+  "user.signup.failed": "Sign-Up Failed",
+  "user.delete.request": "Account Deletion Requested",
+  "user.delete.confirm": "Account Deletion Confirmed",
+  "user.delete.cancel": "Account Deletion Cancelled",
+  "user.delete.execute": "Account Deleted",
+  "session.revoked": "Session Revoked",
+  "session.revoked.all": "All Sessions Revoked",
+  "session.revoked.all.others": "Other Sessions Revoked",
+  "org.create": "Organization Created",
+  "org.update": "Organization Updated",
+  "org.delete": "Organization Deleted",
+  "org.member.add": "Member Added",
+  "org.member.remove": "Member Removed",
+  "org.member.role": "Member Role Updated",
+  "org.invite.create": "Invitation Created",
+  "org.invite.cancel": "Invitation Cancelled",
+  "org.invite.accept": "Invitation Accepted",
+  "org.transfer.initiated": "Ownership Transfer Initiated",
+  "org.transfer.confirmed": "Ownership Transfer Confirmed",
+  "org.transfer.cancelled": "Ownership Transfer Cancelled",
+  "org.transfer.declined": "Ownership Transfer Declined",
+  "org.member.invite.resent": "Invitation Resent",
+  "org.team.updated": "Team Updated",
+  "org.team.deleted": "Team Deleted",
+  "organization.role.created": "Custom Role Created",
+  "organization.role.updated": "Custom Role Updated",
+  "organization.role.deleted": "Custom Role Deleted",
+  "password.policy.changed": "Password Policy Updated",
+  "password.policy.org.changed": "Organization Password Policy Updated",
+  "admin.access.denied": "Admin Access Denied",
+  "admin.users.list": "Admin Users Viewed",
+  "admin.users.ban": "User Banned",
+  "admin.users.unban": "User Unbanned",
+  "admin.users.delete": "User Deleted by Admin",
+  "admin.user.delete": "User Deleted by Admin",
+  "admin.user.deleted": "User Deleted by Admin",
+  "admin.user.created": "User Created by Admin",
+  "admin.user.ban": "User Banned by Admin",
+  "admin.user.unban": "User Unbanned by Admin",
+  "admin.user.role.changed": "User Role Changed",
+  "admin.user.password.reset": "User Password Reset by Admin",
+  "admin.organization.banned": "Organization Banned",
+  "admin.organization.unbanned": "Organization Unbanned",
+  "admin.organization.deleted": "Organization Deleted by Admin",
+  "admin.org.member.role.changed": "Organization Member Role Changed",
+  "admin.session.revoke.all": "All User Sessions Revoked by Admin",
+  "user.session.get": "Session Checked",
+  "user.email.change": "Email Change Requested",
+}
+
+function formatActionLabel(action: string) {
+  if (ACTION_LABELS[action]) {
+    return ACTION_LABELS[action]
+  }
+
+  if (action.startsWith("user.social.login.")) {
+    const provider = action.replace("user.social.login.", "")
+    const providerLabel = provider ? provider[0].toUpperCase() + provider.slice(1) : "Social"
+    return `${providerLabel} Login`
+  }
+
+  const prettified = action
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+
+  if (!prettified) {
+    return "Unknown Activity"
+  }
+
+  return prettified
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
+}
+
 export default function ActivityPage() {
   const router = useRouter()
   const [logs, setLogs] = useState<AuditLog[]>([])
@@ -165,25 +264,95 @@ export default function ActivityPage() {
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
   const getActionConfig = (action: string): { label: string; icon: LucideIcon; bg: string; color: string } => {
-    const configs: Record<string, { label: string; icon: LucideIcon; bg: string; color: string }> = {
-      "user.signup": { label: "Account Created", icon: User, bg: "bg-success/10", color: "text-success" },
-      "user.login": { label: "Signed In", icon: LogIn, bg: "bg-primary/10", color: "text-primary" },
-      "user.logout": { label: "Signed Out", icon: LogOut, bg: "bg-muted/50", color: "text-muted-foreground" },
-      "user.email.verify": { label: "Email Verified", icon: Shield, bg: "bg-success/10", color: "text-success" },
-      "user.2fa.enable": { label: "2FA Enabled", icon: Shield, bg: "bg-success/10", color: "text-success" },
-      "user.2fa.disable": { label: "2FA Disabled", icon: Shield, bg: "bg-warning/10", color: "text-warning" },
-      "user.password.reset": { label: "Password Reset", icon: Key, bg: "bg-primary/10", color: "text-primary" },
-      "user.password.update": { label: "Password Changed", icon: Key, bg: "bg-primary/10", color: "text-primary" },
-      "user.update": { label: "Profile Updated", icon: User, bg: "bg-primary/10", color: "text-primary" },
+    const configs: Record<string, { icon: LucideIcon; bg: string; color: string }> = {
+      "user.signup": { icon: User, bg: "bg-success/10", color: "text-success" },
+      "user.update": { icon: User, bg: "bg-primary/10", color: "text-primary" },
+      "user.profile.update": { icon: User, bg: "bg-primary/10", color: "text-primary" },
+      "user.login": { icon: LogIn, bg: "bg-primary/10", color: "text-primary" },
+      "user.login.failed": { icon: AlertCircle, bg: "bg-destructive/10", color: "text-destructive" },
+      "user.logout": { icon: LogOut, bg: "bg-muted/50", color: "text-muted-foreground" },
+      "user.logout.completed": { icon: LogOut, bg: "bg-muted/50", color: "text-muted-foreground" },
+      "user.email.verify": { icon: Shield, bg: "bg-success/10", color: "text-success" },
+      "user.2fa": { icon: Shield, bg: "bg-primary/10", color: "text-primary" },
+      "user.2fa.enable": { icon: Shield, bg: "bg-success/10", color: "text-success" },
+      "user.2fa.disable": { icon: Shield, bg: "bg-warning/10", color: "text-warning" },
+      "user.2fa.authenticate": { icon: Shield, bg: "bg-primary/10", color: "text-primary" },
+      "user.otp.verify": { icon: Shield, bg: "bg-primary/10", color: "text-primary" },
+      "user.otp.verify.failed": { icon: AlertCircle, bg: "bg-destructive/10", color: "text-destructive" },
+      "user.password.change": { icon: Key, bg: "bg-primary/10", color: "text-primary" },
+      "user.password.update": { icon: Key, bg: "bg-primary/10", color: "text-primary" },
+      "user.password.reset.request": { icon: Key, bg: "bg-warning/10", color: "text-warning" },
+      "user.password.reset.otp.request": { icon: Key, bg: "bg-warning/10", color: "text-warning" },
+      "user.password.reset.otp": { icon: Key, bg: "bg-primary/10", color: "text-primary" },
+      "user.password.reset.otp.failed": { icon: AlertCircle, bg: "bg-destructive/10", color: "text-destructive" },
+      "user.password.reset": { icon: Key, bg: "bg-primary/10", color: "text-primary" },
+      "user.password.reset.failed": { icon: AlertCircle, bg: "bg-destructive/10", color: "text-destructive" },
+      "user.signup.failed": { icon: AlertCircle, bg: "bg-destructive/10", color: "text-destructive" },
+      "user.delete.request": { icon: AlertCircle, bg: "bg-warning/10", color: "text-warning" },
+      "user.delete.confirm": { icon: AlertCircle, bg: "bg-warning/10", color: "text-warning" },
+      "user.delete.cancel": { icon: AlertCircle, bg: "bg-muted/50", color: "text-muted-foreground" },
+      "user.delete.execute": { icon: AlertCircle, bg: "bg-destructive/10", color: "text-destructive" },
+      "session.revoked": { icon: History, bg: "bg-warning/10", color: "text-warning" },
+      "session.revoked.all": { icon: History, bg: "bg-warning/10", color: "text-warning" },
+      "session.revoked.all.others": { icon: History, bg: "bg-warning/10", color: "text-warning" },
+      "org.create": { icon: User, bg: "bg-success/10", color: "text-success" },
+      "org.update": { icon: User, bg: "bg-primary/10", color: "text-primary" },
+      "org.delete": { icon: AlertCircle, bg: "bg-destructive/10", color: "text-destructive" },
+      "org.member.add": { icon: User, bg: "bg-success/10", color: "text-success" },
+      "org.member.remove": { icon: User, bg: "bg-warning/10", color: "text-warning" },
+      "org.member.role": { icon: User, bg: "bg-primary/10", color: "text-primary" },
+      "org.invite.create": { icon: User, bg: "bg-primary/10", color: "text-primary" },
+      "org.invite.cancel": { icon: User, bg: "bg-muted/50", color: "text-muted-foreground" },
+      "org.invite.accept": { icon: User, bg: "bg-success/10", color: "text-success" },
+      "org.transfer.initiated": { icon: User, bg: "bg-warning/10", color: "text-warning" },
+      "org.transfer.confirmed": { icon: User, bg: "bg-success/10", color: "text-success" },
+      "org.transfer.cancelled": { icon: User, bg: "bg-muted/50", color: "text-muted-foreground" },
+      "org.transfer.declined": { icon: User, bg: "bg-warning/10", color: "text-warning" },
+      "org.member.invite.resent": { icon: User, bg: "bg-primary/10", color: "text-primary" },
+      "org.team.updated": { icon: User, bg: "bg-primary/10", color: "text-primary" },
+      "org.team.deleted": { icon: AlertCircle, bg: "bg-warning/10", color: "text-warning" },
+      "organization.role.created": { icon: Shield, bg: "bg-success/10", color: "text-success" },
+      "organization.role.updated": { icon: Shield, bg: "bg-primary/10", color: "text-primary" },
+      "organization.role.deleted": { icon: Shield, bg: "bg-warning/10", color: "text-warning" },
+      "password.policy.changed": { icon: Shield, bg: "bg-primary/10", color: "text-primary" },
+      "password.policy.org.changed": { icon: Shield, bg: "bg-primary/10", color: "text-primary" },
+      "admin.access.denied": { icon: AlertCircle, bg: "bg-destructive/10", color: "text-destructive" },
+      "admin.users.list": { icon: User, bg: "bg-muted/50", color: "text-muted-foreground" },
+      "admin.users.ban": { icon: AlertCircle, bg: "bg-warning/10", color: "text-warning" },
+      "admin.users.unban": { icon: User, bg: "bg-success/10", color: "text-success" },
+      "admin.users.delete": { icon: AlertCircle, bg: "bg-destructive/10", color: "text-destructive" },
+      "admin.user.delete": { icon: AlertCircle, bg: "bg-destructive/10", color: "text-destructive" },
+      "admin.user.deleted": { icon: AlertCircle, bg: "bg-destructive/10", color: "text-destructive" },
+      "admin.user.created": { icon: User, bg: "bg-success/10", color: "text-success" },
+      "admin.user.ban": { icon: AlertCircle, bg: "bg-warning/10", color: "text-warning" },
+      "admin.user.unban": { icon: User, bg: "bg-success/10", color: "text-success" },
+      "admin.user.role.changed": { icon: User, bg: "bg-primary/10", color: "text-primary" },
+      "admin.user.password.reset": { icon: Key, bg: "bg-warning/10", color: "text-warning" },
+      "admin.organization.banned": { icon: AlertCircle, bg: "bg-warning/10", color: "text-warning" },
+      "admin.organization.unbanned": { icon: User, bg: "bg-success/10", color: "text-success" },
+      "admin.organization.deleted": { icon: AlertCircle, bg: "bg-destructive/10", color: "text-destructive" },
+      "admin.org.member.role.changed": { icon: User, bg: "bg-primary/10", color: "text-primary" },
+      "admin.session.revoke.all": { icon: History, bg: "bg-warning/10", color: "text-warning" },
+      "user.session.get": { icon: History, bg: "bg-muted/50", color: "text-muted-foreground" },
+      "user.email.change": { icon: User, bg: "bg-primary/10", color: "text-primary" },
     }
-    return (
-      configs[action] || {
-        label: action,
-        icon: History,
-        bg: "bg-muted/50",
-        color: "text-muted-foreground",
+
+    if (action.startsWith("user.social.login.")) {
+      return {
+        label: formatActionLabel(action),
+        icon: LogIn,
+        bg: "bg-primary/10",
+        color: "text-primary",
       }
-    )
+    }
+
+    const config = configs[action]
+    return {
+      label: formatActionLabel(action),
+      icon: config?.icon ?? History,
+      bg: config?.bg ?? "bg-muted/50",
+      color: config?.color ?? "text-muted-foreground",
+    }
   }
 
   // Generate page numbers for pagination
@@ -242,26 +411,26 @@ export default function ActivityPage() {
   const activityContent = (
     <div className="space-y-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-4">
+        <CardHeader className="flex flex-col gap-4 pb-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <CardTitle>Account Activity</CardTitle>
             <CardDescription>
               {loading ? "Loading..." : `${total} event${total !== 1 ? "s" : ""}`}
             </CardDescription>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            <div className="relative">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
+            <div className="relative w-full sm:w-auto">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 w-[200px]"
+                className="w-full pl-8 sm:w-[220px]"
               />
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="justify-between">
                   Filter: {actionFilter === "" ? "All" : actionFilter.split(".")[1] || actionFilter}
                   <ChevronDown className="w-4 h-4 ml-2" />
                 </Button>
@@ -281,12 +450,13 @@ export default function ActivityPage() {
               variant="outline"
               size="sm"
               onClick={handleSortToggle}
+              className="justify-start sm:justify-center"
             >
               Sort: {sortOrder === "desc" ? "Newest" : "Oldest"}
             </Button>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button variant="outline" size="sm" className="gap-2 justify-start sm:justify-center">
                   <CalendarIcon className="w-4 h-4" />
                   {dateRange.from ? (
                     <span>

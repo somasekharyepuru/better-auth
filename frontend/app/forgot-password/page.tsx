@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { AlertCircle, ArrowLeft, Mail } from "lucide-react"
+import { AlertCircle, Mail } from "lucide-react"
 
 import { AuthLayout } from "@/components/auth-layout"
 import { LoadingButton } from "@/components/ui/loading-button"
@@ -29,6 +29,7 @@ export default function ForgotPasswordPage() {
   const form = useForm<ForgotPasswordForm>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: { email: "" },
+    mode: "onChange",
   })
 
   const onSubmit = async (data: ForgotPasswordForm) => {
@@ -60,15 +61,9 @@ export default function ForgotPasswordPage() {
     <AuthLayout
       title="Forgot password?"
       subtitle="Enter your email and we'll send you a reset code."
+      backLink={{ href: "/login", label: "Back to sign in" }}
     >
       <div className="space-y-6">
-        <Link
-          href="/login"
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to sign in
-        </Link>
 
         <div className="flex justify-center">
           <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center">
@@ -111,6 +106,7 @@ export default function ForgotPasswordPage() {
               size="lg"
               isLoading={isLoading}
               loadingText="Sending..."
+              disabled={!form.formState.isValid || isLoading}
             >
               Send reset code
             </LoadingButton>

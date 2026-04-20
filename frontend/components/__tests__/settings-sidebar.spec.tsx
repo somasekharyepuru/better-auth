@@ -2,7 +2,8 @@
  * Settings Sidebar Component Tests
  */
 
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { User, Settings } from 'lucide-react'
 // Unmock to test the real component
 jest.unmock('@/components/settings-sidebar')
@@ -47,19 +48,6 @@ describe('SettingsSidebar', () => {
     expect(getByText('Test Content')).toBeInTheDocument()
   })
 
-  it('renders title', () => {
-    const { getByText } = render(
-      <SettingsSidebar
-        items={mockItems}
-        basePath="/settings"
-        title="Test Settings"
-      >
-        Content
-      </SettingsSidebar>
-    )
-    expect(getByText('Test Settings')).toBeInTheDocument()
-  })
-
   it('renders with empty items', () => {
     expect(() =>
       render(
@@ -72,6 +60,24 @@ describe('SettingsSidebar', () => {
         </SettingsSidebar>
       )
     ).not.toThrow()
+  })
+
+  it('supports desktop expand/collapse', async () => {
+    const user = userEvent.setup()
+    render(
+      <SettingsSidebar
+        items={mockItems}
+        basePath="/settings"
+        title="Settings"
+      >
+        Content
+      </SettingsSidebar>
+    )
+
+    expect(screen.getByText('General')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /collapse menu/i }))
+    expect(screen.queryByText('General')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /expand menu/i })).toBeInTheDocument()
   })
 
   describe('Mobile View', () => {
@@ -93,8 +99,9 @@ describe('SettingsSidebar', () => {
       ).not.toThrow()
     })
 
-    it('renders title in mobile view', () => {
-      const { getByText } = render(
+    it('renders title in mobile sheet after opening menu', async () => {
+      const user = userEvent.setup()
+      render(
         <SettingsSidebar
           items={mockItems}
           basePath="/settings"
@@ -103,7 +110,9 @@ describe('SettingsSidebar', () => {
           Content
         </SettingsSidebar>
       )
-      expect(getByText('Mobile Settings')).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: /toggle menu/i }))
+      expect(await screen.findByText('Mobile Settings')).toBeInTheDocument()
     })
 
     it('renders children in mobile view', () => {

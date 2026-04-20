@@ -6,24 +6,14 @@ import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { OtpInput } from "@/components/ui/otp-input";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { AuthLayout } from "@/components/auth-layout";
-import { Shield, ArrowLeft, Info } from "lucide-react";
-import Link from "next/link";
+import { Shield, Info } from "lucide-react";
 
-const verify2FASchema = z.object({
-  code: z
-    .string()
-    .min(6, "Code must be 6 digits")
-    .max(6, "Code must be 6 digits")
-    .regex(/^\d+$/, "Code must contain only numbers"),
-});
-
-type Verify2FAFormData = z.infer<typeof verify2FASchema>;
+type Verify2FAFormData = { code: string };
 
 function Verify2FAContent() {
   const [isVerifying, setIsVerifying] = useState(false);
@@ -44,13 +34,37 @@ function Verify2FAContent() {
 
   const {
     register,
-    handleSubmit,
-    formState: { errors },
+    setValue,
+    watch,
+    reset,
   } = useForm<Verify2FAFormData>({
-    resolver: zodResolver(verify2FASchema),
+    mode: "onChange",
+    defaultValues: { code: "" },
   });
 
-  const onSubmit = async (data: Verify2FAFormData) => {
+  const codeValue = watch("code");
+
+  // Derived validity — avoids stale zodResolver when mode switches
+  const isFormValid = useBackupCode
+    ? (codeValue ?? "").trim().length > 0
+    : (codeValue ?? "").length === 6 && /^\d{6}$/.test(codeValue)
+
+  const handleModeSwitch = () => {
+    reset({ code: "" });
+    setError("");
+    setUseBackupCode((prev) => !prev);
+  };
+
+  const onSubmit = async () => {
+    const code = (codeValue ?? "").trim()
+
+    // Client-side guard (button is disabled anyway, but belt-and-suspenders)
+    if (useBackupCode) {
+      if (!code) return
+    } else {
+      if (code.length !== 6 || !/^\d{6}$/.test(code)) return
+    }
+
     setIsVerifying(true);
     setError("");
 
@@ -59,12 +73,12 @@ function Verify2FAContent() {
 
       if (useBackupCode) {
         result = await authClient.twoFactor.verifyBackupCode({
-          code: data.code,
+          code,
           trustDevice: true,
         });
       } else {
         result = await authClient.twoFactor.verifyTotp({
-          code: data.code,
+          code,
           trustDevice: true,
         });
       }
@@ -96,15 +110,9 @@ function Verify2FAContent() {
           ? "Enter one of your backup codes to continue."
           : "Enter the 6-digit code from your authenticator app."
       }
+      backLink={{ href: "/login", label: "Back to sign in" }}
     >
       <div className="space-y-6">
-        <Link
-          href="/login"
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to sign in
-        </Link>
 
         <div className="flex justify-center">
           <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center">
@@ -112,32 +120,51 @@ function Verify2FAContent() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={(e) => { e.preventDefault(); onSubmit(); }}
+          className="space-y-4"
+        >
           {error && (
-            <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg">
+            <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg text-center">
               {error}
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="code">
+          <div className="space-y-3">
+            <Label htmlFor="code" className="block text-center text-sm font-medium">
               {useBackupCode ? "Backup code" : "Verification code"}
             </Label>
-            <Input
-              {...register("code")}
-              id="code"
-              placeholder={useBackupCode ? "Enter backup code" : "000000"}
-              maxLength={useBackupCode ? 10 : 6}
-              className="text-center text-lg tracking-widest font-mono"
-              autoComplete="off"
-              autoFocus
-            />
-            {errors.code && (
-              <p className="text-sm text-destructive">{errors.code.message}</p>
+
+            {useBackupCode ? (
+              <Input
+                {...register("code")}
+                id="code"
+                placeholder="Enter backup code"
+                maxLength={20}
+                className="text-center text-lg tracking-widest font-mono"
+                autoComplete="off"
+                autoFocus
+              />
+            ) : (
+              <div className="flex justify-center">
+                <OtpInput
+                  key="totp"
+                  length={6}
+                  value={codeValue}
+                  onChange={(val) => setValue("code", val, { shouldValidate: true })}
+                  autoFocus
+                  ariaLabel="6-digit authenticator code"
+                />
+              </div>
             )}
           </div>
 
-          <Button type="submit" className="w-full" size="lg" disabled={isVerifying}>
+          <Button
+            type="submit"
+            className="w-full"
+            size="lg"
+            disabled={!isFormValid || isVerifying}
+          >
             {isVerifying ? "Verifying..." : "Verify"}
           </Button>
         </form>
@@ -145,7 +172,7 @@ function Verify2FAContent() {
         <div className="text-center">
           <button
             type="button"
-            onClick={() => setUseBackupCode(!useBackupCode)}
+            onClick={handleModeSwitch}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             {useBackupCode

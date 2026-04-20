@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../common/prisma.service';
 import { randomBytes, createHash } from 'crypto';
 import { emailQueueService } from '../email-queue/email-queue.service';
@@ -118,8 +119,14 @@ export class AccountDeletionService {
   }
 
   async getDeletionStatus(userId: string) {
+    // Only treat pending/confirmed as active. Older terminal-state rows
+    // (cancelled, expired, deleted) must not block the user from initiating
+    // a fresh deletion or surface stale "in progress" UI.
     const request = await this.prisma.deletionRequest.findFirst({
-      where: { userId },
+      where: {
+        userId,
+        status: { in: ['pending', 'confirmed'] },
+      },
       orderBy: { requestedAt: 'desc' },
     });
 
@@ -137,7 +144,16 @@ export class AccountDeletionService {
     };
   }
 
-  async executeDeletion(token: string, authenticatedUserId?: string) {
+  /**
+   * Execute deletion immediately on behalf of an authenticated user (e.g. user
+   * clicked an "execute now" link). The caller MUST pass the userId from the
+   * authenticated session so we can verify the token belongs to them.
+   */
+  async executeDeletion(token: string, authenticatedUserId: string) {
+    if (!authenticatedUserId) {
+      throw new ForbiddenException('Authentication required to execute account deletion');
+    }
+
     const tokenHash = createHash('sha256').update(token).digest('hex');
 
     const request = await this.prisma.deletionRequest.findFirst({
@@ -154,8 +170,7 @@ export class AccountDeletionService {
       throw new NotFoundException('No valid confirmed deletion request found for this token');
     }
 
-    // Verify authenticated user matches the deletion request
-    if (authenticatedUserId && authenticatedUserId !== request.userId) {
+    if (authenticatedUserId !== request.userId) {
       logger.warn('Account deletion attempted by different user', {
         authenticatedUserId,
         requestUserId: request.userId,
@@ -171,8 +186,14 @@ export class AccountDeletionService {
       throw new BadRequestException('Deletion request has expired');
     }
 
-    const userId = request.userId;
+    return this.performDeletion(request.id, request.userId);
+  }
 
+  /**
+   * Internal helper that actually wipes user data. Must only be called from
+   * `executeDeletion` (after auth check) or the scheduled job below.
+   */
+  private async performDeletion(requestId: string, userId: string) {
     await this.prisma.$transaction(async (tx) => {
       const auditLogs = await tx.auditLog.findMany({
         where: { userId },
@@ -206,22 +227,28 @@ export class AccountDeletionService {
     });
 
     await this.prisma.deletionRequest.update({
-      where: { id: request.id },
+      where: { id: requestId },
       data: {
         status: 'deleted',
         deletedAt: new Date(),
       },
     });
 
-    logger.info('Account deleted', { userId, requestId: request.id });
+    logger.info('Account deleted', { userId, requestId });
 
     return {
       deleted: true,
       userId,
-      requestId: request.id,
+      requestId,
     };
   }
 
+  /**
+   * Scheduled hourly to permanently delete accounts whose 30-day grace period
+   * has elapsed. Without this, confirmed deletions would never actually be
+   * executed and the email's "deleted in 30 days" promise would be a lie.
+   */
+  @Cron(CronExpression.EVERY_HOUR)
   async processExpiredDeletions() {
     const expiredRequests = await this.prisma.deletionRequest.findMany({
       where: {
@@ -231,46 +258,19 @@ export class AccountDeletionService {
       include: { user: true },
     });
 
+    if (expiredRequests.length === 0) {
+      return { processed: 0 };
+    }
+
+    logger.info('Processing expired account deletions', {
+      count: expiredRequests.length,
+    });
+
+    let processed = 0;
     for (const request of expiredRequests) {
       try {
-        const userId = request.userId;
-
-        await this.prisma.$transaction(async (tx) => {
-          const auditLogs = await tx.auditLog.findMany({
-            where: { userId },
-            take: 100,
-            orderBy: { createdAt: 'desc' },
-          });
-
-          await tx.user.delete({
-            where: { id: userId },
-          });
-
-          for (const log of auditLogs) {
-            const existingDetails = (log.details as Record<string, unknown> | null) || {};
-            await tx.auditLog.update({
-              where: { id: log.id },
-              data: {
-                userId: 'deleted',
-                details: {
-                  ...existingDetails,
-                  originalUserId: userId,
-                  deletedAt: new Date().toISOString(),
-                },
-              },
-            });
-          }
-        });
-
-        await this.prisma.deletionRequest.update({
-          where: { id: request.id },
-          data: {
-            status: 'deleted',
-            deletedAt: new Date(),
-          },
-        });
-
-        logger.info('Processed expired deletion', { requestId: request.id });
+        await this.performDeletion(request.id, request.userId);
+        processed += 1;
       } catch (error) {
         logger.error('Failed to process expired deletion', {
           requestId: request.id,
@@ -279,7 +279,7 @@ export class AccountDeletionService {
       }
     }
 
-    return { processed: expiredRequests.length };
+    return { processed };
   }
 
   private async sendConfirmationEmail(

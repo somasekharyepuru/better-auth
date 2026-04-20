@@ -127,26 +127,43 @@ export class SessionsService {
   /**
    * Revoke all sessions except current - Uses Better Auth revokeOtherSessions
    */
-  async revokeAllSessions(userId: string, excludeSessionId?: string, headers?: Headers): Promise<{ count: number }> {
-    if (!headers) {
-      throw new ForbiddenException('Headers required for authentication');
-    }
-    try {
-      if (excludeSessionId) {
-        await auth.api.revokeOtherSessions({
-          headers,
-        });
-      } else {
-        await auth.api.revokeSessions({
-          headers,
-        });
-      }
+  async revokeAllOtherSessions(
+    userId: string,
+    currentSessionId: string | undefined,
+    headers: Headers,
+  ): Promise<{ count: number }> {
+    const revokeCount = await this.prisma.session.count({
+      where: {
+        userId,
+        ...(currentSessionId ? { id: { not: currentSessionId } } : {}),
+      },
+    });
 
-      this.logger.info('Sessions revoked via Better Auth', { userId, excludeSessionId });
-      return { count: 1 };
+    try {
+      await auth.api.revokeOtherSessions({ headers });
+      this.logger.info('Other sessions revoked via Better Auth', { userId, currentSessionId, revokeCount });
+      return { count: revokeCount };
     } catch (error: any) {
-      this.logger.error('Failed to revoke sessions via Better Auth', { error, userId });
-      throw new Error(error.message || 'Failed to revoke sessions');
+      this.logger.error('Failed to revoke other sessions via Better Auth', { error, userId, currentSessionId });
+      throw new Error(error.message || 'Failed to revoke other sessions');
+    }
+  }
+
+  /**
+   * Revoke all sessions (including current) - Uses Better Auth revokeSessions
+   */
+  async revokeAllSessions(userId: string, headers: Headers): Promise<{ count: number }> {
+    const revokeCount = await this.prisma.session.count({
+      where: { userId },
+    });
+
+    try {
+      await auth.api.revokeSessions({ headers });
+      this.logger.info('All sessions revoked via Better Auth', { userId, revokeCount });
+      return { count: revokeCount };
+    } catch (error: any) {
+      this.logger.error('Failed to revoke all sessions via Better Auth', { error, userId });
+      throw new Error(error.message || 'Failed to revoke all sessions');
     }
   }
 

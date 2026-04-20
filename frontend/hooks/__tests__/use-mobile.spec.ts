@@ -2,7 +2,7 @@
  * useIsMobile Hook Tests
  */
 
-import { renderHook, act } from '@testing-library/react'
+import { renderHook } from '@testing-library/react'
 
 // Unmock the hook to test real implementation
 jest.unmock('../use-mobile')
@@ -14,6 +14,27 @@ const originalInnerWidth = window.innerWidth
 const originalMatchMedia = window.matchMedia
 
 describe('useIsMobile', () => {
+  const setViewport = (width: number) => {
+    Object.defineProperty(window, 'innerWidth', { writable: true, value: width })
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: jest.fn().mockImplementation((query: string) => {
+        const maxWidthMatch = query.match(/\(max-width:\s*(\d+)px\)/)
+        const maxWidth = maxWidthMatch ? Number(maxWidthMatch[1]) : Number.POSITIVE_INFINITY
+        return {
+          matches: width <= maxWidth,
+          media: query,
+          onchange: null,
+          addListener: jest.fn(),
+          removeListener: jest.fn(),
+          addEventListener: jest.fn(),
+          removeEventListener: jest.fn(),
+          dispatchEvent: jest.fn(),
+        }
+      }),
+    })
+  }
+
   beforeEach(() => {
     // Reset to original before each test
     Object.defineProperty(window, 'matchMedia', {
@@ -35,7 +56,7 @@ describe('useIsMobile', () => {
 
   describe('Desktop View', () => {
     it('returns false when width is >= 768px', () => {
-      Object.defineProperty(window, 'innerWidth', { writable: true, value: 1024 })
+      setViewport(1024)
 
       const { result } = renderHook(() => useIsMobile())
 
@@ -43,7 +64,7 @@ describe('useIsMobile', () => {
     })
 
     it('returns false when width is exactly 768px', () => {
-      Object.defineProperty(window, 'innerWidth', { writable: true, value: 768 })
+      setViewport(768)
 
       const { result } = renderHook(() => useIsMobile())
 
@@ -53,7 +74,7 @@ describe('useIsMobile', () => {
 
   describe('Mobile View', () => {
     it('returns true when width is < 768px', () => {
-      Object.defineProperty(window, 'innerWidth', { writable: true, value: 500 })
+      setViewport(500)
 
       const { result } = renderHook(() => useIsMobile())
 
@@ -61,7 +82,7 @@ describe('useIsMobile', () => {
     })
 
     it('returns true when width is 767px', () => {
-      Object.defineProperty(window, 'innerWidth', { writable: true, value: 767 })
+      setViewport(767)
 
       const { result } = renderHook(() => useIsMobile())
 

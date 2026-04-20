@@ -5,6 +5,7 @@ import { authClient } from "@/lib/auth-client";
 import { LandingPage } from "@/components/landing/landing-page";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
+import { SessionProvider } from "@/components/session-provider";
 
 interface User {
   id: string;
@@ -71,9 +72,11 @@ export default function HomePage() {
   // Same shell as (authenticated) routes: UnifiedHeader, padding, TimeBlockTypes, etc.
   if (user) {
     return (
-      <AuthenticatedShell>
-        <DashboardContent user={user} />
-      </AuthenticatedShell>
+      <SessionProvider>
+        <AuthenticatedShell>
+          <DashboardContent user={user} />
+        </AuthenticatedShell>
+      </SessionProvider>
     );
   }
 

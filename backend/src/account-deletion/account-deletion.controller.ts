@@ -1,9 +1,25 @@
-import { Controller, Post, Get, Delete, Body, Req, Param, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Param, ForbiddenException } from '@nestjs/common';
 import { Session, UserSession } from '@thallesp/nestjs-better-auth';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiCookieAuth, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiCookieAuth, ApiParam } from '@nestjs/swagger';
 import { AccountDeletionService } from './account-deletion.service';
 import { auditService } from '../audit/audit.service';
 import { AccountDeletionRequestDto, AccountDeletionStatusDto, ConfirmDeletionResponseDto, SuccessResponseDto, ExecuteDeletionResponseDto } from '../common/dto';
+
+// Better Auth's UserSession is `{ user: User, session: Session }` at runtime,
+// but the published type is loose. We narrow to just the bits we need so the
+// controller stays consistent with the rest of the auth-service controllers
+// (sessions, organization, audit, etc.) instead of reaching into raw `req`.
+type AuthenticatedUserSession = Partial<UserSession> & {
+  user?: { id: string; email?: string };
+};
+
+function requireUserId(session: AuthenticatedUserSession): string {
+  const userId = session?.user?.id;
+  if (!userId) {
+    throw new ForbiddenException('Not authenticated');
+  }
+  return userId;
+}
 
 @ApiTags('Account Deletion')
 @ApiBearerAuth('bearerAuth')
@@ -16,12 +32,8 @@ export class AccountDeletionController {
   @ApiOperation({ summary: 'Request account deletion', description: 'Initiate GDPR-compliant account deletion request (30-day grace period)' })
   @ApiResponse({ status: 200, description: 'Deletion request created', type: AccountDeletionRequestDto })
   @ApiResponse({ status: 401, description: 'Not authenticated' })
-  async requestDeletion(@Session() session: UserSession): Promise<{ message: string; request: { id: string; expiresAt: Date } }> {
-    const userId = session?.user?.id;
-
-    if (!userId) {
-      throw new ForbiddenException('Not authenticated');
-    }
+  async requestDeletion(@Session() session: AuthenticatedUserSession): Promise<{ message: string; request: { id: string; expiresAt: Date } }> {
+    const userId = requireUserId(session);
 
     const request = await this.accountDeletionService.createDeletionRequest(userId);
 
@@ -30,6 +42,10 @@ export class AccountDeletionController {
       expiresAt: request.expiresAt,
     });
 
+    // NOTE: Intentionally do NOT include the confirmation token in this
+    // response. The token is delivered out-of-band via email so that an
+    // attacker who hijacks an active session still can't complete deletion
+    // without access to the user's inbox.
     return {
       message: 'Account deletion requested. Please confirm via email to proceed.',
       request: {
@@ -45,12 +61,11 @@ export class AccountDeletionController {
   @ApiResponse({ status: 200, description: 'Request confirmed', type: ConfirmDeletionResponseDto })
   @ApiResponse({ status: 401, description: 'Not authenticated' })
   @ApiResponse({ status: 404, description: 'Invalid or expired token' })
-  async confirmDeletion(@Param('token') token: string, @Req() req: any): Promise<ConfirmDeletionResponseDto> {
-    const userId = req.user?.id;
-
-    if (!userId) {
-      throw new ForbiddenException('Not authenticated');
-    }
+  async confirmDeletion(
+    @Param('token') token: string,
+    @Session() session: AuthenticatedUserSession,
+  ): Promise<ConfirmDeletionResponseDto> {
+    const userId = requireUserId(session);
 
     const result = await this.accountDeletionService.confirmDeletionRequest(token, userId);
 
@@ -68,12 +83,8 @@ export class AccountDeletionController {
   @ApiOperation({ summary: 'Cancel deletion request', description: 'Cancel pending account deletion request' })
   @ApiResponse({ status: 200, description: 'Request cancelled', type: SuccessResponseDto })
   @ApiResponse({ status: 401, description: 'Not authenticated' })
-  async cancelDeletion(@Req() req: any): Promise<SuccessResponseDto> {
-    const userId = req.user?.id;
-
-    if (!userId) {
-      throw new ForbiddenException('Not authenticated');
-    }
+  async cancelDeletion(@Session() session: AuthenticatedUserSession): Promise<SuccessResponseDto> {
+    const userId = requireUserId(session);
 
     await this.accountDeletionService.cancelDeletionRequest(userId);
 
@@ -86,16 +97,10 @@ export class AccountDeletionController {
   @ApiOperation({ summary: 'Get deletion status', description: 'Check current account deletion request status' })
   @ApiResponse({ status: 200, description: 'Status retrieved', type: AccountDeletionStatusDto })
   @ApiResponse({ status: 401, description: 'Not authenticated' })
-  async getDeletionStatus(@Req() req: any): Promise<AccountDeletionStatusDto> {
-    const userId = req.user?.id;
+  async getDeletionStatus(@Session() session: AuthenticatedUserSession): Promise<AccountDeletionStatusDto> {
+    const userId = requireUserId(session);
 
-    if (!userId) {
-      throw new ForbiddenException('Not authenticated');
-    }
-
-    const status = await this.accountDeletionService.getDeletionStatus(userId);
-
-    return status;
+    return this.accountDeletionService.getDeletionStatus(userId);
   }
 
   @Post('execute/:token')
@@ -105,12 +110,11 @@ export class AccountDeletionController {
   @ApiResponse({ status: 401, description: 'Not authenticated' })
   @ApiResponse({ status: 403, description: 'Token does not belong to authenticated user' })
   @ApiResponse({ status: 404, description: 'Invalid or expired token' })
-  async executeDeletion(@Param('token') token: string, @Req() req: any): Promise<ExecuteDeletionResponseDto> {
-    const userId = req.user?.id;
-
-    if (!userId) {
-      throw new ForbiddenException('Authentication required to execute account deletion');
-    }
+  async executeDeletion(
+    @Param('token') token: string,
+    @Session() session: AuthenticatedUserSession,
+  ): Promise<ExecuteDeletionResponseDto> {
+    const userId = requireUserId(session);
 
     const result = await this.accountDeletionService.executeDeletion(token, userId);
 

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Param,
@@ -20,6 +21,39 @@ export class DaysController {
       throw new UnauthorizedException("Not authenticated");
     }
     return userId;
+  }
+
+  /**
+   * Lightweight summary for an inclusive date range.
+   * Used by week/month dashboard views; never auto-creates Day rows.
+   *
+   * NOTE: must be declared BEFORE the `:date` route below or
+   * Nest will route `/api/days/range` as `date=range`.
+   */
+  @Get("range")
+  async getDaysRange(
+    @Query("start") start: string,
+    @Query("end") end: string,
+    @Query("lifeAreaId") lifeAreaId: string | undefined,
+    @Req() req: Request,
+  ) {
+    const userId = this.getUserIdFromRequest(req);
+    if (!start || !end) {
+      throw new BadRequestException("start and end query params are required");
+    }
+    try {
+      return await this.daysService.getRangeSummary(
+        userId,
+        start,
+        end,
+        lifeAreaId,
+      );
+    } catch (err) {
+      if (err instanceof Error) {
+        throw new BadRequestException(err.message);
+      }
+      throw err;
+    }
   }
 
   @Get(":date")

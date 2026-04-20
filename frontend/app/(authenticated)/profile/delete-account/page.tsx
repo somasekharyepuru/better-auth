@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
+import { authClient } from "@/lib/auth-client"
 interface DeletionStatus {
   hasActiveRequest: boolean
   status?: string
@@ -74,14 +75,12 @@ export default function DeleteAccountPage() {
 
       if (!response.ok) throw new Error("Failed to request deletion")
 
-      const data = await response.json()
-      const token = data?.request?.token
-      if (!token) {
-        throw new Error("Invalid response: missing confirmation token")
-      }
-      setConfirmationToken(token)
+      // The confirmation token is delivered via email only (not in this response)
+      // for security; the user must paste it from their inbox in step 2.
+      setConfirmationToken("")
       setStep(2)
       await fetchStatus()
+      toast.success("Confirmation email sent. Check your inbox.")
     } catch {
       toast.error("Failed to request deletion")
     } finally {
@@ -121,11 +120,45 @@ export default function DeleteAccountPage() {
 
       if (!response.ok) throw new Error("Failed to cancel deletion")
 
+      setConfirmationToken("")
       setStep(1)
       await fetchStatus()
       toast.success("Deletion cancelled")
     } catch {
       toast.error("Failed to cancel deletion")
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleExecuteDeletion = async () => {
+    if (!confirmationToken) {
+      toast.error("Confirmation token is required to delete now")
+      return
+    }
+    setActionLoading(true)
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_AUTH_URL}/account-deletion/execute/${confirmationToken}`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      )
+
+      if (!response.ok) throw new Error("Failed to execute deletion")
+
+      // Sign out locally and bounce to the login page. The user no longer
+      // exists server-side, so the next request would 401 anyway.
+      try {
+        await authClient.signOut()
+      } catch {
+        // Ignore sign-out failures — the account is already gone.
+      }
+      toast.success("Your account has been permanently deleted")
+      router.replace("/login")
+    } catch {
+      toast.error("Failed to execute deletion")
     } finally {
       setActionLoading(false)
     }
@@ -310,6 +343,31 @@ export default function DeleteAccountPage() {
                       >
                         {actionLoading ? "Cancelling..." : "Cancel Deletion Request"}
                       </Button>
+
+                      <Separator />
+
+                      <div className="space-y-3 text-left">
+                        <div>
+                          <p className="text-sm font-medium">Don't want to wait?</p>
+                          <p className="text-xs text-muted-foreground">
+                            Paste your confirmation token from the email to permanently delete your account right now. This signs you out and cannot be undone.
+                          </p>
+                        </div>
+                        <Input
+                          type="text"
+                          value={confirmationToken}
+                          onChange={(e) => setConfirmationToken(e.target.value)}
+                          placeholder="Confirmation token from email"
+                        />
+                        <Button
+                          onClick={handleExecuteDeletion}
+                          disabled={actionLoading || !confirmationToken}
+                          variant="destructive"
+                          className="w-full"
+                        >
+                          {actionLoading ? "Deleting..." : "Delete My Account Now"}
+                        </Button>
+                      </div>
                     </>
                   ) : (
                     <>

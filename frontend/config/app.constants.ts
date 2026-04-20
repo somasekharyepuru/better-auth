@@ -79,6 +79,7 @@ export const APP_CONFIG = {
         copyright: `© ${dayjs().format('YYYY')}`,
         tagline: "Calm productivity, by design.",
         links: [
+            { label: "Help", href: "/help" },
             { label: "Privacy", href: "/privacy" },
             { label: "Terms", href: "/terms" },
             { label: "Contact", href: "mailto:somasekharyepuru@gmail.com" },

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { prioritiesApi, TopPriority, Day } from "@/lib/daymark-api";
-import { dayKeys } from "../queries/use-day";
+import { dayKeys, invalidateDayCaches } from "../queries/use-day";
 
 interface MutationContext {
   previousDay: Day | undefined;
@@ -33,7 +33,7 @@ export function useTogglePriorityMutation(date: string, lifeAreaId?: string | nu
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey });
+      invalidateDayCaches(queryClient, date, lifeAreaId);
     },
   });
 }
@@ -65,7 +65,7 @@ export function useUpdatePriorityMutation(date: string, lifeAreaId?: string | nu
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey });
+      invalidateDayCaches(queryClient, date, lifeAreaId);
     },
   });
 }
@@ -104,7 +104,7 @@ export function useCreatePriorityMutation(date: string, lifeAreaId?: string | nu
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey });
+      invalidateDayCaches(queryClient, date, lifeAreaId);
     },
   });
 }
@@ -133,7 +133,7 @@ export function useDeletePriorityMutation(date: string, lifeAreaId?: string | nu
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey });
+      invalidateDayCaches(queryClient, date, lifeAreaId);
     },
   });
 }
@@ -163,7 +163,7 @@ export function useReorderPrioritiesMutation(date: string, lifeAreaId?: string |
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey });
+      invalidateDayCaches(queryClient, date, lifeAreaId);
     },
   });
 }

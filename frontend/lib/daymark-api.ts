@@ -82,6 +82,35 @@ export interface DayProgress {
     completed: number;
 }
 
+/**
+ * Lightweight per-day projection used by week/month dashboard overviews.
+ * One entry is returned for every date in the requested range, even if no
+ * Day row exists yet (counts will simply be zero).
+ */
+export interface DaySummary {
+    date: string; // YYYY-MM-DD
+    dayId: string | null;
+    lifeAreaId: string | null;
+    priorities: Array<{
+        id: string;
+        title: string;
+        completed: boolean;
+        order: number;
+    }>;
+    prioritiesTotal: number;
+    prioritiesCompleted: number;
+    timeBlocks: Array<{
+        id: string;
+        title: string;
+        startTime: string;
+        endTime: string;
+        type: string;
+    }>;
+    timeBlocksCount: number;
+    hasQuickNote: boolean;
+    hasReview: boolean;
+}
+
 // Helper for authenticated requests
 async function fetchWithCredentials(url: string, options: RequestInit = {}) {
     const response = await fetch(url, {
@@ -175,6 +204,20 @@ export const daysApi = {
     async getProgress(date: string, lifeAreaId?: string): Promise<DayProgress> {
         const params = lifeAreaId ? `?lifeAreaId=${lifeAreaId}` : '';
         return fetchWithCredentials(`${API_BASE}/api/days/${date}/progress${params}`);
+    },
+
+    /**
+     * Fetch lightweight summaries for an inclusive date range.
+     * Used by the week / month dashboard overviews.
+     */
+    async getRange(
+        start: string,
+        end: string,
+        lifeAreaId?: string | null,
+    ): Promise<DaySummary[]> {
+        const params = new URLSearchParams({ start, end });
+        if (lifeAreaId) params.set('lifeAreaId', lifeAreaId);
+        return fetchWithCredentials(`${API_BASE}/api/days/range?${params.toString()}`);
     },
 };
 

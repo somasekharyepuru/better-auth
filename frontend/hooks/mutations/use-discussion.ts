@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { discussionItemsApi, DiscussionItem, Day } from "@/lib/daymark-api";
-import { dayKeys } from "../queries/use-day";
+import { dayKeys, invalidateDayCaches } from "../queries/use-day";
 
 interface MutationContext {
   previousDay: Day | undefined;
@@ -14,7 +14,7 @@ export function useDiscussionMutations(date: string, lifeAreaId?: string | null)
   const queryClient = useQueryClient();
   const queryKey = dayKeys.day(date, lifeAreaId);
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey });
+  const invalidate = () => invalidateDayCaches(queryClient, date, lifeAreaId);
 
   // Example of simplified optimistic update setter
   const setOptimistic = async (updateFn: (prev: Day) => Day) => {

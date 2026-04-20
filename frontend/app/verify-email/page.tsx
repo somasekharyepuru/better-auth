@@ -2,18 +2,17 @@
 
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { AlertCircle, ArrowLeft, CheckCircle, Mail } from "lucide-react"
+import { AlertCircle, CheckCircle, Mail } from "lucide-react"
 import { toast } from "sonner"
 
 import { AuthLayout } from "@/components/auth-layout"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import { OtpInput } from "@/components/ui/otp-input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Spinner } from "@/components/ui/spinner"
 import { authClient } from "@/lib/auth-client"
@@ -37,6 +36,7 @@ function VerifyEmailContent() {
   const form = useForm<OTPForm>({
     resolver: zodResolver(otpSchema),
     defaultValues: { otp: "" },
+    mode: "onChange",
   })
 
   const hasAutoSent = useRef(false)
@@ -141,15 +141,8 @@ function VerifyEmailContent() {
   }
 
   return (
-    <AuthLayout title="Verify your email">
+    <AuthLayout title="Verify your email" backLink={{ href: "/signup", label: "Back" }}>
       <div className="space-y-6">
-        <Link
-          href="/signup"
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Link>
 
         <div className="text-center space-y-4">
           <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto">
@@ -175,18 +168,20 @@ function VerifyEmailContent() {
               name="otp"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Verification code</FormLabel>
+                  <FormLabel className="sr-only">Verification code</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Enter 8-digit code"
-                      maxLength={8}
-                      disabled={isLoading}
-                      className="text-center text-lg tracking-widest font-mono"
-                      autoComplete="one-time-code"
-                    />
+                    <div className="flex justify-center">
+                      <OtpInput
+                        length={8}
+                        value={field.value}
+                        onChange={field.onChange}
+                        disabled={isLoading}
+                        autoFocus
+                        ariaLabel="8-digit email verification code"
+                      />
+                    </div>
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-center" />
                 </FormItem>
               )}
             />
@@ -197,6 +192,7 @@ function VerifyEmailContent() {
               size="lg"
               isLoading={isLoading}
               loadingText="Verifying..."
+              disabled={!form.formState.isValid || isLoading}
             >
               Verify email
             </LoadingButton>

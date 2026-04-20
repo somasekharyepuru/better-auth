@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
@@ -50,40 +50,16 @@ import { useSettings } from "@/lib/settings-context";
 import { CALENDAR_UI_ENABLED } from "@/lib/feature-flags";
 import { HeaderCalendarWidget } from "@/components/calendar/header-calendar-widget";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { useSession } from "@/components/session-provider";
 import { cn, getAvatarFallback } from "@/lib/utils";
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  emailVerified: boolean;
-  role?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  image?: string | null;
-}
-
 export function UnifiedHeader() {
-  const [user, setUser] = useState<User | null>(null);
+  const { user } = useSession();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { settings } = useSettings();
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const sessionData = await authClient.getSession();
-        if (sessionData?.data?.user) {
-          setUser(sessionData.data.user);
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-      }
-    };
-    checkAuth();
-  }, []);
 
   // Cmd+K shortcut
   useEffect(() => {
@@ -118,6 +94,7 @@ export function UnifiedHeader() {
   const isToolsPage = pathname === "/tools" || pathname.startsWith("/tools/");
   const showToolsLink = settings.toolsTabEnabled && (settings.pomodoroEnabled || settings.eisenhowerEnabled || settings.decisionLogEnabled);
   const userInitials = getAvatarFallback(user?.name, user?.email);
+  const showOrganizationNavigation = user?.role === "admin";
 
   return (
     <>
@@ -279,13 +256,15 @@ export function UnifiedHeader() {
                     Tools
                   </button>
                 )}
-                <button
-                  onClick={() => { router.push("/organizations"); setIsMobileMenuOpen(false); }}
-                  className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                >
-                  <Building2 className="w-5 h-5" />
-                  Organizations
-                </button>
+                {showOrganizationNavigation && (
+                  <button
+                    onClick={() => { router.push("/organizations"); setIsMobileMenuOpen(false); }}
+                    className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  >
+                    <Building2 className="w-5 h-5" />
+                    Organizations
+                  </button>
+                )}
                 <button
                   onClick={() => { router.push("/help"); setIsMobileMenuOpen(false); }}
                   className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
@@ -375,20 +354,24 @@ export function UnifiedHeader() {
             )}
           </CommandGroup>
 
-          <CommandSeparator />
+          {showOrganizationNavigation && (
+            <>
+              <CommandSeparator />
 
-          {/* Auth-Service: Organizations */}
-          <CommandGroup heading="Organizations">
-            <CommandItem onSelect={() => runCommand(() => router.push("/organizations"))}>
-              <Building2 className="mr-2 h-4 w-4" />
-              <span>My Organizations</span>
-              <CommandShortcut>⌘O</CommandShortcut>
-            </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => router.push("/organizations/create"))}>
-              <Plus className="mr-2 h-4 w-4" />
-              <span>Create Organization</span>
-            </CommandItem>
-          </CommandGroup>
+              {/* Auth-Service: Organizations */}
+              <CommandGroup heading="Organizations">
+                <CommandItem onSelect={() => runCommand(() => router.push("/organizations"))}>
+                  <Building2 className="mr-2 h-4 w-4" />
+                  <span>My Organizations</span>
+                  <CommandShortcut>⌘O</CommandShortcut>
+                </CommandItem>
+                <CommandItem onSelect={() => runCommand(() => router.push("/organizations/create"))}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  <span>Create Organization</span>
+                </CommandItem>
+              </CommandGroup>
+            </>
+          )}
 
           {user && (
             <>

@@ -741,7 +741,7 @@ export default function CalendarPage() {
 
                         <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                             <Link
-                                href="/calendar/help"
+                                href="/help"
                                 className="text-sm text-purple-600 dark:text-purple-400 hover:underline"
                             >
                                 View full guide →

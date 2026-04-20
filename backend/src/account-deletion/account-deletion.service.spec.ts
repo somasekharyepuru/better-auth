@@ -191,18 +191,22 @@ describe('AccountDeletionService', () => {
       expect(result.canCancel).toBe(true);
     });
 
-    it('should return canCancel false for completed requests', async () => {
-      const mockRequest = {
-        id: 'request-1',
-        status: 'deleted',
-        requestedAt: new Date(),
-      };
-
-      (prisma.deletionRequest.findFirst as any).mockResolvedValue(mockRequest);
+    it('should ignore terminal-state rows (cancelled / expired / deleted)', async () => {
+      // The service must filter these out at the query level so that a stale
+      // cancelled/expired request never blocks a fresh deletion attempt.
+      (prisma.deletionRequest.findFirst as any).mockResolvedValue(null);
 
       const result = await service.getDeletionStatus('user-123');
 
-      expect(result.canCancel).toBe(false);
+      expect(result).toEqual({ hasActiveRequest: false });
+      expect(prisma.deletionRequest.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: 'user-123',
+            status: { in: ['pending', 'confirmed'] },
+          }),
+        }),
+      );
     });
   });
 
@@ -234,16 +238,34 @@ describe('AccountDeletionService', () => {
         deletedAt: new Date(),
       });
 
-      const result = await service.executeDeletion('token');
+      const result = await service.executeDeletion('token', 'user-123');
 
       expect(result.deleted).toBe(true);
       expect(result.userId).toBe('user-123');
     });
 
+    it('should throw ForbiddenException when authenticated userId is missing', async () => {
+      await expect(service.executeDeletion('token', '')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw ForbiddenException when authenticated user does not own the request', async () => {
+      const mockRequest = {
+        id: 'request-1',
+        userId: 'user-123',
+        status: 'confirmed',
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        user: { id: 'user-123', email: 'test@example.com' },
+      };
+
+      (prisma.deletionRequest.findFirst as any).mockResolvedValue(mockRequest);
+
+      await expect(service.executeDeletion('token', 'someone-else')).rejects.toThrow(ForbiddenException);
+    });
+
     it('should throw NotFoundException when no confirmed request found', async () => {
       (prisma.deletionRequest.findFirst as any).mockResolvedValue(null);
 
-      await expect(service.executeDeletion('token')).rejects.toThrow(NotFoundException);
+      await expect(service.executeDeletion('token', 'user-123')).rejects.toThrow(NotFoundException);
     });
 
     it('should mark expired and throw BadRequestException', async () => {
@@ -261,7 +283,7 @@ describe('AccountDeletionService', () => {
         status: 'expired',
       });
 
-      await expect(service.executeDeletion('token')).rejects.toThrow(BadRequestException);
+      await expect(service.executeDeletion('token', 'user-123')).rejects.toThrow(BadRequestException);
     });
   });
 

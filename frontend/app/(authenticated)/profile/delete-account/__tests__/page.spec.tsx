@@ -23,6 +23,14 @@ jest.mock('sonner', () => ({
   },
 }))
 
+// Mock auth client (used by the "Delete now" flow to sign the user out
+// after their account is destroyed server-side).
+jest.mock('@/lib/auth-client', () => ({
+  authClient: {
+    signOut: jest.fn().mockResolvedValue(undefined),
+  },
+}))
+
 describe('Delete Account Page', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -38,12 +46,17 @@ describe('Delete Account Page', () => {
         })
       }
       // POST /account-deletion/request
+      // Backend intentionally does NOT return the confirmation token in the
+      // response body — it is delivered via email only. The frontend must
+      // not depend on it being present.
       if (url.includes('/account-deletion/request') && options?.method === 'POST') {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
+            message: 'Account deletion requested. Please confirm via email to proceed.',
             request: {
-              token: 'test-confirmation-token-123',
+              id: 'request-1',
+              expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             },
           }),
         })
@@ -190,7 +203,7 @@ describe('Delete Account Page', () => {
         fireEvent.click(requestButton)
         await waitFor(() => {
           expect(mockFetch).toHaveBeenCalledWith(
-            'http://localhost:3002/account-deletion/request',
+            `${process.env.NEXT_PUBLIC_AUTH_URL}/account-deletion/request`,
             expect.objectContaining({
               method: 'POST',
               credentials: 'include',
@@ -255,7 +268,36 @@ describe('Delete Account Page', () => {
       }
     })
 
-    it('stores confirmation token from response', async () => {
+    it('does NOT pre-fill the token from the request response', async () => {
+      // Security regression guard: the backend must never expose the
+      // confirmation token in the request response — it is delivered via
+      // email only. Even if an old/malicious response includes a `token`
+      // field, the frontend must ignore it and require the user to paste
+      // the token from their inbox.
+      mockFetch.mockImplementation((url: string, options?: RequestInit) => {
+        if (url.includes('/account-deletion/status') && (!options || options.method !== 'POST')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ hasActiveRequest: false }),
+          })
+        }
+        if (url.includes('/account-deletion/request') && options?.method === 'POST') {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({
+              message: 'ok',
+              request: {
+                id: 'request-1',
+                expiresAt: new Date().toISOString(),
+                // Even if the server leaks a token, the UI must not auto-fill it.
+                token: 'leaked-should-be-ignored',
+              },
+            }),
+          })
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+      })
+
       const { container } = render(<DeleteAccountPage />)
       await waitFor(() => {
         expect(container.textContent).toContain('Request Account Deletion')
@@ -269,6 +311,9 @@ describe('Delete Account Page', () => {
         await waitFor(() => {
           expect(container.textContent).toContain('Confirm Deletion')
         })
+        const input = container.querySelector('input[type="text"]') as HTMLInputElement | null
+        expect(input).toBeTruthy()
+        expect(input?.value).toBe('')
       }
     })
 
@@ -327,7 +372,11 @@ describe('Delete Account Page', () => {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({
-              request: { token: 'test-token-123' },
+              message: 'Account deletion requested. Please confirm via email to proceed.',
+              request: {
+                id: 'request-1',
+                expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              },
             }),
           })
         }
@@ -466,7 +515,7 @@ describe('Delete Account Page', () => {
         fireEvent.click(confirmButton)
         await waitFor(() => {
           expect(mockFetch).toHaveBeenCalledWith(
-            'http://localhost:3002/account-deletion/confirm/my-token',
+            `${process.env.NEXT_PUBLIC_AUTH_URL}/account-deletion/confirm/my-token`,
             expect.objectContaining({
               method: 'POST',
               credentials: 'include',
@@ -678,7 +727,7 @@ describe('Delete Account Page', () => {
         fireEvent.click(cancelButton)
         await waitFor(() => {
           expect(mockFetch).toHaveBeenCalledWith(
-            'http://localhost:3002/account-deletion/cancel',
+            `${process.env.NEXT_PUBLIC_AUTH_URL}/account-deletion/cancel`,
             expect.objectContaining({
               method: 'POST',
               credentials: 'include',
@@ -807,6 +856,114 @@ describe('Delete Account Page', () => {
         fireEvent.click(cancelButton)
         await waitFor(() => {
           expect(toast.error).toHaveBeenCalledWith('Failed to cancel deletion')
+        })
+      }
+    })
+  })
+
+  describe('Execute Now (during grace period)', () => {
+    const expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
+    beforeEach(() => {
+      mockFetch.mockImplementation((url: string, options?: RequestInit) => {
+        if (url.includes('/account-deletion/status') && (!options || options.method !== 'POST')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({
+              hasActiveRequest: true,
+              status: 'confirmed',
+              expiresAt: expiryDate,
+              canCancel: true,
+            }),
+          })
+        }
+        if (url.includes('/account-deletion/execute/') && options?.method === 'POST') {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ deleted: true, userId: 'u1', requestId: 'r1' }),
+          })
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+      })
+    })
+
+    it('renders an execute-now form in step 3 when cancellation is still possible', async () => {
+      const { container } = render(<DeleteAccountPage />)
+      await waitFor(() => {
+        expect(container.textContent).toContain("Don't want to wait?")
+      })
+
+      const buttons = Array.from(container.querySelectorAll('button'))
+      const deleteNow = buttons.find(b => b.textContent?.includes('Delete My Account Now'))
+      expect(deleteNow).toBeTruthy()
+      // Disabled until the user pastes their token.
+      expect(deleteNow).toBeDisabled()
+    })
+
+    it('calls execute API with the pasted token and signs the user out', async () => {
+      const { authClient } = require('@/lib/auth-client')
+      const { container } = render(<DeleteAccountPage />)
+      await waitFor(() => {
+        expect(container.textContent).toContain("Don't want to wait?")
+      })
+
+      const inputs = Array.from(container.querySelectorAll('input[type="text"]'))
+      const tokenInput = inputs[inputs.length - 1] as HTMLInputElement
+      fireEvent.change(tokenInput, { target: { value: 'real-token' } })
+
+      const deleteNow = Array.from(container.querySelectorAll('button')).find(b =>
+        b.textContent?.includes('Delete My Account Now')
+      )
+      expect(deleteNow).not.toBeDisabled()
+
+      if (deleteNow) {
+        fireEvent.click(deleteNow)
+        await waitFor(() => {
+          expect(mockFetch).toHaveBeenCalledWith(
+            `${process.env.NEXT_PUBLIC_AUTH_URL}/account-deletion/execute/real-token`,
+            expect.objectContaining({ method: 'POST', credentials: 'include' })
+          )
+          expect(authClient.signOut).toHaveBeenCalled()
+        })
+      }
+    })
+
+    it('shows error toast when execute API fails', async () => {
+      const { toast } = require('sonner')
+      mockFetch.mockImplementation((url: string, options?: RequestInit) => {
+        if (url.includes('/account-deletion/status') && (!options || options.method !== 'POST')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({
+              hasActiveRequest: true,
+              status: 'confirmed',
+              expiresAt: expiryDate,
+              canCancel: true,
+            }),
+          })
+        }
+        if (url.includes('/account-deletion/execute/') && options?.method === 'POST') {
+          return Promise.resolve({ ok: false, json: () => Promise.resolve({}) })
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+      })
+
+      const { container } = render(<DeleteAccountPage />)
+      await waitFor(() => {
+        expect(container.textContent).toContain("Don't want to wait?")
+      })
+
+      const inputs = Array.from(container.querySelectorAll('input[type="text"]'))
+      const tokenInput = inputs[inputs.length - 1] as HTMLInputElement
+      fireEvent.change(tokenInput, { target: { value: 'bad-token' } })
+
+      const deleteNow = Array.from(container.querySelectorAll('button')).find(b =>
+        b.textContent?.includes('Delete My Account Now')
+      )
+      if (deleteNow) {
+        fireEvent.click(deleteNow)
+        await waitFor(() => {
+          expect(toast.error).toHaveBeenCalledWith('Failed to execute deletion')
         })
       }
     })

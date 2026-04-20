@@ -23,7 +23,12 @@ import { cn } from "@/lib/utils"
 
 const signUpSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Please enter a valid email address")
+    .trim()
+    .toLowerCase(),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")
@@ -66,6 +71,7 @@ function SignUpPageContent() {
   const form = useForm<SignUpForm>({
     resolver: zodResolver(signUpSchema),
     defaultValues: { name: "", email: "", password: "" },
+    mode: "onChange",
   })
 
   const onSubmit = async (data: SignUpForm) => {
@@ -243,6 +249,7 @@ function SignUpPageContent() {
                   size="lg"
                   isLoading={isLoading}
                   loadingText="Creating account..."
+                  disabled={!form.formState.isValid || isLoading}
                 >
                   <span className="flex items-center gap-2">
                     Create account

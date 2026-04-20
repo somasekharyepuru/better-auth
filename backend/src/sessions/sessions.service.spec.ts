@@ -4,6 +4,7 @@ jest.mock('../common/prisma.service', () => {
     findUnique: jest.fn(),
     update: jest.fn(),
     findMany: jest.fn(),
+    count: jest.fn(),
   };
   return {
     PrismaService: jest.fn().mockImplementation(() => ({
@@ -261,40 +262,74 @@ describe('SessionsService', () => {
     });
   });
 
-  describe('revokeAllSessions', () => {
-    it('should revoke all other sessions when excludeSessionId provided', async () => {
+  describe('revokeAllOtherSessions', () => {
+    it('should revoke all other sessions when currentSessionId provided', async () => {
+      prismaService.session.count.mockResolvedValue(2);
       mockAuth.api.revokeOtherSessions.mockResolvedValue({});
 
-      const result = await service.revokeAllSessions('user-1', 'current-session', new Headers());
+      const result = await service.revokeAllOtherSessions('user-1', 'current-session', new Headers());
 
-      expect(result).toEqual({ count: 1 });
+      expect(result).toEqual({ count: 2 });
+      expect(prismaService.session.count).toHaveBeenCalledWith({
+        where: {
+          userId: 'user-1',
+          id: { not: 'current-session' },
+        },
+      });
       expect(mockAuth.api.revokeOtherSessions).toHaveBeenCalledWith({
         headers: expect.any(Headers),
       });
     });
 
-    it('should revoke all sessions when excludeSessionId not provided', async () => {
+    it('should revoke all other sessions without exclusion filter when currentSessionId missing', async () => {
+      prismaService.session.count.mockResolvedValue(3);
+      mockAuth.api.revokeOtherSessions.mockResolvedValue({});
+
+      const result = await service.revokeAllOtherSessions('user-1', undefined, new Headers());
+
+      expect(result).toEqual({ count: 3 });
+      expect(prismaService.session.count).toHaveBeenCalledWith({
+        where: {
+          userId: 'user-1',
+        },
+      });
+      expect(mockAuth.api.revokeOtherSessions).toHaveBeenCalledWith({
+        headers: expect.any(Headers),
+      });
+    });
+
+    it('should handle Better Auth API errors', async () => {
+      prismaService.session.count.mockResolvedValue(2);
+      mockAuth.api.revokeOtherSessions.mockRejectedValue(new Error('Revocation failed'));
+
+      await expect(
+        service.revokeAllOtherSessions('user-1', 'current-session', new Headers())
+      ).rejects.toThrow('Revocation failed');
+    });
+  });
+
+  describe('revokeAllSessions', () => {
+    it('should revoke all sessions including current', async () => {
+      prismaService.session.count.mockResolvedValue(4);
       mockAuth.api.revokeSessions.mockResolvedValue({});
 
-      const result = await service.revokeAllSessions('user-1', undefined, new Headers());
+      const result = await service.revokeAllSessions('user-1', new Headers());
 
-      expect(result).toEqual({ count: 1 });
+      expect(result).toEqual({ count: 4 });
+      expect(prismaService.session.count).toHaveBeenCalledWith({
+        where: { userId: 'user-1' },
+      });
       expect(mockAuth.api.revokeSessions).toHaveBeenCalledWith({
         headers: expect.any(Headers),
       });
     });
 
-    it('should throw ForbiddenException when headers not provided', async () => {
-      await expect(service.revokeAllSessions('user-1', 'session-1')).rejects.toThrow(
-        new ForbiddenException('Headers required for authentication')
-      );
-    });
-
     it('should handle Better Auth API errors', async () => {
-      mockAuth.api.revokeOtherSessions.mockRejectedValue(new Error('Revocation failed'));
+      prismaService.session.count.mockResolvedValue(4);
+      mockAuth.api.revokeSessions.mockRejectedValue(new Error('Revocation failed'));
 
       await expect(
-        service.revokeAllSessions('user-1', 'current-session', new Headers())
+        service.revokeAllSessions('user-1', new Headers())
       ).rejects.toThrow('Revocation failed');
     });
   });

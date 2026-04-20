@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { quickNotesApi, QuickNote, Day } from "@/lib/daymark-api";
-import { dayKeys } from "../queries/use-day";
+import { dayKeys, invalidateDayCaches } from "../queries/use-day";
 
 export function useQuickNoteMutations(date: string, lifeAreaId?: string | null) {
   const queryClient = useQueryClient();
@@ -31,7 +31,7 @@ export function useQuickNoteMutations(date: string, lifeAreaId?: string | null) 
         queryClient.setQueryData(queryKey, context.previousDay);
       }
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey }),
+    onSettled: () => invalidateDayCaches(queryClient, date, lifeAreaId),
   });
 
   return { upsertNote };

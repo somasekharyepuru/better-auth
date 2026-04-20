@@ -7,6 +7,7 @@ jest.mock('./sessions.service', () => ({
     getUserSessions: jest.fn().mockResolvedValue([]),
     getSessionById: jest.fn().mockResolvedValue(null),
     revokeSession: jest.fn().mockResolvedValue({ success: true }),
+    revokeAllOtherSessions: jest.fn().mockResolvedValue({ count: 0 }),
     revokeAllSessions: jest.fn().mockResolvedValue({ count: 0 }),
   })),
 }));
@@ -38,6 +39,7 @@ describe('SessionsController', () => {
       getUserSessions: jest.fn().mockResolvedValue([mockSession]),
       getSessionById: jest.fn().mockResolvedValue(mockSession),
       revokeSession: jest.fn().mockResolvedValue({ success: true }),
+      revokeAllOtherSessions: jest.fn().mockResolvedValue({ count: 3 }),
       revokeAllSessions: jest.fn().mockResolvedValue({ count: 3 }),
     };
 
@@ -196,11 +198,11 @@ describe('SessionsController', () => {
 
       const result = await controller.revokeAllSessions(req, req);
 
-      expect(result).toEqual({ success: true, message: 'All sessions revoked' });
-      expect(mockSessionsService.revokeAllSessions).toHaveBeenCalledWith('user-1', 'session-1', req.headers);
+      expect(result).toEqual({ success: true, message: 'All other sessions revoked' });
+      expect(mockSessionsService.revokeAllOtherSessions).toHaveBeenCalledWith('user-1', 'session-1', req.headers);
       expect(mockAuditService.logUserAction).toHaveBeenCalledWith(
         'user-1',
-        'session.revoked.all',
+        'session.revoked.all.others',
         { revokedCount: 3 },
         'session-1',
         '192.168.1.1',
@@ -233,6 +235,33 @@ describe('SessionsController', () => {
         expect.any(String),
         '10.0.0.2',
         'TestAgent'
+      );
+    });
+  });
+
+  describe('revokeAllSessionsIncludingCurrent', () => {
+    it('should revoke all sessions including current for authenticated user', async () => {
+      const req = createMockRequest();
+
+      const result = await controller.revokeAllSessionsIncludingCurrent(req, req);
+
+      expect(result).toEqual({ success: true, message: 'All sessions revoked' });
+      expect(mockSessionsService.revokeAllSessions).toHaveBeenCalledWith('user-1', req.headers);
+      expect(mockAuditService.logUserAction).toHaveBeenCalledWith(
+        'user-1',
+        'session.revoked.all',
+        { revokedCount: 3 },
+        'session-1',
+        '192.168.1.1',
+        'Mozilla/5.0'
+      );
+    });
+
+    it('should throw ForbiddenException when not authenticated', async () => {
+      const req = createMockRequest({ user: null });
+
+      await expect(controller.revokeAllSessionsIncludingCurrent(req, req)).rejects.toThrow(
+        new ForbiddenException('Not authenticated')
       );
     });
   });

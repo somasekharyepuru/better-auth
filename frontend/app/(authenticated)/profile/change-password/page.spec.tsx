@@ -28,6 +28,13 @@ jest.mock('@/lib/auth-client', () => ({
   },
 }))
 
+jest.mock('@/lib/session-management-api', () => ({
+  sessionManagementApi: {
+    revokeAllExceptCurrent: jest.fn(),
+    revokeAllIncludingCurrent: jest.fn(),
+  },
+}))
+
 // Mock toast
 jest.mock('sonner', () => ({
   toast: {
@@ -52,31 +59,34 @@ describe('Change Password Page', () => {
     jest.clearAllMocks()
     // Default successful password change
     const { authClient } = require('@/lib/auth-client')
+    const { sessionManagementApi } = require('@/lib/session-management-api')
     authClient.changePassword.mockResolvedValue({
       data: { success: true },
     })
+    sessionManagementApi.revokeAllExceptCurrent.mockResolvedValue({})
+    sessionManagementApi.revokeAllIncludingCurrent.mockResolvedValue({})
   })
 
   describe('Page Structure', () => {
     it('renders page title', async () => {
       const { container } = render(<ChangePasswordPage />)
       await waitFor(() => {
-        expect(container.textContent).toContain('Change Password')
+        expect(container.textContent).toContain('Password')
       })
     })
 
     it('shows page description', async () => {
       const { container } = render(<ChangePasswordPage />)
       await waitFor(() => {
-        expect(container.textContent).toContain('Enter your current password and choose a new one')
+        expect(container.textContent).toContain('Update your account password')
       })
     })
 
-    it('has back button to profile', async () => {
+    it('does not show legacy back button', async () => {
       const { container } = render(<ChangePasswordPage />)
       await waitFor(() => {
         const backLink = container.querySelector('a[href="/profile"]')
-        expect(backLink).toBeTruthy()
+        expect(backLink).toBeNull()
       })
     })
 
@@ -418,7 +428,7 @@ describe('Change Password Page', () => {
       const submitButton = getSubmitButton(container)
       fireEvent.click(submitButton)
       await waitFor(() => {
-        expect(container.querySelector('[role="progressbar"]')).toBeTruthy()
+        expect(container.textContent).toContain('Changing...')
       })
     })
 
@@ -499,7 +509,37 @@ describe('Change Password Page', () => {
       })
     })
 
-    it('redirects to profile after successful change', async () => {
+    it('opens security modal after successful change', async () => {
+      render(<ChangePasswordPage />)
+
+      await waitFor(() => {
+        expect(screen.getByText('Change password')).toBeInTheDocument()
+      })
+
+      const currentPasswordInput = document.querySelector('input[name="currentPassword"]')
+      const newPasswordInput = document.querySelector('input[name="newPassword"]')
+      const confirmPasswordInput = document.querySelector('input[name="confirmPassword"]')
+      if (currentPasswordInput) fireEvent.change(currentPasswordInput, { target: { value: 'oldpass123' } })
+      if (newPasswordInput) fireEvent.change(newPasswordInput, { target: { value: 'newpass123' } })
+      if (confirmPasswordInput) fireEvent.change(confirmPasswordInput, { target: { value: 'newpass123' } })
+
+      const submitButton = screen.getByRole('button', { name: 'Change password' })
+      fireEvent.click(submitButton)
+      await waitFor(() => {
+        expect(screen.getByText('Password changed')).toBeInTheDocument()
+        expect(mockPush).not.toHaveBeenCalled()
+      })
+    })
+
+    it('renders without legacy back button', () => {
+      const { container } = render(<ChangePasswordPage />)
+      const backLink = container.querySelector('a[href="/profile"]')
+      expect(backLink).toBeNull()
+    })
+
+    it('revokes all except current session from modal', async () => {
+      const { sessionManagementApi } = require('@/lib/session-management-api')
+      const user = userEvent.setup()
       const { container } = render(<ChangePasswordPage />)
 
       await waitFor(() => {
@@ -508,16 +548,21 @@ describe('Change Password Page', () => {
 
       const currentInput = container.querySelector('input[name="currentPassword"]')
       if (currentInput) fireEvent.change(currentInput, { target: { value: 'oldpass123' } })
-
       const newInput = container.querySelector('input[name="newPassword"]')
       if (newInput) fireEvent.change(newInput, { target: { value: 'newpass123' } })
-
       const confirmInput = container.querySelector('input[name="confirmPassword"]')
       if (confirmInput) fireEvent.change(confirmInput, { target: { value: 'newpass123' } })
 
-      const submitButton = getSubmitButton(container)
-      fireEvent.click(submitButton)
+      fireEvent.click(getSubmitButton(container))
+
       await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Revoke all except this device' })).toBeInTheDocument()
+      })
+
+      await user.click(screen.getByRole('button', { name: 'Revoke all except this device' }))
+
+      await waitFor(() => {
+        expect(sessionManagementApi.revokeAllExceptCurrent).toHaveBeenCalled()
         expect(mockPush).toHaveBeenCalledWith('/profile')
       })
     })
@@ -647,12 +692,6 @@ describe('Change Password Page', () => {
     it('renders with all form fields', () => {
       const { container } = render(<ChangePasswordPage />)
       expect(container.querySelectorAll('input').length).toBe(3)
-    })
-
-    it('renders with back button', () => {
-      const { container } = render(<ChangePasswordPage />)
-      const backLink = container.querySelector('a[href="/profile"]')
-      expect(backLink).toBeTruthy()
     })
 
     it('renders with submit button', () => {
