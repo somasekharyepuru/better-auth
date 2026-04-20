@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { History, Info, LogIn, LogOut, Shield, Key, User, Search, ChevronDown, Calendar as CalendarIcon, LucideIcon, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
-import { format } from "date-fns"
+import dayjs from "dayjs"
 
 import { Spinner } from "@/components/ui/spinner"
 import { Input } from "@/components/ui/input"
@@ -460,7 +460,7 @@ export default function ActivityPage() {
                   <CalendarIcon className="w-4 h-4" />
                   {dateRange.from ? (
                     <span>
-                      {format(dateRange.from, "MMM d")} - {dateRange.to ? format(dateRange.to, "MMM d") : "..."}
+                      {dayjs(dateRange.from).format("MMM D")} - {dateRange.to ? dayjs(dateRange.to).format("MMM D") : "..."}
                     </span>
                   ) : (
                     "Date Range"
