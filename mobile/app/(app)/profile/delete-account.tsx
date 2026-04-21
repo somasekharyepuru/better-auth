@@ -1,14 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useAuth } from '../../../src/contexts/AuthContext';
-import { useTheme } from '../../../src/contexts/ThemeContext';
-import { Typography, Spacing, Radius } from '../../../src/constants/Theme';
-import { Button } from '../../../components/ui';
-import { TextInput } from '../../../components/ui';
-import { Card } from '../../../components/ui';
-import { ConfirmDialog } from '../../../components/feedback';
-import { LoadingSpinner } from '../../../components/feedback';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { useAuth } from "../../../src/contexts/AuthContext";
+import { useTheme } from "../../../src/contexts/ThemeContext";
+import { Typography, Spacing, Radius } from "../../../src/constants/Theme";
+import { Button } from "../../../components/ui";
+import { TextInput } from "../../../components/ui";
+import { Card } from "../../../components/ui";
+import { ConfirmDialog } from "../../../components/feedback";
+import { LoadingSpinner } from "../../../components/feedback";
+import { getMobileApiBaseURL } from "../../../src/lib/api-base";
 
 interface DeletionStatus {
   hasPendingRequest: boolean;
@@ -16,20 +24,22 @@ interface DeletionStatus {
   canRequestNew: boolean;
 }
 
-type DeletionStep = 'request' | 'confirm' | 'pending';
+type DeletionStep = "request" | "confirm" | "pending";
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { signOut } = useAuth();
 
-  const [confirmText, setConfirmText] = useState('');
-  const [confirmationToken, setConfirmationToken] = useState('');
-  const [currentStep, setCurrentStep] = useState<DeletionStep>('request');
+  const [confirmText, setConfirmText] = useState("");
+  const [confirmationToken, setConfirmationToken] = useState("");
+  const [currentStep, setCurrentStep] = useState<DeletionStep>("request");
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
-  const [deletionStatus, setDeletionStatus] = useState<DeletionStatus | null>(null);
-  const [error, setError] = useState('');
+  const [deletionStatus, setDeletionStatus] = useState<DeletionStatus | null>(
+    null,
+  );
+  const [error, setError] = useState("");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -41,19 +51,22 @@ export default function DeleteAccountScreen() {
 
   const checkDeletionStatus = async () => {
     setIsCheckingStatus(true);
-    setError('');
+    setError("");
 
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002'}/account-deletion/status`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${getMobileApiBaseURL()}/account-deletion/status`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
         },
-        credentials: 'include',
-      });
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to check deletion status');
+        throw new Error("Failed to check deletion status");
       }
 
       const data = await response.json();
@@ -63,43 +76,46 @@ export default function DeleteAccountScreen() {
         canRequestNew: data.canRequestNew !== false,
       });
     } catch (err) {
-      setError('Unable to check account deletion status');
+      setError("Unable to check account deletion status");
     } finally {
       setIsCheckingStatus(false);
     }
   };
 
   const handleRequestDeletion = async () => {
-    if (confirmText !== 'DELETE') {
-      setError('Please type DELETE to confirm');
+    if (confirmText !== "DELETE") {
+      setError("Please type DELETE to confirm");
       return;
     }
 
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002'}/account-deletion/request`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${getMobileApiBaseURL()}/account-deletion/request`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
         },
-        credentials: 'include',
-      });
+      );
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Failed to request account deletion');
+        throw new Error(data.message || "Failed to request account deletion");
       }
 
       const data = await response.json();
       setShowConfirmDialog(false);
-      setConfirmText('');
+      setConfirmText("");
 
       // Move to confirmation step
-      setCurrentStep('confirm');
+      setCurrentStep("confirm");
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred');
+      setError(err.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -107,34 +123,37 @@ export default function DeleteAccountScreen() {
 
   const handleConfirmToken = async () => {
     if (!confirmationToken || confirmationToken.length < 6) {
-      setError('Please enter a valid confirmation token');
+      setError("Please enter a valid confirmation token");
       return;
     }
 
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002'}/account-deletion/confirm/${confirmationToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${getMobileApiBaseURL()}/account-deletion/confirm/${confirmationToken}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
         },
-        credentials: 'include',
-      });
+      );
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Failed to confirm deletion');
+        throw new Error(data.message || "Failed to confirm deletion");
       }
 
-      setCurrentStep('pending');
-      setConfirmationToken('');
+      setCurrentStep("pending");
+      setConfirmationToken("");
 
       // Refresh status
       await checkDeletionStatus();
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred');
+      setError(err.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -142,38 +161,41 @@ export default function DeleteAccountScreen() {
 
   const handleCancelDeletion = async () => {
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002'}/account-deletion/cancel`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${getMobileApiBaseURL()}/account-deletion/cancel`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
         },
-        credentials: 'include',
-      });
+      );
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Failed to cancel deletion request');
+        throw new Error(data.message || "Failed to cancel deletion request");
       }
 
       setShowCancelDialog(false);
       await checkDeletionStatus();
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred');
+      setError(err.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
   };
 
   const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -195,7 +217,7 @@ export default function DeleteAccountScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       <ScrollView
@@ -204,7 +226,9 @@ export default function DeleteAccountScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.destructive }]}>Delete Account</Text>
+          <Text style={[styles.title, { color: colors.destructive }]}>
+            Delete Account
+          </Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
             Permanently delete your account and all data
           </Text>
@@ -212,38 +236,68 @@ export default function DeleteAccountScreen() {
 
         {/* Step Indicator */}
         <View style={styles.stepIndicator}>
-          {(['request', 'confirm', 'pending'] as DeletionStep[]).map((step, index) => (
-            <React.Fragment key={step}>
-              <View
-                style={[
-                  styles.stepDot,
-                  currentStep === step
-                    ? { backgroundColor: colors.destructive }
-                    : { backgroundColor: colors.muted },
-                  index < ['request', 'confirm', 'pending'].indexOf(currentStep) &&
-                    { backgroundColor: colors.destructive },
-                ]}
-              />
-              {index < 2 && (
+          {(["request", "confirm", "pending"] as DeletionStep[]).map(
+            (step, index) => (
+              <React.Fragment key={step}>
                 <View
                   style={[
-                    styles.stepLine,
-                    index < ['request', 'confirm', 'pending'].indexOf(currentStep) && { backgroundColor: colors.destructive },
+                    styles.stepDot,
+                    currentStep === step
+                      ? { backgroundColor: colors.destructive }
+                      : { backgroundColor: colors.muted },
+                    index <
+                      ["request", "confirm", "pending"].indexOf(
+                        currentStep,
+                      ) && { backgroundColor: colors.destructive },
                   ]}
                 />
-              )}
-            </React.Fragment>
-          ))}
+                {index < 2 && (
+                  <View
+                    style={[
+                      styles.stepLine,
+                      index <
+                        ["request", "confirm", "pending"].indexOf(
+                          currentStep,
+                        ) && { backgroundColor: colors.destructive },
+                    ]}
+                  />
+                )}
+              </React.Fragment>
+            ),
+          )}
         </View>
         <View style={styles.stepLabels}>
-          <Text style={[styles.stepLabel, currentStep === 'request' && { color: colors.destructive }]}>1. Request</Text>
-          <Text style={[styles.stepLabel, currentStep === 'confirm' && { color: colors.destructive }]}>2. Confirm</Text>
-          <Text style={[styles.stepLabel, currentStep === 'pending' && { color: colors.destructive }]}>3. Pending</Text>
+          <Text
+            style={[
+              styles.stepLabel,
+              currentStep === "request" && { color: colors.destructive },
+            ]}
+          >
+            1. Request
+          </Text>
+          <Text
+            style={[
+              styles.stepLabel,
+              currentStep === "confirm" && { color: colors.destructive },
+            ]}
+          >
+            2. Confirm
+          </Text>
+          <Text
+            style={[
+              styles.stepLabel,
+              currentStep === "pending" && { color: colors.destructive },
+            ]}
+          >
+            3. Pending
+          </Text>
         </View>
 
         {error && (
           <Card padding="md" style={styles.errorCard}>
-            <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
+            <Text style={[styles.errorText, { color: colors.destructive }]}>
+              {error}
+            </Text>
           </Card>
         )}
 
@@ -256,23 +310,41 @@ export default function DeleteAccountScreen() {
                 <Text style={[styles.warningTitle, { color: colors.warning }]}>
                   Deletion Pending
                 </Text>
-                <Text style={[styles.warningText, { color: colors.mutedForeground }]}>
-                  Your account is scheduled for deletion on {formatDate(deletionStatus.expiresAt)}
+                <Text
+                  style={[
+                    styles.warningText,
+                    { color: colors.mutedForeground },
+                  ]}
+                >
+                  Your account is scheduled for deletion on{" "}
+                  {formatDate(deletionStatus.expiresAt)}
                 </Text>
-                <Text style={[styles.warningText, { color: colors.mutedForeground }]}>
-                  You have {getDaysUntilDeletion(deletionStatus.expiresAt)} days to cancel this request
+                <Text
+                  style={[
+                    styles.warningText,
+                    { color: colors.mutedForeground },
+                  ]}
+                >
+                  You have {getDaysUntilDeletion(deletionStatus.expiresAt)} days
+                  to cancel this request
                 </Text>
               </View>
             </View>
 
             <View style={styles.warningInfo}>
-              <Text style={[styles.infoText, { color: colors.mutedForeground }]}>
+              <Text
+                style={[styles.infoText, { color: colors.mutedForeground }]}
+              >
                 ✓ Your data will be permanently removed
               </Text>
-              <Text style={[styles.infoText, { color: colors.mutedForeground }]}>
+              <Text
+                style={[styles.infoText, { color: colors.mutedForeground }]}
+              >
                 ✓ All sessions will be terminated
               </Text>
-              <Text style={[styles.infoText, { color: colors.mutedForeground }]}>
+              <Text
+                style={[styles.infoText, { color: colors.mutedForeground }]}
+              >
                 ✓ Organization memberships will be removed
               </Text>
             </View>
@@ -309,21 +381,35 @@ export default function DeleteAccountScreen() {
             </Text>
           </View>
 
-          <View style={[styles.gracePeriodCard, { backgroundColor: colors.muted }]}>
-            <Text style={[styles.gracePeriodText, { color: colors.mutedForeground }]}>
-              You'll have 30 days to cancel this request before your account is permanently deleted.
+          <View
+            style={[styles.gracePeriodCard, { backgroundColor: colors.muted }]}
+          >
+            <Text
+              style={[
+                styles.gracePeriodText,
+                { color: colors.mutedForeground },
+              ]}
+            >
+              You'll have 30 days to cancel this request before your account is
+              permanently deleted.
             </Text>
           </View>
         </Card>
 
         {/* Confirmation Form (Step 2: Email Token Confirmation) */}
-        {currentStep === 'confirm' && (
+        {currentStep === "confirm" && (
           <>
             <Text style={[styles.stepTitle, { color: colors.foreground }]}>
               Step 2: Confirm Your Request
             </Text>
-            <Text style={[styles.stepDescription, { color: colors.mutedForeground }]}>
-              Enter the confirmation token sent to your email to proceed with account deletion.
+            <Text
+              style={[
+                styles.stepDescription,
+                { color: colors.mutedForeground },
+              ]}
+            >
+              Enter the confirmation token sent to your email to proceed with
+              account deletion.
             </Text>
 
             <Text style={[styles.label, { color: colors.foreground }]}>
@@ -351,7 +437,7 @@ export default function DeleteAccountScreen() {
 
             <Button
               variant="ghost"
-              onPress={() => setCurrentStep('request')}
+              onPress={() => setCurrentStep("request")}
               disabled={isLoading}
               style={styles.ghostBackButton}
             >
@@ -361,7 +447,7 @@ export default function DeleteAccountScreen() {
         )}
 
         {/* Confirmation Form (Step 1: Request Deletion) */}
-        {currentStep === 'request' && !deletionStatus?.hasPendingRequest && (
+        {currentStep === "request" && !deletionStatus?.hasPendingRequest && (
           <>
             <Text style={[styles.label, { color: colors.foreground }]}>
               Type DELETE to confirm:
@@ -377,15 +463,18 @@ export default function DeleteAccountScreen() {
             <Button
               variant="destructive"
               onPress={() => setShowConfirmDialog(true)}
-              disabled={confirmText !== 'DELETE' || isLoading}
+              disabled={confirmText !== "DELETE" || isLoading}
               loading={isLoading}
               style={styles.deleteButton}
             >
               Request Account Deletion
             </Button>
 
-            <Text style={[styles.disclaimer, { color: colors.mutedForeground }]}>
-              You will receive a confirmation email to proceed with the deletion.
+            <Text
+              style={[styles.disclaimer, { color: colors.mutedForeground }]}
+            >
+              You will receive a confirmation email to proceed with the
+              deletion.
             </Text>
           </>
         )}
@@ -396,7 +485,7 @@ export default function DeleteAccountScreen() {
             variant="ghost"
             onPress={async () => {
               await signOut();
-              router.replace('/(auth)/login');
+              router.replace("/(auth)/login");
             }}
             style={styles.signOutButton}
           >
@@ -452,8 +541,8 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.xl,
-    paddingTop: Spacing['4xl'],
-    paddingBottom: Spacing['2xl'],
+    paddingTop: Spacing["4xl"],
+    paddingBottom: Spacing["2xl"],
   },
   header: {
     marginBottom: Spacing.xl,
@@ -466,9 +555,9 @@ const styles = StyleSheet.create({
     ...Typography.body,
   },
   stepIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     marginVertical: Spacing.lg,
     paddingHorizontal: Spacing.xl,
   },
@@ -483,9 +572,9 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.sm,
   },
   stepLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing['2xl'],
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing["2xl"],
     marginBottom: Spacing.lg,
   },
   stepLabel: {
@@ -494,12 +583,12 @@ const styles = StyleSheet.create({
   },
   stepTitle: {
     ...Typography.h3,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: Spacing.sm,
   },
   stepDescription: {
     ...Typography.body,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: Spacing.xl,
     paddingHorizontal: Spacing.xl,
   },
@@ -513,8 +602,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   warningHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     marginBottom: Spacing.md,
   },
   warningIcon: {
@@ -526,7 +615,7 @@ const styles = StyleSheet.create({
   },
   warningTitle: {
     ...Typography.h3,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: Spacing.sm,
   },
   warningText: {
@@ -550,12 +639,12 @@ const styles = StyleSheet.create({
   infoIcon: {
     fontSize: 32,
     marginBottom: Spacing.md,
-    textAlign: 'center',
+    textAlign: "center",
   },
   infoTitle: {
     ...Typography.h3,
     marginBottom: Spacing.md,
-    textAlign: 'center',
+    textAlign: "center",
   },
   infoList: {
     marginTop: Spacing.md,
@@ -567,8 +656,8 @@ const styles = StyleSheet.create({
   },
   gracePeriodText: {
     ...Typography.bodySmall,
-    textAlign: 'center',
-    fontStyle: 'italic',
+    textAlign: "center",
+    fontStyle: "italic",
   },
   label: {
     ...Typography.label,
@@ -582,14 +671,14 @@ const styles = StyleSheet.create({
   },
   disclaimer: {
     ...Typography.caption,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: Spacing.sm,
   },
   signOutSection: {
     marginTop: Spacing.xl,
   },
   signOutButton: {
-    width: '100%',
+    width: "100%",
   },
   ghostBackButton: {
     marginTop: Spacing.sm,

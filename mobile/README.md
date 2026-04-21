@@ -58,7 +58,9 @@ npm install react react-native expo expo-router expo-secure-store
 Create a `.env` file in your project root:
 
 ```env
-EXPO_PUBLIC_API_URL=http://localhost:3002
+# Optional override if Expo host detection is not enough for your setup.
+# For a physical device, use your computer's LAN IP instead of localhost.
+# EXPO_PUBLIC_API_URL=http://192.168.1.10:3002
 ```
 
 For production, use your backend URL:

@@ -4,7 +4,11 @@
  * Bypasses ESM import issues with better-auth/client
  */
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002';
+import { getMobileApiBaseURL } from './api-base';
+
+const API_BASE = getMobileApiBaseURL();
+const SHOULD_LOG_API =
+    (typeof __DEV__ !== 'undefined' && __DEV__) || process.env.EXPO_PUBLIC_API_LOGS === 'true';
 
 export interface Session {
     id: string;
@@ -49,12 +53,34 @@ class HTTPAuthClient {
         this.baseURL = baseURL;
     }
 
+    private logRequestStart(method: string, url: string): void {
+        if (SHOULD_LOG_API) {
+            console.log(`[mobile-auth-api] -> ${method} ${url}`);
+        }
+    }
+
+    private logRequestSuccess(method: string, url: string, status: number, duration: number): void {
+        if (SHOULD_LOG_API) {
+            console.log(`[mobile-auth-api] <- ${method} ${url} ${status} (${duration}ms)`);
+        }
+    }
+
+    private logRequestFailure(method: string, url: string, message: string, duration: number, status?: number): void {
+        if (SHOULD_LOG_API) {
+            const statusLabel = status ? ` ${status}` : '';
+            console.warn(`[mobile-auth-api] xx ${method} ${url}${statusLabel} (${duration}ms) ${message}`);
+        }
+    }
+
     private async request<T>(
         endpoint: string,
         options: RequestInit = {}
     ): Promise<AuthResponse<T>> {
+        const method = (options.method || 'GET').toUpperCase();
+        const startedAt = Date.now();
         try {
             const url = `${this.baseURL}/api/auth/${endpoint}`;
+            this.logRequestStart(method, url);
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000);
             const response = await fetch(url, {
@@ -96,12 +122,17 @@ class HTTPAuthClient {
                 };
             }
 
+            this.logRequestSuccess(method, url, response.status, Date.now() - startedAt);
+
             return { data: data as T, error: null };
         } catch (error) {
+            const url = `${this.baseURL}/api/auth/${endpoint}`;
+            const message = error instanceof Error ? error.message : 'Network error';
+            this.logRequestFailure(method, url, message, Date.now() - startedAt);
             return {
                 data: null,
                 error: {
-                    message: error instanceof Error ? error.message : 'Network error',
+                    message,
                 },
             };
         }
@@ -111,8 +142,11 @@ class HTTPAuthClient {
         endpoint: string,
         options: RequestInit = {}
     ): Promise<AuthResponse<T>> {
+        const method = (options.method || 'GET').toUpperCase();
+        const startedAt = Date.now();
         try {
             const url = `${this.baseURL}/api/${endpoint}`;
+            this.logRequestStart(method, url);
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000);
             const response = await fetch(url, {
@@ -154,12 +188,17 @@ class HTTPAuthClient {
                 };
             }
 
+            this.logRequestSuccess(method, url, response.status, Date.now() - startedAt);
+
             return { data: data as T, error: null };
         } catch (error) {
+            const url = `${this.baseURL}/api/${endpoint}`;
+            const message = error instanceof Error ? error.message : 'Network error';
+            this.logRequestFailure(method, url, message, Date.now() - startedAt);
             return {
                 data: null,
                 error: {
-                    message: error instanceof Error ? error.message : 'Network error',
+                    message,
                 },
             };
         }

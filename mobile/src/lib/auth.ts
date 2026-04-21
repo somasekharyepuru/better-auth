@@ -7,6 +7,7 @@
  */
 
 import { authClient, httpAuthClient } from './auth-client';
+import { getMobileApiBaseURL } from './api-base';
 import {
     createError,
     getErrorMessage,
@@ -1373,7 +1374,7 @@ export async function removeTeamMember(params: {
  * Get API base URL for direct fetch calls
  */
 function getApiBaseURL(): string {
-    return process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002';
+    return getMobileApiBaseURL();
 }
 
 /**

@@ -4,7 +4,11 @@
  * Uses credentials: 'include' (cookie-based session) matching the current mobile auth pattern
  */
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002';
+import { getMobileApiBaseURL } from './api-base';
+
+const API_BASE = getMobileApiBaseURL();
+const SHOULD_LOG_API =
+    (typeof __DEV__ !== 'undefined' && __DEV__) || process.env.EXPO_PUBLIC_API_LOGS === 'true';
 
 // ==========================================
 // Types
@@ -398,30 +402,57 @@ export interface TimeBlockType {
 // ==========================================
 
 async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<any> {
-    const response = await fetch(url, {
-        ...options,
-        credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        },
-    });
+    const method = (options.method || 'GET').toUpperCase();
+    const startedAt = Date.now();
 
-    if (!response.ok) {
-        if (response.status === 401) {
-            throw new Error('Session expired');
+    if (SHOULD_LOG_API) {
+        console.log(`[mobile-api] -> ${method} ${url}`);
+    }
+
+    try {
+        const response = await fetch(url, {
+            ...options,
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers,
+            },
+        });
+
+        const duration = Date.now() - startedAt;
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ message: response.statusText }));
+            const errorMessage = response.status === 401
+                ? 'Session expired'
+                : (error.message || 'Request failed');
+
+            if (SHOULD_LOG_API) {
+                console.warn(`[mobile-api] <- ${method} ${url} ${response.status} (${duration}ms) ${errorMessage}`);
+            }
+
+            throw new Error(errorMessage);
         }
-        const error = await response.json().catch(() => ({ message: response.statusText }));
-        throw new Error(error.message || 'Request failed');
-    }
 
-    // Handle empty responses (DELETE etc.)
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-        return undefined;
-    }
+        if (SHOULD_LOG_API) {
+            console.log(`[mobile-api] <- ${method} ${url} ${response.status} (${duration}ms)`);
+        }
 
-    return response.json();
+        // Handle empty responses (DELETE etc.)
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            return undefined;
+        }
+
+        return response.json();
+    } catch (error) {
+        const duration = Date.now() - startedAt;
+        const message = error instanceof Error ? error.message : 'Network error';
+        if (SHOULD_LOG_API) {
+            console.error(`[mobile-api] xx ${method} ${url} (${duration}ms) ${message}`);
+        }
+        throw error;
+    }
 }
 
 // ==========================================

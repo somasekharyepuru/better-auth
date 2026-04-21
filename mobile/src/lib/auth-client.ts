@@ -5,6 +5,7 @@
  */
 
 import { httpAuthClient } from './http-auth-client';
+import { getMobileApiBaseURL } from './api-base';
 
 export { httpAuthClient };
 
@@ -194,7 +195,7 @@ export const authClient = {
  * Get the current API base URL
  */
 export function getApiBaseURL(): string {
-    return process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002';
+    return getMobileApiBaseURL();
 }
 
 /**
