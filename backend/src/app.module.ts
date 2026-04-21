@@ -35,6 +35,7 @@ import { DailyReviewModule } from './daily-review/daily-review.module';
 import { SettingsModule } from './settings/settings.module';
 import { TimeBlockTypesModule } from './time-block-types/time-block-types.module';
 import { TelemetryModule } from './telemetry/telemetry.module';
+import { HabitsModule } from './habits/habits.module';
 
 @Module({
     imports: [
@@ -81,6 +82,7 @@ import { TelemetryModule } from './telemetry/telemetry.module';
         SettingsModule,
         TimeBlockTypesModule,
         TelemetryModule,
+        HabitsModule,
     ],
 })
 export class AppModule implements NestModule {

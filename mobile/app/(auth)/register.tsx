@@ -8,6 +8,7 @@ import { Typography, Spacing, Radius } from "../../src/constants/Theme";
 import { Button } from "../../components/ui";
 import { TextInput } from "../../components/ui";
 import { PasswordStrengthIndicator } from "../../components/form";
+import Svg, { Path } from "react-native-svg";
 import { Separator } from "../../components/ui";
 import { AuthLayout, AuthError } from "../../components/auth";
 
@@ -131,40 +132,17 @@ export default function RegisterScreen() {
     name.trim() && email.trim() && password && confirmPassword;
 
   return (
-    <AuthLayout scrollEnabled={true}>
-      {/* Header - left aligned */}
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.foreground }]}>
-          Create your{"\n"}account
-        </Text>
-        <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-          Join us and get started today
-        </Text>
-      </View>
-
+    <AuthLayout 
+      scrollEnabled={true}
+      title="Create an account"
+      subtitle="Enter your email below to create your account"
+    >
       <AuthError error={error} colors={colors} />
-
-      {/* Social button first */}
-      <Pressable
-        onPress={() => handleSocialSignIn("microsoft")}
-        disabled={isLoading}
-        style={({ pressed }) => [
-          styles.socialPrimaryButton,
-          { backgroundColor: isDark ? "#00A4EF" : "#0078D4" },
-          pressed && { transform: [{ scale: 0.97 }] },
-        ]}
-      >
-        <Text style={[styles.socialPrimaryButtonText, { color: "#FFFFFF" }]}>
-          Sign up with Microsoft
-        </Text>
-      </Pressable>
-
-      <Separator label="Or continue with email" style={styles.separator} />
 
       {/* Form fields */}
       <View style={styles.form}>
         <TextInput
-          label="FULL NAME"
+          label="Full name"
           placeholder="e.g. Jane Doe"
           value={name}
           onChangeText={setName}
@@ -173,8 +151,8 @@ export default function RegisterScreen() {
         />
 
         <TextInput
-          label="EMAIL"
-          placeholder="e.g. hello@example.com"
+          label="Email"
+          placeholder="name@example.com"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -184,8 +162,8 @@ export default function RegisterScreen() {
         />
 
         <TextInput
-          label="PASSWORD"
-          placeholder="Strong password"
+          label="Password"
+          placeholder="Create a password"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -195,7 +173,7 @@ export default function RegisterScreen() {
         {password ? <PasswordStrengthIndicator password={password} /> : null}
 
         <TextInput
-          label="CONFIRM PASSWORD"
+          label="Confirm password"
           placeholder="Confirm your password"
           value={confirmPassword}
           onChangeText={setConfirmPassword}
@@ -204,26 +182,40 @@ export default function RegisterScreen() {
         />
       </View>
 
-      {/* Submit - muted style */}
-      <Button
+      {/* Submit */}
+      <Pressable
         onPress={handleRegister}
         disabled={isLoading || !isFormValid}
-        loading={isLoading}
-        style={[styles.submitButton, { backgroundColor: colors.secondary }]}
+        style={({ pressed }) => [
+          styles.submitButton,
+          { opacity: pressed || isLoading || !isFormValid ? 0.8 : 1 }
+        ]}
       >
-        <Text style={[styles.submitButtonText, { color: colors.foreground }]}>
-          Create Account
+        <Text style={styles.submitButtonText}>
+          {isLoading ? "Creating..." : "Create Account"}
         </Text>
-      </Button>
+      </Pressable>
 
-      <Button
-        variant="outline"
+      <Separator label="Or continue with" style={styles.separator} />
+
+      <Pressable
         onPress={() => handleSocialSignIn("google")}
         disabled={isLoading}
-        style={styles.googleButton}
+        style={({ pressed }) => [
+          styles.googleNativeButton,
+          pressed && { opacity: 0.8 },
+        ]}
       >
-        Sign up with Google
-      </Button>
+        <Svg width="20" height="20" viewBox="0 0 24 24" style={{ marginRight: Spacing.sm }}>
+          <Path fill="#4285F4" d="M23.745 12.27c0-.827-.066-1.605-.205-2.355H12.25v4.545h6.456a5.53 5.53 0 0 1-2.39 3.635v3.013h3.86c2.26-2.08 3.568-5.143 3.568-8.837Z" />
+          <Path fill="#34A853" d="M12.25 24c3.24 0 5.95-1.077 7.935-2.89l-3.86-3.014c-1.076.722-2.453 1.15-4.075 1.15-3.13 0-5.782-2.115-6.728-4.962H1.545v3.1A11.751 11.751 0 0 0 12.25 24Z" />
+          <Path fill="#FBBC05" d="M5.522 14.284a6.93 6.93 0 0 1-.371-2.284c0-.79.137-1.558.371-2.284v-3.1H1.545a11.765 11.765 0 0 0 0 10.768l3.977-3.1Z" />
+          <Path fill="#EA4335" d="M12.25 4.753c1.76 0 3.344.606 4.587 1.79l3.444-3.445C18.196 1.156 15.485 0 12.25 0 7.398 0 3.195 2.766 1.545 6.89l3.977 3.1c.946-2.847 3.597-4.962 6.728-4.962Z" />
+        </Svg>
+        <Text style={[styles.googleNativeButtonText, { color: isDark ? "#E5E7EB" : "#374151" }]}>
+          Sign up with Google
+        </Text>
+      </Pressable>
 
       <View style={styles.legalWrap}>
         <Text style={[styles.legal, { color: colors.mutedForeground }]}>
@@ -244,51 +236,29 @@ export default function RegisterScreen() {
       </View>
 
       {/* Footer */}
-      <View style={styles.footer}>
-        <Link
-          href={{
-            pathname: "/(auth)/login",
-            params: redirectTo ? { redirectTo } : undefined,
-          }}
-          asChild
-        >
-          <Pressable>
-            <Text style={[styles.footerLink, { color: colors.foreground }]}>
-              Already have an account? Sign in
-            </Text>
-          </Pressable>
-        </Link>
+      <View style={styles.footerWrap}>
+        <View style={styles.footerRow}>
+          <Text style={[styles.footerText, { color: colors.mutedForeground }]}>Already have an account? </Text>
+          <Link
+            href={{
+              pathname: "/(auth)/login",
+              params: redirectTo ? { redirectTo } : undefined,
+            }}
+            asChild
+          >
+            <Pressable>
+              <Text style={[styles.footerLinkBold, { color: colors.foreground }]}>
+                Sign in
+              </Text>
+            </Pressable>
+          </Link>
+        </View>
       </View>
     </AuthLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    alignItems: "flex-start",
-    marginBottom: Spacing["2xl"],
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "700",
-    lineHeight: 40,
-    marginBottom: Spacing.sm,
-  },
-  subtitle: {
-    ...Typography.body,
-  },
-  socialPrimaryButton: {
-    width: "100%",
-    paddingVertical: 18,
-    borderRadius: Radius.full,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Spacing.lg,
-  },
-  socialPrimaryButtonText: {
-    fontSize: 17,
-    fontWeight: "600",
-  },
   legalWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -312,27 +282,52 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   submitButton: {
+    backgroundColor: "#0071e3",
     width: "100%",
-    borderRadius: Radius.full,
+    borderRadius: 100,
     paddingVertical: 16,
-    marginBottom: Spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.sm,
+    shadowColor: "#0071e3",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   submitButtonText: {
+    color: "#FFFFFF",
     fontSize: 17,
     fontWeight: "600",
   },
-  googleButton: {
+  googleNativeButton: {
+    flexDirection: "row",
     width: "100%",
+    paddingVertical: 14,
     borderRadius: Radius.full,
-    marginBottom: Spacing["2xl"],
-  },
-  footer: {
     alignItems: "center",
-    marginTop: Spacing.md,
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.1)",
+    marginBottom: Spacing.xl,
   },
-  footerLink: {
-    ...Typography.body,
-    fontWeight: "500",
+  googleNativeButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  footerWrap: {
+    alignItems: "center",
+  },
+  footerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  footerText: {
+    ...Typography.bodySmall,
+  },
+  footerLinkBold: {
+    ...Typography.bodySmall,
+    fontWeight: "600",
     textDecorationLine: "underline",
   },
 });

@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { useRouter, Link } from 'expo-router';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { Spacing } from '../../src/constants/Theme';
-import { Button } from '../../components/ui';
 import { TextInput } from '../../components/ui';
 import { AuthLayout, AuthError } from '../../components/auth';
 
@@ -50,21 +49,18 @@ export default function ForgotPasswordScreen() {
         icon="✉️"
         showBackButton
       >
-        <Button
+        <Pressable
           onPress={() => router.push({
             pathname: '/(auth)/reset-password',
             params: { email },
           })}
-          style={styles.button}
+          style={({ pressed }) => [
+            styles.primaryButton,
+            { opacity: pressed ? 0.8 : 1 },
+          ]}
         >
-          Continue to Reset
-        </Button>
-
-        <Link href="/(auth)/login" style={styles.link}>
-          <Button variant="ghost" size="sm">
-            Back to Sign In
-          </Button>
-        </Link>
+          <Text style={styles.primaryButtonText}>Continue to Reset</Text>
+        </Pressable>
       </AuthLayout>
     );
   }
@@ -88,30 +84,40 @@ export default function ForgotPasswordScreen() {
         autoComplete="email"
       />
 
-      <Button
+      <Pressable
         onPress={handleSubmit}
         disabled={isLoading || !email.trim()}
-        loading={isLoading}
-        style={styles.button}
+        style={({ pressed }) => [
+          styles.primaryButton,
+          { opacity: pressed || isLoading || !email.trim() ? 0.8 : 1 },
+        ]}
       >
-        Send Reset Code
-      </Button>
-
-      <Link href="/(auth)/login" style={styles.link}>
-        <Button variant="ghost" size="sm">
-          Back to Sign In
-        </Button>
-      </Link>
+        <Text style={styles.primaryButtonText}>
+          {isLoading ? 'Sending...' : 'Send Reset Code'}
+        </Text>
+      </Pressable>
     </AuthLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  button: {
-    marginTop: Spacing.lg,
-  },
-  link: {
-    marginTop: Spacing.md,
+  primaryButton: {
+    backgroundColor: '#0071e3',
+    width: '100%',
+    borderRadius: 100,
+    paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing.lg,
+    shadowColor: '#0071e3',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '600',
   },
 });

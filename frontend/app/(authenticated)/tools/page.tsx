@@ -7,7 +7,7 @@ import { useSettings } from "@/lib/settings-context";
 import { Spinner } from "@/components/ui/spinner";
 import { AuthenticatedPageShell } from "@/components/layout/authenticated-page-shell";
 import { PageHeader } from "@/components/page-header";
-import { Timer, Grid3X3, BookOpen } from "lucide-react";
+import { Timer, Grid3X3, BookOpen, Repeat } from "lucide-react";
 
 const TOOLS = [
   {
@@ -33,6 +33,14 @@ const TOOLS = [
     icon: BookOpen,
     href: "/tools/decisions",
     settingsKey: "decisionLogEnabled" as const,
+  },
+  {
+    key: "habits",
+    name: "Work Habits",
+    description: "Build streaks for daily work disciplines",
+    icon: Repeat,
+    href: "/tools/habits",
+    settingsKey: "habitsEnabled" as const,
   },
 ];
 

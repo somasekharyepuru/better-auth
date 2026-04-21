@@ -104,11 +104,14 @@ export interface UserSettings {
     pomodoroEnabled: boolean;
     eisenhowerEnabled: boolean;
     decisionLogEnabled: boolean;
+    habitsEnabled: boolean;
     pomodoroFocusDuration?: number;
     pomodoroShortBreak?: number;
     pomodoroLongBreak?: number;
     pomodoroSoundEnabled?: boolean;
     focusBlocksCalendar?: boolean;
+    lifeAreasEnabled?: boolean;
+    defaultLifeAreaId?: string | null;
     theme: 'light' | 'dark' | 'system';
 }
 
@@ -1289,5 +1292,119 @@ export const organizationsApi = {
                 method: 'DELETE',
             });
         },
+    },
+};
+
+// ==========================================
+// Habits API
+// ==========================================
+
+export type HabitFrequency = 'DAILY' | 'WEEKLY' | 'X_PER_WEEK' | 'X_PER_MONTH';
+
+export interface HabitLog {
+    id: string;
+    habitId: string;
+    date: string;
+    completed: boolean;
+    note?: string;
+    createdAt: string;
+}
+
+export interface Habit {
+    id: string;
+    userId: string;
+    name: string;
+    description?: string;
+    emoji?: string;
+    color: string;
+    frequency: HabitFrequency;
+    frequencyDays: number[];
+    targetCount?: number;
+    lifeAreaId?: string | null;
+    lifeArea?: { id: string; name: string; color: string | null } | null;
+    isArchived: boolean;
+    isActive: boolean;
+    order: number;
+    currentStreak: number;
+    longestStreak: number;
+    completionRate: number;
+    logs: { date: string; completed: boolean; note?: string }[];
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CreateHabitInput {
+    name: string;
+    description?: string;
+    emoji?: string;
+    color?: string;
+    frequency?: HabitFrequency;
+    frequencyDays?: number[];
+    targetCount?: number;
+    lifeAreaId?: string | null;
+}
+
+export interface UpdateHabitInput extends Partial<CreateHabitInput> {
+    isArchived?: boolean;
+    isActive?: boolean;
+    order?: number;
+}
+
+export const habitsApi = {
+    async getAll(includeInactive = true): Promise<Habit[]> {
+        const q = includeInactive ? '?includeInactive=true' : '';
+        return fetchWithAuth(`${API_BASE}/api/habits${q}`);
+    },
+
+    async getToday(): Promise<(Habit & { completedToday?: boolean; completedForDate?: boolean })[]> {
+        return fetchWithAuth(`${API_BASE}/api/habits/today`);
+    },
+
+    /** Habits due on a given calendar day (YYYY-MM-DD), for dashboards */
+    async getForDate(date: string): Promise<(Habit & { completedForDate: boolean; completedToday?: boolean })[]> {
+        return fetchWithAuth(`${API_BASE}/api/habits/day/${date}`);
+    },
+
+    async create(data: CreateHabitInput): Promise<Habit> {
+        return fetchWithAuth(`${API_BASE}/api/habits`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
+
+    async update(id: string, data: UpdateHabitInput): Promise<Habit> {
+        return fetchWithAuth(`${API_BASE}/api/habits/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        });
+    },
+
+    async delete(id: string): Promise<void> {
+        return fetchWithAuth(`${API_BASE}/api/habits/${id}`, {
+            method: 'DELETE',
+        });
+    },
+
+    async archive(id: string): Promise<Habit> {
+        return fetchWithAuth(`${API_BASE}/api/habits/${id}/archive`, {
+            method: 'PATCH',
+        });
+    },
+
+    async log(id: string, date?: string, note?: string): Promise<HabitLog> {
+        return fetchWithAuth(`${API_BASE}/api/habits/${id}/log`, {
+            method: 'POST',
+            body: JSON.stringify({ date, note }),
+        });
+    },
+
+    async unlog(id: string, date: string): Promise<void> {
+        return fetchWithAuth(`${API_BASE}/api/habits/${id}/log/${date}`, {
+            method: 'DELETE',
+        });
+    },
+
+    async getLogs(id: string, days = 90): Promise<{ logs: HabitLog[]; currentStreak: number; longestStreak: number; completionRate: number }> {
+        return fetchWithAuth(`${API_BASE}/api/habits/${id}/logs?days=${days}`);
     },
 };

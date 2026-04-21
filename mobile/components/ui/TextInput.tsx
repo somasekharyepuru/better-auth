@@ -47,7 +47,7 @@ export const TextInput: React.FC<CustomTextInputProps> = ({
   style,
   ...props
 }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -56,8 +56,8 @@ export const TextInput: React.FC<CustomTextInputProps> = ({
 
   const getBorderColor = () => {
     if (error) return colors.destructive;
-    if (isFocused) return colors.ring;
-    return colors.input;
+    if (isFocused) return colors.primary;
+    return isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
   };
 
   const renderLeftIcon = () => {
@@ -105,7 +105,7 @@ export const TextInput: React.FC<CustomTextInputProps> = ({
           styles.inputContainer,
           {
             borderColor: getBorderColor(),
-            backgroundColor: colors.card,
+            backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#FFFFFF",
           },
         ]}
       >
@@ -137,23 +137,23 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   label: {
-    fontSize: 12,
-    fontWeight: "600" as const,
-    letterSpacing: 0.8,
-    marginBottom: Spacing.sm,
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#4B5563",
+    marginBottom: Spacing.xs,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1.5,
-    borderRadius: Radius.lg,
-    paddingHorizontal: Spacing.md,
-    minHeight: 52,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    height: 52,
   },
   input: {
     flex: 1,
     ...Typography.body,
-    paddingVertical: Spacing.sm,
+    height: 52,
   },
   iconContainer: {
     paddingHorizontal: Spacing.sm,

@@ -48,6 +48,7 @@ model User {
   calendarConnections CalendarConnection[]
   calendarSettings    UserCalendarSettings?
   timeBlockTypes      TimeBlockType[]
+  habits              Habit[]
 
   @@unique([email])
   @@map("user")
@@ -353,6 +354,7 @@ model LifeArea {
   days            Day[]
   eisenhowerTasks EisenhowerTask[]
   decisionEntries DecisionEntry[]
+  habits          Habit[]
 
   @@index([userId])
   @@map("life_area")
@@ -532,6 +534,8 @@ model UserSettings {
 
   lifeAreasEnabled  Boolean @default(true)
   defaultLifeAreaId String?
+
+  habitsEnabled     Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -898,4 +902,65 @@ model UserCalendarSettings {
   updatedAt DateTime @updatedAt
 
   @@map("user_calendar_settings")
+}
+
+// ==========================================
+// Habits
+// ==========================================
+
+enum HabitFrequency {
+  DAILY
+  WEEKLY
+  X_PER_WEEK
+  X_PER_MONTH
+}
+
+model Habit {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lifeAreaId  String?
+  lifeArea    LifeArea? @relation(fields: [lifeAreaId], references: [id], onDelete: SetNull)
+
+  name        String
+  description String?   @db.Text
+  emoji       String?
+  color       String    @default("#6366F1")
+
+  frequency     HabitFrequency @default(DAILY)
+  // For WEEKLY: day-of-week indices (0=Sun…6=Sat)
+  frequencyDays Int[]
+  // For X_PER_WEEK / X_PER_MONTH: target count
+  targetCount   Int?
+
+  isArchived Boolean @default(false)
+  // When false, habit is paused (hidden from daily tracking until resumed).
+  isActive   Boolean @default(true)
+  order      Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  logs HabitLog[]
+
+  @@index([userId])
+  @@index([lifeAreaId])
+  @@map("habit")
+}
+
+model HabitLog {
+  id      String @id @default(cuid())
+  habitId String
+  habit   Habit  @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  date      DateTime @db.Date
+  completed Boolean  @default(true)
+  note      String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([habitId, date])
+  @@index([habitId])
+  @@index([date])
+  @@map("habit_log")
 }

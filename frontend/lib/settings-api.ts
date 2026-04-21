@@ -18,11 +18,15 @@ export interface UserSettings {
     pomodoroEnabled: boolean;
     eisenhowerEnabled: boolean;
     decisionLogEnabled: boolean;
+    habitsEnabled: boolean;
     pomodoroFocusDuration: number;
     pomodoroShortBreak: number;
     pomodoroLongBreak: number;
     pomodoroSoundEnabled: boolean;
     focusBlocksCalendar: boolean;
+    // Life Areas settings
+    lifeAreasEnabled: boolean;
+    defaultLifeAreaId: string | null;
 }
 
 export interface UpdateSettingsDto {
@@ -40,11 +44,15 @@ export interface UpdateSettingsDto {
     pomodoroEnabled?: boolean;
     eisenhowerEnabled?: boolean;
     decisionLogEnabled?: boolean;
+    habitsEnabled?: boolean;
     pomodoroFocusDuration?: number;
     pomodoroShortBreak?: number;
     pomodoroLongBreak?: number;
     pomodoroSoundEnabled?: boolean;
     focusBlocksCalendar?: boolean;
+    // Life Areas settings
+    lifeAreasEnabled?: boolean;
+    defaultLifeAreaId?: string | null;
 }
 
 // Default settings (used when API fails or loading)
@@ -65,11 +73,15 @@ export const DEFAULT_SETTINGS: UserSettings = {
     pomodoroEnabled: true,
     eisenhowerEnabled: true,
     decisionLogEnabled: true,
+    habitsEnabled: true,
     pomodoroFocusDuration: 25,
     pomodoroShortBreak: 5,
     pomodoroLongBreak: 15,
     pomodoroSoundEnabled: true,
     focusBlocksCalendar: true,
+    // Life Areas defaults
+    lifeAreasEnabled: true,
+    defaultLifeAreaId: null,
 };
 
 async function fetchWithCredentials(url: string, options: RequestInit = {}) {

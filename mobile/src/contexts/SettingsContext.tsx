@@ -18,6 +18,7 @@ const DEFAULT_SETTINGS: UserSettings = {
     pomodoroEnabled: true,
     eisenhowerEnabled: true,
     decisionLogEnabled: true,
+    habitsEnabled: true,
     pomodoroFocusDuration: 25,
     pomodoroShortBreak: 5,
     pomodoroLongBreak: 15,

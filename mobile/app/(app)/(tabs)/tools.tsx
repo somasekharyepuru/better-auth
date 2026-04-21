@@ -39,6 +39,14 @@ const TOOLS: Tool[] = [
     href: "/(app)/tools/decisions",
     color: "#0ea5e9",
   },
+  {
+    key: "habits",
+    name: "Work Habits",
+    description: "Build streaks for daily work disciplines",
+    icon: "🛠️",
+    href: "/(app)/tools/habits",
+    color: "#6366F1",
+  },
 ];
 
 export default function ToolsScreen() {
@@ -50,6 +58,7 @@ export default function ToolsScreen() {
     if (tool.key === "pomodoro") return settings.pomodoroEnabled !== false;
     if (tool.key === "matrix") return settings.eisenhowerEnabled !== false;
     if (tool.key === "decisions") return settings.decisionLogEnabled !== false;
+    if (tool.key === "habits") return settings.habitsEnabled !== false;
     return true;
   });
 

@@ -20,7 +20,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const THEME_STORAGE_KEY = '@app_theme';
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('system');
+  const [theme, setThemeState] = useState<Theme>('light');
   const [colorScheme, setColorScheme] = useState<ColorScheme>('light');
 
   useEffect(() => {
@@ -28,18 +28,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (theme !== 'system') {
-      setColorScheme(theme);
-    } else {
-      // Initialize from current system appearance
-      const currentScheme = Appearance.getColorScheme();
-      setColorScheme(currentScheme === 'dark' ? 'dark' : 'light');
-      
-      const subscription = Appearance.addChangeListener(({ colorScheme: scheme }) => {
-        setColorScheme(scheme === 'dark' ? 'dark' : 'light');
-      });
-      return () => subscription.remove();
-    }
+    // Force light scheme regardless of system preference or saved setting
+    setColorScheme('light');
+    setThemeState('light');
   }, [theme]);
 
   const loadTheme = async () => {
@@ -80,8 +71,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const isDark = colorScheme === 'dark';
-  const colors = Colors[colorScheme];
+  const isDark = false;
+  const colors = Colors.light;
 
   return (
     <ThemeContext.Provider value={{ theme, colorScheme, isDark, colors, setTheme }}>

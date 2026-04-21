@@ -22,6 +22,7 @@ import { EndOfDayReview } from "@/components/daymark/end-of-day-review";
 import { LifeAreaSelector } from "@/components/daymark/life-area-selector";
 import { WeekView } from "@/components/dashboard/week-view";
 import { MonthView } from "@/components/dashboard/month-view";
+import { DashboardHabitsCard } from "@/components/dashboard/dashboard-habits-card";
 import { ChevronLeft, ChevronRight, Moon } from "lucide-react";
 
 interface User {
@@ -409,6 +410,9 @@ export function DashboardContent({ user }: DashboardContentProps) {
                       lifeAreas={lifeAreas}
                       onMove={loadDayData}
                     />
+                  )}
+                  {settings.habitsEnabled !== false && (
+                    <DashboardHabitsCard date={currentDate} />
                   )}
                 </div>
 

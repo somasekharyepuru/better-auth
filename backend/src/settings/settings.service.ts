@@ -24,6 +24,8 @@ export interface UpdateSettingsDto {
   // Life Areas settings
   lifeAreasEnabled?: boolean;
   defaultLifeAreaId?: string | null;
+  // Habits settings
+  habitsEnabled?: boolean;
 }
 
 export interface UserSettingsResponse {
@@ -51,6 +53,8 @@ export interface UserSettingsResponse {
   // Life Areas settings
   lifeAreasEnabled: boolean;
   defaultLifeAreaId: string | null;
+  // Habits settings
+  habitsEnabled: boolean;
 }
 
 @Injectable()
@@ -175,6 +179,8 @@ export class SettingsService {
       // Life Areas settings
       lifeAreasEnabled: settings.lifeAreasEnabled,
       defaultLifeAreaId: settings.defaultLifeAreaId,
+      // Habits settings
+      habitsEnabled: settings.habitsEnabled,
     };
   }
 }

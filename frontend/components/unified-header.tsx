@@ -24,6 +24,7 @@ import {
   ChevronDown,
   Plus,
   Building2,
+  Repeat,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
@@ -345,6 +346,10 @@ export function UnifiedHeader() {
             <CommandItem onSelect={() => runCommand(() => router.push("/tools/decisions"))}>
               <Wrench className="mr-2 h-4 w-4" />
               <span>Decision Log</span>
+            </CommandItem>
+            <CommandItem onSelect={() => runCommand(() => router.push("/tools/habits"))}>
+              <Repeat className="mr-2 h-4 w-4" />
+              <span>Work Habits</span>
             </CommandItem>
             {CALENDAR_UI_ENABLED && (
               <CommandItem onSelect={() => runCommand(() => router.push("/settings/calendars"))}>
