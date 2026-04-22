@@ -640,6 +640,12 @@ export const auth = betterAuth({
             }
         })
     },
+    emailVerification: {
+        sendVerificationEmail: async ({ user, url }) => {
+            await emailQueueService.addEmailJob(user.email, url, 'change-email-verification');
+            logger.info('Email change verification queued', { email: user.email });
+        },
+    },
     emailAndPassword: {
         enabled: true,
         requireEmailVerification: true,

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, KeyRound, ShieldCheck } from "lucide-react"
 import { toast } from "sonner"
 
 import { LoadingButton } from "@/components/ui/loading-button"
@@ -69,7 +69,6 @@ export default function ChangePasswordPage() {
 
   const onSubmit = async (data: ChangePasswordForm) => {
     setIsLoading(true)
-
     try {
       const result = await authClient.changePassword({
         currentPassword: data.currentPassword,
@@ -77,9 +76,7 @@ export default function ChangePasswordPage() {
       })
 
       if (result.error) {
-        toast.error("Failed to change password", {
-          description: result.error.message,
-        })
+        toast.error("Failed to change password", { description: result.error.message })
         return
       }
 
@@ -129,144 +126,148 @@ export default function ChangePasswordPage() {
     }
   }
 
-  const content = (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Password</CardTitle>
-          <CardDescription>Update your account password</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="currentPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Current password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          {...field}
-                          type={showCurrentPassword ? "text" : "password"}
-                          placeholder="Enter current password"
-                          disabled={isLoading}
-                          className="pr-9"
-                          autoComplete="current-password"
-                        />
-                        <button
-                          type="button"
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                          aria-label={showCurrentPassword ? "Hide current password" : "Show current password"}
-                        >
-                          {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Separator />
-
-              <FormField
-                control={form.control}
-                name="newPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>New password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          {...field}
-                          type={showNewPassword ? "text" : "password"}
-                          placeholder="At least 8 characters"
-                          disabled={isLoading}
-                          className="pr-9"
-                          autoComplete="new-password"
-                          onChange={(e) => {
-                            field.onChange(e)
-                            setNewPassword(e.target.value)
-                          }}
-                        />
-                        <button
-                          type="button"
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                          onClick={() => setShowNewPassword(!showNewPassword)}
-                          aria-label={showNewPassword ? "Hide new password" : "Show new password"}
-                        >
-                          {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                    <PasswordStrengthMeter password={newPassword} />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm new password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          {...field}
-                          type={showConfirmPassword ? "text" : "password"}
-                          placeholder="Re-enter new password"
-                          disabled={isLoading}
-                          className="pr-9"
-                          autoComplete="new-password"
-                        />
-                        <button
-                          type="button"
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                        >
-                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <LoadingButton
-                type="submit"
-                className="w-full"
-                isLoading={isLoading}
-                loadingText="Changing..."
-              >
-                Change password
-              </LoadingButton>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-
-      <div className="text-sm text-muted-foreground">
-        Use a strong password with a mix of uppercase, lowercase, numbers, and special characters.
-      </div>
-    </div>
-  )
-
   return (
     <>
-      {content}
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                <KeyRound className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Change Password</CardTitle>
+                <CardDescription>Update your account password</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                <FormField
+                  control={form.control}
+                  name="currentPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Current password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            {...field}
+                            type={showCurrentPassword ? "text" : "password"}
+                            placeholder="Enter your current password"
+                            disabled={isLoading}
+                            className="pr-10"
+                            autoComplete="current-password"
+                          />
+                          <button
+                            type="button"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                            aria-label={showCurrentPassword ? "Hide password" : "Show password"}
+                          >
+                            {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Separator />
+
+                <FormField
+                  control={form.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>New password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            {...field}
+                            type={showNewPassword ? "text" : "password"}
+                            placeholder="At least 8 characters"
+                            disabled={isLoading}
+                            className="pr-10"
+                            autoComplete="new-password"
+                            onChange={(e) => {
+                              field.onChange(e)
+                              setNewPassword(e.target.value)
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            aria-label={showNewPassword ? "Hide password" : "Show password"}
+                          >
+                            {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                      {newPassword && <PasswordStrengthMeter password={newPassword} />}
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm new password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            {...field}
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="Re-enter your new password"
+                            disabled={isLoading}
+                            className="pr-10"
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                          >
+                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex justify-end pt-1">
+                  <LoadingButton
+                    type="submit"
+                    isLoading={isLoading}
+                    loadingText="Updating..."
+                  >
+                    Update password
+                  </LoadingButton>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+
+        <div className="flex items-start gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+          <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
+          Use a strong password with a mix of uppercase, lowercase, numbers, and special characters.
+        </div>
+      </div>
+
       <Dialog
         open={isRevokeSessionsDialogOpen}
         onOpenChange={(open) => {
-          if (!isSessionActionLoading) {
-            setIsRevokeSessionsDialogOpen(open)
-          }
+          if (!isSessionActionLoading) setIsRevokeSessionsDialogOpen(open)
         }}
       >
         <DialogContent className="sm:max-w-md">
@@ -306,7 +307,7 @@ export default function ChangePasswordPage() {
               onClick={handleKeepSessions}
               disabled={isSessionActionLoading}
             >
-              Cancel
+              Keep all sessions
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -141,6 +141,27 @@ const EMAIL_TEMPLATES: Record<string, { subject: string; getHtml: (otp: string, 
         `;
         },
     },
+    'change-email-verification': {
+        subject: 'Verify your new email address',
+        getHtml: (url, appName) => {
+            const safeAppName = escapeHtml(appName);
+            const isValidUrl = /^https?:\/\//i.test(url);
+            const safeUrl = isValidUrl ? url : '#';
+            const safeDisplayUrl = escapeHtml(isValidUrl ? url : '');
+            return `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #333;">Verify your new email address</h2>
+                <p>We received a request to change the email address on your ${safeAppName} account.</p>
+                <p>Click the button below to confirm your new email address. This link expires in 1 hour.</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${safeUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Verify new email</a>
+                </div>
+                <p style="color: #666; font-size: 14px;">If you didn't request this change, you can safely ignore this email — your email address will remain unchanged.</p>
+                <p style="color: #999; font-size: 12px; margin-top: 20px;">Or copy and paste this link: ${safeDisplayUrl}</p>
+            </div>
+            `;
+        },
+    },
     'organization-invitation': {
         subject: 'You have been invited to join an organization',
         getHtml: (otp, appName) => {

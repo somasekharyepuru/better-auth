@@ -25,6 +25,7 @@ import {
   Plus,
   Trash2,
   CheckCircle,
+  Settings,
 } from "lucide-react";
 
 const SECTION_OPTIONS = [
@@ -48,6 +49,43 @@ const AVAILABLE_COLORS = [
   { name: "Teal", hex: "#14B8A6" },
   { name: "Orange", hex: "#F97316" },
 ];
+
+function SectionHeader({ icon: Icon, title, description, color = "text-primary", bg = "bg-primary/10" }: {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  color?: string;
+  bg?: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", bg)}>
+        <Icon className={cn("h-4 w-4", color)} />
+      </div>
+      <div>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </div>
+    </div>
+  );
+}
+
+function ToggleRow({ label, description, checked, onChange }: {
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between px-6 py-4">
+      <div>
+        <p className="text-sm font-medium">{label}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+      </div>
+      <Checkbox checked={checked} onCheckedChange={(v) => onChange(!!v)} />
+    </div>
+  );
+}
 
 export default function PreferencesPage() {
   const { addToast } = useToast();
@@ -158,309 +196,222 @@ export default function PreferencesPage() {
     );
   };
 
-  return (
-    <>
-      <div className="space-y-6">
-        {/* Appearance */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Moon className="h-5 w-5" />
-              Appearance
-            </CardTitle>
-            <CardDescription>Customize how Daymark looks</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <Label className="text-sm font-medium">Theme</Label>
-                <p className="text-sm text-muted-foreground mb-3">Select your preferred theme</p>
-                <div className="flex gap-2">
-                  {[
-                    { value: "light", icon: Sun, label: "Light" },
-                    { value: "dark", icon: Moon, label: "Dark" },
-                    { value: "system", icon: Monitor, label: "System" },
-                  ].map(({ value, icon: Icon, label }) => (
-                    <button
-                      key={value}
-                      onClick={() => setTheme(value)}
-                      className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors",
-                        theme === value
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border hover:bg-muted"
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+  const themeOptions = [
+    { value: "light", icon: Sun, label: "Light" },
+    { value: "dark", icon: Moon, label: "Dark" },
+    { value: "system", icon: Monitor, label: "System" },
+  ];
 
-        {/* Dashboard Sections */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Grid3X3 className="h-5 w-5" />
-              Dashboard Sections
-            </CardTitle>
-            <CardDescription>Choose which sections appear on your dashboard</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {SECTION_OPTIONS.map((section) => (
+  return (
+    <div className="space-y-6">
+      {/* Appearance */}
+      <Card>
+        <CardHeader>
+          <SectionHeader icon={Moon} title="Appearance" description="Customize how the app looks" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label className="text-sm">Theme</Label>
+            <div className="flex gap-2">
+              {themeOptions.map(({ value, icon: Icon, label }) => (
+                <button
+                  key={value}
+                  onClick={() => setTheme(value)}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors",
+                    theme === value
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border hover:bg-muted text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dashboard sections */}
+      <Card>
+        <CardHeader>
+          <SectionHeader icon={Grid3X3} title="Dashboard Sections" description="Choose which sections appear on your dashboard" />
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {SECTION_OPTIONS.map((section) => {
+              const isEnabled = enabledSections.includes(section.key);
+              return (
                 <button
                   key={section.key}
                   onClick={() => toggleSection(section.key)}
                   className={cn(
-                    "flex items-center gap-3 p-3 rounded-lg border transition-colors text-left",
-                    enabledSections.includes(section.key)
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:bg-muted"
+                    "flex items-center gap-3 p-3 rounded-lg border text-left transition-colors",
+                    isEnabled ? "border-primary bg-primary/5" : "border-border hover:bg-muted"
                   )}
                 >
                   <div className={cn(
-                    "w-5 h-5 rounded border-2 flex items-center justify-center",
-                    enabledSections.includes(section.key)
-                      ? "border-primary bg-primary"
-                      : "border-muted-foreground"
+                    "h-5 w-5 rounded border-2 flex items-center justify-center shrink-0",
+                    isEnabled ? "border-primary bg-primary" : "border-muted-foreground"
                   )}>
-                    {enabledSections.includes(section.key) && (
-                      <CheckCircle className="w-4 h-4 text-primary-foreground" />
-                    )}
+                    {isEnabled && <CheckCircle className="h-4 w-4 text-primary-foreground" />}
                   </div>
                   <div>
-                    <p className="font-medium text-sm">{section.label}</p>
+                    <p className="text-sm font-medium">{section.label}</p>
                     <p className="text-xs text-muted-foreground">{section.description}</p>
                   </div>
                 </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Productivity Tools */}
+      {/* Productivity tools */}
+      <Card>
+        <CardHeader>
+          <SectionHeader icon={Wrench} title="Productivity Tools" description="Enable or disable productivity features" />
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="divide-y divide-border">
+            <ToggleRow label="Tools Tab" description="Show the Tools tab in navigation" checked={toolsEnabled} onChange={setToolsEnabled} />
+            <ToggleRow label="Pomodoro Timer" description="Focus timer with short and long breaks" checked={pomodoroEnabled} onChange={setPomodoroEnabled} />
+            <ToggleRow label="Eisenhower Matrix" description="Priority matrix for task management" checked={eisenhowerEnabled} onChange={setEisenhowerEnabled} />
+            <ToggleRow label="Decision Log" description="Track important decisions" checked={decisionLogEnabled} onChange={setDecisionLogEnabled} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pomodoro settings */}
+      {pomodoroEnabled && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Wrench className="h-5 w-5" />
-              Productivity Tools
-            </CardTitle>
-            <CardDescription>Enable or disable productivity features</CardDescription>
+            <SectionHeader icon={Timer} title="Pomodoro Timer" description="Customize your focus and break durations" />
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">Tools Tab</Label>
-                <p className="text-xs text-muted-foreground">Show Tools in navigation</p>
-              </div>
-              <Checkbox checked={toolsEnabled} onCheckedChange={(v) => setToolsEnabled(!!v)} />
+          <CardContent className="space-y-5">
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { label: "Focus (min)", value: focusDuration, onChange: setFocusDuration, min: 1, max: 120 },
+                { label: "Short break", value: shortBreak, onChange: setShortBreak, min: 1, max: 30 },
+                { label: "Long break", value: longBreak, onChange: setLongBreak, min: 1, max: 60 },
+              ].map(({ label, value, onChange, min, max }) => (
+                <div key={label} className="space-y-1.5">
+                  <Label className="text-sm">{label}</Label>
+                  <Input
+                    type="number"
+                    value={value}
+                    onChange={(e) => onChange(Number(e.target.value))}
+                    min={min}
+                    max={max}
+                  />
+                </div>
+              ))}
             </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">Pomodoro Timer</Label>
-                <p className="text-xs text-muted-foreground">Focus timer with breaks</p>
-              </div>
-              <Checkbox checked={pomodoroEnabled} onCheckedChange={(v) => setPomodoroEnabled(!!v)} />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">Eisenhower Matrix</Label>
-                <p className="text-xs text-muted-foreground">Priority matrix view</p>
-              </div>
-              <Checkbox checked={eisenhowerEnabled} onCheckedChange={(v) => setEisenhowerEnabled(!!v)} />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">Decision Log</Label>
-                <p className="text-xs text-muted-foreground">Track decisions</p>
-              </div>
-              <Checkbox checked={decisionLogEnabled} onCheckedChange={(v) => setDecisionLogEnabled(!!v)} />
+            <div className="divide-y divide-border border rounded-lg overflow-hidden">
+              <ToggleRow label="Sound notifications" description="Play sound when timer ends" checked={pomodoroSoundEnabled} onChange={setPomodoroSoundEnabled} />
+              {CALENDAR_UI_ENABLED && (
+                <ToggleRow label="Block calendar during focus" description="Mark focus time on your calendar" checked={focusBlocksCalendar} onChange={setFocusBlocksCalendar} />
+              )}
             </div>
           </CardContent>
         </Card>
+      )}
 
-        {/* Pomodoro Settings */}
-        {pomodoroEnabled && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Timer className="h-5 w-5" />
-                Pomodoro Settings
-              </CardTitle>
-              <CardDescription>Customize your focus timer</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label className="text-sm">Focus (min)</Label>
-                  <Input
-                    type="number"
-                    value={focusDuration}
-                    onChange={(e) => setFocusDuration(Number(e.target.value))}
-                    min={1}
-                    max={120}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm">Short Break</Label>
-                  <Input
-                    type="number"
-                    value={shortBreak}
-                    onChange={(e) => setShortBreak(Number(e.target.value))}
-                    min={1}
-                    max={30}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm">Long Break</Label>
-                  <Input
-                    type="number"
-                    value={longBreak}
-                    onChange={(e) => setLongBreak(Number(e.target.value))}
-                    min={1}
-                    max={60}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-sm font-medium">Sound Notifications</Label>
-                  <p className="text-xs text-muted-foreground">Play sound when timer ends</p>
-                </div>
-                <Checkbox checked={pomodoroSoundEnabled} onCheckedChange={(v) => setPomodoroSoundEnabled(!!v)} />
-              </div>
-              {CALENDAR_UI_ENABLED && (
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-sm font-medium">Block Calendar During Focus</Label>
-                    <p className="text-xs text-muted-foreground">Mark focus time on calendar</p>
-                  </div>
-                  <Checkbox checked={focusBlocksCalendar} onCheckedChange={(v) => setFocusBlocksCalendar(!!v)} />
+      {/* Time block types */}
+      <Card>
+        <CardHeader>
+          <SectionHeader icon={Calendar} title="Time Block Types" description="Manage custom categories for time blocks" />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {isTypesLoading ? (
+            <div className="flex justify-center py-6">
+              <Spinner size="sm" />
+            </div>
+          ) : (
+            <>
+              {timeBlockTypes.length > 0 && (
+                <div className="divide-y divide-border border rounded-lg overflow-hidden">
+                  {timeBlockTypes.map((type) => (
+                    <div key={type.id} className="flex items-center justify-between px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-4 w-4 rounded-full shrink-0" style={{ backgroundColor: type.color }} />
+                        <span className="text-sm font-medium">{type.name}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteType(type.id)}
+                        disabled={deletingTypeId === type.id}
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                      >
+                        {deletingTypeId === type.id ? <Spinner size="sm" /> : <Trash2 className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Time Block Types */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Time Block Types
-            </CardTitle>
-            <CardDescription>Manage custom time block categories</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {timeBlockTypes.map((type) => (
-                <div
-                  key={type.id}
-                  className="flex items-center justify-between p-3 rounded-lg border"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: type.color }}
-                    />
-                    <span className="font-medium text-sm">{type.name}</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteType(type.id)}
-                    disabled={deletingTypeId === type.id}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
 
               {showAddType ? (
-                <div className="flex items-center gap-2 p-3 rounded-lg border border-dashed">
-                  <div className="flex gap-1">
+                <div className="rounded-lg border border-dashed p-4 space-y-3">
+                  <div className="flex flex-wrap gap-1.5">
                     {AVAILABLE_COLORS.map((color) => (
                       <button
                         key={color.hex}
                         onClick={() => setNewTypeColor(color.hex)}
+                        title={color.name}
                         className={cn(
-                          "w-5 h-5 rounded-full transition-transform",
+                          "h-5 w-5 rounded-full transition-transform",
                           newTypeColor === color.hex && "scale-125 ring-2 ring-offset-1"
                         )}
                         style={{ backgroundColor: color.hex }}
                       />
                     ))}
                   </div>
-                  <Input
-                    value={newTypeName}
-                    onChange={(e) => setNewTypeName(e.target.value)}
-                    placeholder="Type name..."
-                    className="flex-1 h-8"
-                    onKeyDown={(e) => e.key === "Enter" && handleAddType()}
-                  />
-                  <Button size="sm" onClick={handleAddType} disabled={isAddingType}>
-                    Add
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setShowAddType(false)}>
-                    Cancel
-                  </Button>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newTypeName}
+                      onChange={(e) => setNewTypeName(e.target.value)}
+                      placeholder="Type name..."
+                      className="flex-1 h-9"
+                      onKeyDown={(e) => e.key === "Enter" && handleAddType()}
+                      autoFocus
+                    />
+                    <Button size="sm" onClick={handleAddType} disabled={isAddingType || !newTypeName.trim()} className="h-9">
+                      {isAddingType ? <Spinner size="sm" /> : "Add"}
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setShowAddType(false)} className="h-9">
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <button
                   onClick={() => setShowAddType(true)}
-                  className="flex items-center gap-2 p-3 rounded-lg border border-dashed w-full text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
+                  className="flex w-full items-center gap-2 rounded-lg border border-dashed p-3 text-sm text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
                 >
                   <Plus className="h-4 w-4" />
-                  Add Type
+                  Add new type
                 </button>
               )}
-            </div>
-          </CardContent>
-        </Card>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* Behavior */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5" />
-              Behavior
-            </CardTitle>
-            <CardDescription>Automation and daily workflows</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">Auto Carry Forward</Label>
-                <p className="text-xs text-muted-foreground">Move incomplete items to next day</p>
-              </div>
-              <Checkbox checked={autoCarry} onCheckedChange={(v) => setAutoCarry(!!v)} />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">Auto Create Next Day</Label>
-                <p className="text-xs text-muted-foreground">Create next day entry automatically</p>
-              </div>
-              <Checkbox checked={autoCreate} onCheckedChange={(v) => setAutoCreate(!!v)} />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">End-of-Day Review</Label>
-                <p className="text-xs text-muted-foreground">Show review prompts at day end</p>
-              </div>
-              <Checkbox checked={reviewEnabled} onCheckedChange={(v) => setReviewEnabled(!!v)} />
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Default Time Block Duration</Label>
-              <p className="text-xs text-muted-foreground mb-2">Default duration in minutes</p>
+      {/* Behaviour */}
+      <Card>
+        <CardHeader>
+          <SectionHeader icon={Zap} title="Behaviour" description="Automation and daily workflow settings" />
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="divide-y divide-border">
+            <ToggleRow label="Auto carry forward" description="Move incomplete items to the next day" checked={autoCarry} onChange={setAutoCarry} />
+            <ToggleRow label="Auto create next day" description="Automatically create the next day entry" checked={autoCreate} onChange={setAutoCreate} />
+            <ToggleRow label="End-of-day review" description="Show review prompts at the end of each day" checked={reviewEnabled} onChange={setReviewEnabled} />
+            <div className="px-6 py-4 space-y-2">
+              <Label className="text-sm font-medium">Default time block duration</Label>
+              <p className="text-xs text-muted-foreground">Duration in minutes for new time blocks</p>
               <Input
                 type="number"
                 value={defaultDuration}
@@ -470,16 +421,16 @@ export default function PreferencesPage() {
                 className="w-32"
               />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        <div className="flex justify-end">
-          <Button onClick={handleSavePreferences} disabled={isSaving}>
-            {isSaving ? <Spinner size="sm" className="mr-2" /> : null}
-            Save Preferences
-          </Button>
-        </div>
+      <div className="flex justify-end">
+        <Button onClick={handleSavePreferences} disabled={isSaving}>
+          {isSaving ? <Spinner size="sm" className="mr-2" /> : null}
+          Save preferences
+        </Button>
       </div>
-    </>
+    </div>
   );
 }

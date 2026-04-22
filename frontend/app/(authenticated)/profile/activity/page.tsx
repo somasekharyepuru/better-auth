@@ -16,14 +16,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
@@ -43,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+
 interface AuditLog {
   id: string
   userId: string
@@ -183,7 +176,6 @@ export default function ActivityPage() {
 
   const searchTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Debounce search input
   useEffect(() => {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
     searchTimerRef.current = setTimeout(() => {
@@ -235,12 +227,10 @@ export default function ActivityPage() {
     }
   }, [page, pageSize, sortOrder, actionFilter, debouncedSearch, dateRange, router])
 
-  // Re-fetch when any server-side param changes
   useEffect(() => {
     fetchActivity()
   }, [fetchActivity])
 
-  // Reset page when filters change
   const handleFilterChange = (value: ActionFilter) => {
     setActionFilter(value)
     setPage(1)
@@ -355,7 +345,6 @@ export default function ActivityPage() {
     }
   }
 
-  // Generate page numbers for pagination
   const getPageNumbers = (): (number | "ellipsis")[] => {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1)
 
@@ -374,310 +363,281 @@ export default function ActivityPage() {
 
   if (error && logs.length === 0) {
     return (
-      <>
-        <div className="space-y-6">
-          <Card className="border-destructive/50">
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
-                  <AlertCircle className="w-5 h-5 text-destructive" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-destructive">Failed to load activity</p>
-                  <p className="text-sm text-muted-foreground mt-1">{error}</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-3"
-                    onClick={() => {
-                      setError(null)
-                      fetchActivity()
-                    }}
-                  >
-                    Try again
-                  </Button>
-                </div>
+      <div className="space-y-6">
+        <Card className="border-destructive/50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10 shrink-0">
+                <AlertCircle className="h-5 w-5 text-destructive" />
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </>
+              <div className="flex-1">
+                <p className="font-medium text-destructive">Failed to load activity</p>
+                <p className="text-sm text-muted-foreground mt-1">{error}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => {
+                    setError(null)
+                    fetchActivity()
+                  }}
+                >
+                  Try again
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 
   const startItem = total === 0 ? 0 : (page - 1) * pageSize + 1
   const endItem = Math.min(page * pageSize, total)
 
-  const activityContent = (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-col gap-4 pb-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <CardTitle>Account Activity</CardTitle>
-            <CardDescription>
-              {loading ? "Loading..." : `${total} event${total !== 1 ? "s" : ""}`}
-            </CardDescription>
-          </div>
-          <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
-            <div className="relative w-full sm:w-auto">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 sm:w-[220px]"
-              />
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="justify-between">
-                  Filter: {actionFilter === "" ? "All" : actionFilter.split(".")[1] || actionFilter}
-                  <ChevronDown className="w-4 h-4 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuRadioGroup value={actionFilter} onValueChange={(v) => handleFilterChange(v as ActionFilter)}>
-                  <DropdownMenuRadioItem value="">All Activity</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="user.login">Sign Ins</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="user.logout">Sign Outs</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="user.2fa">Two-Factor Auth</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="user.password">Password Changes</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="user.email">Email Events</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSortToggle}
-              className="justify-start sm:justify-center"
-            >
-              Sort: {sortOrder === "desc" ? "Newest" : "Oldest"}
-            </Button>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 justify-start sm:justify-center">
-                  <CalendarIcon className="w-4 h-4" />
-                  {dateRange.from ? (
-                    <span>
-                      {dayjs(dateRange.from).format("MMM D")} - {dateRange.to ? dayjs(dateRange.to).format("MMM D") : "..."}
-                    </span>
-                  ) : (
-                    "Date Range"
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <div className="p-3">
-                  <Calendar
-                    mode="range"
-                    selected={{
-                      from: dateRange.from,
-                      to: dateRange.to,
-                    }}
-                    onSelect={(range) => {
-                      if (range) {
-                        handleDateChange({ from: range.from, to: range.to })
-                      } else {
-                        handleDateChange({ from: undefined, to: undefined })
-                      }
-                    }}
-                    numberOfMonths={2}
-                  />
-                  {(dateRange.from || dateRange.to) && (
-                    <div className="mt-3 flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleDateChange({ from: undefined, to: undefined })}
-                      >
-                        Clear
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <Spinner size="lg" />
-            </div>
-          ) : logs.length === 0 ? (
-            <div className="text-center py-12">
-              <History className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-              <p className="text-muted-foreground">
-                {total === 0 && !actionFilter && !debouncedSearch && !dateRange.from
-                  ? "No activity found"
-                  : "No matching activity found"}
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="hidden md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Event</TableHead>
-                      <TableHead>IP Address</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {logs.map((log) => {
-                      const config = getActionConfig(log.action)
-                      const Icon = config.icon
-                      return (
-                        <TableRow key={log.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <div className={`w-8 h-8 rounded-full ${config.bg} flex items-center justify-center`}>
-                                <Icon className={`w-4 h-4 ${config.color}`} />
-                              </div>
-                              <span className="font-medium">{config.label}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">{log.ipAddress || "-"}</TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {new Date(log.createdAt).toLocaleString()}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {log.success ? (
-                              <span className="text-xs bg-success/10 text-success px-2 py-0.5 rounded-full">
-                                Success
-                              </span>
-                            ) : (
-                              <span className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">
-                                Failed
-                              </span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
+  return (
+    <>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader className="flex flex-col gap-4 pb-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <History className="h-4 w-4 text-primary" />
               </div>
-
-              <div className="md:hidden space-y-3">
-                {logs.map((log) => {
-                  const config = getActionConfig(log.action)
-                  const Icon = config.icon
-                  return (
-                    <div key={log.id} className="p-4 rounded-lg border">
-                      <div className="flex items-start gap-3">
-                        <div className={`w-10 h-10 rounded-full ${config.bg} flex items-center justify-center shrink-0`}>
-                          <Icon className={`w-5 h-5 ${config.color}`} />
+              <div>
+                <CardTitle>Security Activity</CardTitle>
+                <CardDescription>
+                  {loading ? "Loading..." : `${total} event${total !== 1 ? "s" : ""}`}
+                </CardDescription>
+              </div>
+            </div>
+            <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end sm:shrink-0">
+              <div className="relative w-full sm:w-auto">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Search events..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 sm:w-[200px] h-9"
+                />
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="justify-between">
+                    {actionFilter === "" ? "All Activity" : actionFilter.split(".")[1]
+                      ? actionFilter.split(".")[1].charAt(0).toUpperCase() + actionFilter.split(".")[1].slice(1)
+                      : actionFilter}
+                    <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuRadioGroup value={actionFilter} onValueChange={(v) => handleFilterChange(v as ActionFilter)}>
+                    <DropdownMenuRadioItem value="">All Activity</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="user.login">Sign Ins</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="user.logout">Sign Outs</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="user.2fa">Two-Factor Auth</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="user.password">Password Changes</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="user.email">Email Events</DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSortToggle}
+              >
+                {sortOrder === "desc" ? "Newest first" : "Oldest first"}
+              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <CalendarIcon className="h-3.5 w-3.5" />
+                    {dateRange.from ? (
+                      <span>
+                        {dayjs(dateRange.from).format("MMM D")}
+                        {dateRange.to ? ` – ${dayjs(dateRange.to).format("MMM D")}` : " – ..."}
+                      </span>
+                    ) : (
+                      "Date Range"
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <div className="p-3">
+                    <Calendar
+                      mode="range"
+                      selected={{
+                        from: dateRange.from,
+                        to: dateRange.to,
+                      }}
+                      onSelect={(range) => {
+                        if (range) {
+                          handleDateChange({ from: range.from, to: range.to })
+                        } else {
+                          handleDateChange({ from: undefined, to: undefined })
+                        }
+                      }}
+                      numberOfMonths={2}
+                    />
+                    {(dateRange.from || dateRange.to) && (
+                      <div className="mt-3 flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleDateChange({ from: undefined, to: undefined })}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {loading ? (
+              <div className="flex justify-center py-16">
+                <Spinner size="lg" />
+              </div>
+            ) : logs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 px-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
+                  <History className="h-6 w-6 text-muted-foreground/50" />
+                </div>
+                <p className="text-sm font-medium text-muted-foreground">No activity found</p>
+                <p className="text-xs text-muted-foreground/70 mt-1">
+                  {total === 0 && !actionFilter && !debouncedSearch && !dateRange.from
+                    ? "Your security events will appear here"
+                    : "Try adjusting your search or filters"}
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="divide-y">
+                  {logs.map((log) => {
+                    const config = getActionConfig(log.action)
+                    const Icon = config.icon
+                    return (
+                      <div
+                        key={log.id}
+                        className="flex items-center gap-4 px-6 py-4 hover:bg-muted/30 transition-colors"
+                      >
+                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${config.bg}`}>
+                          <Icon className={`h-4 w-4 ${config.color}`} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-sm font-medium truncate">{config.label}</p>
-                            {log.success ? (
-                              <span className="text-xs bg-success/10 text-success px-2 py-0.5 rounded-full shrink-0">
-                                Success
-                              </span>
-                            ) : (
-                              <span className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded-full shrink-0">
-                                Failed
-                              </span>
+                          <p className="text-sm font-medium truncate">{config.label}</p>
+                          <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                            <span>
+                              {new Date(log.createdAt).toLocaleString(undefined, {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                                hour: "numeric",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                            {log.ipAddress && (
+                              <>
+                                <span className="text-muted-foreground/40">·</span>
+                                <span>{log.ipAddress}</span>
+                              </>
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(log.createdAt).toLocaleString()}
-                          </p>
-                          {log.ipAddress && (
-                            <p className="text-xs text-muted-foreground/70 mt-1">
-                              IP: {log.ipAddress}
-                            </p>
+                        </div>
+                        <div className="shrink-0">
+                          {log.success ? (
+                            <span className="inline-flex items-center rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-medium text-success">
+                              Success
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive">
+                              Failed
+                            </span>
                           )}
                         </div>
                       </div>
-                    </div>
-                  )
-                })}
-              </div>
+                    )
+                  })}
+                </div>
 
-              {/* Pagination */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>Showing {startItem}-{endItem} of {total}</span>
-                  <span className="hidden sm:inline">|</span>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span>
+                      {total === 0 ? "No results" : `${startItem}–${endItem} of ${total}`}
+                    </span>
+                    <span className="hidden sm:inline text-muted-foreground/40">|</span>
+                    <div className="hidden sm:flex items-center gap-1.5">
+                      <span>Rows:</span>
+                      <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
+                        <SelectTrigger className="h-7 w-[64px] text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PAGE_SIZE_OPTIONS.map((size) => (
+                            <SelectItem key={size} value={String(size)}>
+                              {size}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-1">
-                    <span className="hidden sm:inline">Rows per page:</span>
-                    <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
-                      <SelectTrigger className="h-8 w-[70px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PAGE_SIZE_OPTIONS.map((size) => (
-                          <SelectItem key={size} value={String(size)}>
-                            {size}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                      disabled={page <= 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+
+                    {getPageNumbers().map((p, i) =>
+                      p === "ellipsis" ? (
+                        <span key={`ellipsis-${i}`} className="px-1.5 text-sm text-muted-foreground">
+                          ...
+                        </span>
+                      ) : (
+                        <Button
+                          key={p}
+                          variant={page === p ? "default" : "outline"}
+                          size="icon"
+                          className="h-8 w-8 text-xs"
+                          onClick={() => setPage(p)}
+                        >
+                          {p}
+                        </Button>
+                      )
+                    )}
+
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={page >= totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setPage(prev => Math.max(1, prev - 1))}
-                    disabled={page <= 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-
-                  {getPageNumbers().map((p, i) =>
-                    p === "ellipsis" ? (
-                      <span key={`ellipsis-${i}`} className="px-2 text-muted-foreground">...</span>
-                    ) : (
-                      <Button
-                        key={p}
-                        variant={page === p ? "default" : "outline"}
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => setPage(p)}
-                      >
-                        {p}
-                      </Button>
-                    )
-                  )}
-
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={page >= totalPages}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="flex gap-3 p-4 bg-muted/50 rounded-lg">
-        <Info className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-        <p className="text-sm text-muted-foreground">
-          Regularly review your account activity to ensure there's no suspicious activity. If you see anything unusual, change your password immediately.
-        </p>
+        <div className="flex gap-3 rounded-lg bg-muted/50 p-4">
+          <Shield className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+          <p className="text-sm text-muted-foreground">
+            Regularly review your account activity to ensure there is no suspicious activity. If you see anything unusual, change your password immediately.
+          </p>
+        </div>
       </div>
-    </div>
-  )
-
-  return (
-    <>
-      {activityContent}
     </>
   )
 }

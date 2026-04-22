@@ -5,12 +5,15 @@ import { timingSafeEqual } from 'crypto';
 
 const mobileAuthLogger = createChildLogger('mobile-auth');
 
-// Paths that should bypass mobile auth (health checks only)
-// Note: Auth endpoints should NOT bypass - mobile clients must authenticate
+// Paths that should bypass mobile auth check.
+// Email link clicks arrive with no Origin header (direct browser navigation),
+// so they must be exempted or they get rejected as unauthenticated mobile clients.
 const BYPASS_PATHS = [
     '/health',
     '/ready',
     '/queue-stats',
+    '/api/auth/verify-email',      // email verification link from inbox
+    '/api/auth/reset-password',    // password reset link from inbox
 ];
 
 /**
@@ -28,8 +31,8 @@ function constantTimeEqual(a: string, b: string): boolean {
 @Injectable()
 export class MobileAuthMiddleware implements NestMiddleware {
     use(req: Request, res: Response, next: NextFunction) {
-        // Check for exact bypass paths only (no prefix matching)
-        if (BYPASS_PATHS.includes(req.path)) {
+        const fullPath = (req.originalUrl || req.url || '').split('?')[0];
+        if (BYPASS_PATHS.some(p => fullPath === p || fullPath.startsWith(p + '?'))) {
             return next();
         }
 
