@@ -103,6 +103,7 @@ export default function OrganizationLayout({
         { name: "Teams", href: `/organizations/${params.id}/teams`, icon: Briefcase, show: true },
         { name: "Roles", href: `/organizations/${params.id}/roles`, icon: Key, show: canAccessSettings },
         { name: "Settings", href: `/organizations/${params.id}/settings`, icon: Settings, show: canAccessSettings },
+        { name: "Billing", href: `/organizations/${params.id}/settings/billing`, icon: CreditCard, show: canAccessSettings },
     ].filter(item => item.show);
 
     const roleInfo = currentUserRole ? ROLE_INFO[currentUserRole] : null;

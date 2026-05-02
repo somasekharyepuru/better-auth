@@ -16,8 +16,9 @@ export class DailyReviewService {
     userId: string,
     dateStr: string,
     data: { wentWell?: string; didntGoWell?: string },
+    lifeAreaId?: string,
   ) {
-    const day = await this.daysService.getOrCreateDay(userId, dateStr);
+    const day = await this.daysService.getOrCreateDay(userId, dateStr, lifeAreaId || null);
 
     return this.prisma.dailyReview.upsert({
       where: { dayId: day.id },

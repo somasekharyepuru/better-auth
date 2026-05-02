@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, ForbiddenException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { PlanLimitsService } from "../subscription/plan-limits.service";
 
 // Focus Suite v2: Extended DTOs with linkage fields
 export interface CreateDecisionDto {
@@ -75,12 +76,20 @@ export interface DecisionWithRelations {
 
 @Injectable()
 export class DecisionLogService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private planLimits: PlanLimitsService,
+  ) {}
 
   async getAllDecisions(
     userId: string,
     params: DecisionQueryParams = {},
   ): Promise<PaginatedDecisionsResponse> {
+    const canAccess = await this.planLimits.canAccessDecisionLog(userId);
+    if (!canAccess) {
+      throw new ForbiddenException(PlanLimitsService.featurePayload('decisionLog'));
+    }
+
     const {
       search,
       lifeAreaId,
@@ -200,6 +209,11 @@ export class DecisionLogService {
     userId: string,
     data: CreateDecisionDto,
   ): Promise<DecisionWithRelations> {
+    const canAccess = await this.planLimits.canAccessDecisionLog(userId);
+    if (!canAccess) {
+      throw new ForbiddenException(PlanLimitsService.featurePayload('decisionLog'));
+    }
+
     // Create the decision
     const decision = await this.prisma.decisionEntry.create({
       data: {

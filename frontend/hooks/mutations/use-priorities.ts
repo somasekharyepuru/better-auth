@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { prioritiesApi, TopPriority, Day } from "@/lib/daymark-api";
 import { dayKeys, invalidateDayCaches } from "../queries/use-day";
+import { isPlanLimitError } from "@/lib/plan-errors";
 
 interface MutationContext {
   previousDay: Day | undefined;

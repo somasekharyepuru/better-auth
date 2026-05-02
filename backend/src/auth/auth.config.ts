@@ -330,6 +330,51 @@ export const auth = betterAuth({
                     logger.error('Failed to audit sign-out', { error });
                 }
             }
+
+            // ── Org join: block Free users ──────────────────────────────────
+            if (path === '/organization/accept-invitation') {
+                try {
+                    const session = (ctx.context as any)?.session;
+                    const userId = session?.userId;
+                    if (userId) {
+                        const { PlanLimitsService } = await import('../subscription/plan-limits.service');
+                        const svc = new PlanLimitsService(prisma as any);
+                        const canJoin = await svc.canJoinOrg(userId);
+                        if (!canJoin) {
+                            throw new APIError('FORBIDDEN', PlanLimitsService.orgJoinPayload() as any);
+                        }
+                    }
+                } catch (err: any) {
+                    if (err?.status) throw err;
+                    logger.error('canJoinOrg check failed', { error: err });
+                }
+            }
+
+            // ── Invite creation: enforce seat limit ─────────────────────────
+            if (path === '/organization/create-invitation') {
+                try {
+                    const body = ctx.body as any;
+                    const orgId = body?.organizationId;
+                    if (orgId) {
+                        const orgSub = await prisma.organizationSubscription.findUnique({
+                            where: { organizationId: orgId },
+                        });
+                        if (orgSub) {
+                            const memberCount = await prisma.member.count({ where: { organizationId: orgId } });
+                            if (memberCount >= orgSub.seatLimit) {
+                                throw new APIError('FORBIDDEN', {
+                                    code: 'SEAT_LIMIT_REACHED',
+                                    message: `Seat limit reached (${memberCount}/${orgSub.seatLimit}). Add more seats to invite new members.`,
+                                    upgradeUrl: `/organizations/${orgId}/settings/billing`,
+                                } as any);
+                            }
+                        }
+                    }
+                } catch (err: any) {
+                    if (err?.status) throw err;
+                    logger.error('seat-limit check failed', { error: err });
+                }
+            }
         }),
         // After hook: Audit logging, device tracking, password history
         after: createAuthMiddleware(async (ctx) => {

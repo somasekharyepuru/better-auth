@@ -6,6 +6,7 @@ import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import {
   Wrench,
+  BarChart3,
   Calendar,
   Menu,
   X,
@@ -93,6 +94,7 @@ export function UnifiedHeader() {
     (pathname === "/calendar" || pathname.startsWith("/calendar/"));
   const isDashboard = pathname === "/";
   const isToolsPage = pathname === "/tools" || pathname.startsWith("/tools/");
+  const isReportsPage = pathname === "/reports" || pathname.startsWith("/reports/");
   const showToolsLink = settings.toolsTabEnabled && (settings.pomodoroEnabled || settings.eisenhowerEnabled || settings.decisionLogEnabled);
   const userInitials = getAvatarFallback(user?.name, user?.email);
   const showOrganizationNavigation = user?.role === "admin";
@@ -152,6 +154,20 @@ export function UnifiedHeader() {
                   <span className="hidden lg:inline">Tools</span>
                 </button>
               )}
+
+              <button
+                type="button"
+                onClick={() => router.push("/reports")}
+                className={cn(
+                  "hidden sm:flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors lg:px-3",
+                  isReportsPage
+                    ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
+                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200",
+                )}
+              >
+                <BarChart3 className="h-4 w-4" />
+                <span className="hidden lg:inline">Reports</span>
+              </button>
 
               <ThemeSwitcher />
 
@@ -257,6 +273,19 @@ export function UnifiedHeader() {
                     Tools
                   </button>
                 )}
+                <button
+                  type="button"
+                  onClick={() => { router.push("/reports"); setIsMobileMenuOpen(false); }}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-colors",
+                    isReportsPage
+                      ? "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-800",
+                  )}
+                >
+                  <BarChart3 className="w-5 h-5" />
+                  Reports
+                </button>
                 {showOrganizationNavigation && (
                   <button
                     onClick={() => { router.push("/organizations"); setIsMobileMenuOpen(false); }}
@@ -324,6 +353,11 @@ export function UnifiedHeader() {
               <Wrench className="mr-2 h-4 w-4" />
               <span>Tools</span>
               <CommandShortcut>⌘T</CommandShortcut>
+            </CommandItem>
+            <CommandItem onSelect={() => runCommand(() => router.push("/reports"))}>
+              <BarChart3 className="mr-2 h-4 w-4" />
+              <span>Reports</span>
+              <CommandShortcut>⌘R</CommandShortcut>
             </CommandItem>
             <CommandItem onSelect={() => runCommand(() => router.push("/help"))}>
               <HelpCircle className="mr-2 h-4 w-4" />

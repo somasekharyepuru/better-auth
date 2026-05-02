@@ -25,11 +25,12 @@ export class DailyReviewController {
   @Put("days/:date/review")
   async upsertReview(
     @Param("date") date: string,
-    @Body() body: { wentWell?: string; didntGoWell?: string },
+    @Body() body: { wentWell?: string; didntGoWell?: string; lifeAreaId?: string },
     @Req() req: Request,
   ) {
     const userId = this.getUserIdFromRequest(req);
-    return this.dailyReviewService.upsertReview(userId, date, body);
+    const { lifeAreaId, ...reviewData } = body;
+    return this.dailyReviewService.upsertReview(userId, date, reviewData, lifeAreaId);
   }
 
   @Post("days/:date/review/carry-forward")

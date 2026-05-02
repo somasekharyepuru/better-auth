@@ -35,10 +35,12 @@ import { TokenRefreshProcessor } from "./queue/token-refresh.processor";
 
 import { CALENDAR_QUEUES } from "./queue/calendar-queue.constants";
 import { PrismaModule } from "../prisma/prisma.module";
+import { SubscriptionModule } from "../subscription/subscription.module";
 
 @Module({
   imports: [
     PrismaModule,
+    SubscriptionModule,
     ScheduleModule.forRoot(),
     BullModule.registerQueue(
       { name: CALENDAR_QUEUES.GOOGLE_SYNC },

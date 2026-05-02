@@ -2,9 +2,11 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { HabitFrequency } from '@prisma/client';
+import { PlanLimitsService } from '../subscription/plan-limits.service';
 
 // ─── DTOs ──────────────────────────────────────────────────────────────────
 
@@ -156,7 +158,10 @@ function computeCompletionRate(
 
 @Injectable()
 export class HabitsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private planLimits: PlanLimitsService,
+  ) {}
 
   // ── List / today ──────────────────────────────────────────────────────────
 
@@ -214,6 +219,13 @@ export class HabitsService {
   // ── CRUD ──────────────────────────────────────────────────────────────────
 
   async createHabit(userId: string, data: CreateHabitDto) {
+    const check = await this.planLimits.canCreateHabit(userId);
+    if (!check.allowed) {
+      throw new ForbiddenException(
+        PlanLimitsService.limitPayload('active_habits', check.current, check.max),
+      );
+    }
+
     if (data.lifeAreaId) {
       await this.assertLifeAreaOwnership(data.lifeAreaId, userId);
     }

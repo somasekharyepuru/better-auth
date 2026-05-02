@@ -2,19 +2,22 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
+  ForbiddenException,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { DaysService } from "../days/days.service";
+import { PlanLimitsService } from "../subscription/plan-limits.service";
 
 @Injectable()
 export class PrioritiesService {
   constructor(
     private prisma: PrismaService,
     private daysService: DaysService,
+    private planLimits: PlanLimitsService,
   ) {}
 
   /**
-   * Create a priority (unlimited)
+   * Create a priority — enforces daily plan limit for Free users.
    */
   async createPriority(
     userId: string,
@@ -22,6 +25,13 @@ export class PrioritiesService {
     title: string,
     lifeAreaId?: string,
   ) {
+    const check = await this.planLimits.canCreatePriority(userId);
+    if (!check.allowed) {
+      throw new ForbiddenException(
+        PlanLimitsService.limitPayload('daily_priorities', check.current, check.max),
+      );
+    }
+
     const day = await this.daysService.getOrCreateDay(
       userId,
       dateStr,

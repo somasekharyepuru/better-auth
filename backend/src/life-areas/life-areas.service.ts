@@ -3,8 +3,10 @@ import {
   BadRequestException,
   NotFoundException,
   UnauthorizedException,
+  ForbiddenException,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { PlanLimitsService } from "../subscription/plan-limits.service";
 
 export interface CreateLifeAreaDto {
   name: string;
@@ -34,7 +36,10 @@ const MAX_LIFE_AREAS = 5;
 
 @Injectable()
 export class LifeAreasService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private planLimits: PlanLimitsService,
+  ) {}
 
   /**
    * Get all active life areas for a user
@@ -87,23 +92,17 @@ export class LifeAreasService {
   }
 
   /**
-   * Create a new life area
+   * Create a new life area — enforces plan-based limit.
    */
   async createLifeArea(
     userId: string,
     data: CreateLifeAreaDto,
   ): Promise<LifeAreaResponse> {
-    // Check max limit
-    const count = await this.prisma.lifeArea.count({
-      where: {
-        userId,
-        isArchived: false,
-      },
-    });
-
-    if (count >= MAX_LIFE_AREAS) {
-      throw new BadRequestException(
-        `Maximum ${MAX_LIFE_AREAS} life areas allowed`,
+    // Plan-based limit check
+    const check = await this.planLimits.canCreateLifeArea(userId);
+    if (!check.allowed) {
+      throw new ForbiddenException(
+        PlanLimitsService.limitPayload('life_areas', check.current, check.max),
       );
     }
 
@@ -186,9 +185,10 @@ export class LifeAreasService {
       },
     });
 
-    if (activeCount >= MAX_LIFE_AREAS) {
-      throw new BadRequestException(
-        `Cannot restore: maximum ${MAX_LIFE_AREAS} active life areas allowed`,
+    const restoreCheck = await this.planLimits.canCreateLifeArea(userId);
+    if (!restoreCheck.allowed) {
+      throw new ForbiddenException(
+        PlanLimitsService.limitPayload('life_areas', restoreCheck.current, restoreCheck.max),
       );
     }
 

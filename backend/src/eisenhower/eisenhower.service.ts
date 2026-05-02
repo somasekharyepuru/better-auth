@@ -1,6 +1,7 @@
-import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { SettingsService } from "../settings/settings.service";
+import { PlanLimitsService } from "../subscription/plan-limits.service";
 
 export interface CreateEisenhowerTaskDto {
   title: string;
@@ -21,9 +22,15 @@ export class EisenhowerService {
   constructor(
     private prisma: PrismaService,
     private settingsService: SettingsService,
+    private planLimits: PlanLimitsService,
   ) {}
 
   async getAllTasks(userId: string) {
+    const canAccess = await this.planLimits.canAccessEisenhower(userId);
+    if (!canAccess) {
+      throw new ForbiddenException(PlanLimitsService.featurePayload('eisenhowerMatrix'));
+    }
+
     return this.prisma.eisenhowerTask.findMany({
       where: { userId },
       include: {
@@ -36,6 +43,11 @@ export class EisenhowerService {
   }
 
   async createTask(userId: string, data: CreateEisenhowerTaskDto) {
+    const canAccess = await this.planLimits.canAccessEisenhower(userId);
+    if (!canAccess) {
+      throw new ForbiddenException(PlanLimitsService.featurePayload('eisenhowerMatrix'));
+    }
+
     // Validate quadrant (1-4)
     const quadrant = Math.max(1, Math.min(4, data.quadrant));
 

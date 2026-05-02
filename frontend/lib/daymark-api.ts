@@ -1,4 +1,6 @@
 // Daymark API client for frontend
+import { PlanLimitError, FeatureGateError } from './plan-errors';
+
 const API_BASE = process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:3002';
 
 // Types
@@ -123,8 +125,10 @@ async function fetchWithCredentials(url: string, options: RequestInit = {}) {
     });
 
     if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: response.statusText }));
-        throw new Error(error.message || 'Request failed');
+        const body = await response.json().catch(() => ({ message: response.statusText }));
+        if (body?.code === 'PLAN_LIMIT_REACHED') throw new PlanLimitError(body);
+        if (body?.code === 'FEATURE_NOT_AVAILABLE') throw new FeatureGateError(body);
+        throw new Error(body.message || 'Request failed');
     }
 
     return response.json();

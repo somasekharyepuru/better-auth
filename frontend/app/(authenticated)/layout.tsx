@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { SessionProvider, useSession } from "@/components/session-provider";
 import { Spinner } from "@/components/ui/spinner";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
+import { PlanProvider } from "@/contexts/plan-context";
 
 function AuthenticatedContent({ children }: { children: React.ReactNode }) {
     const { user, isLoading } = useSession();
@@ -38,7 +39,9 @@ export default function AuthenticatedLayout({
 }) {
     return (
         <SessionProvider>
-            <AuthenticatedContent>{children}</AuthenticatedContent>
+            <PlanProvider>
+                <AuthenticatedContent>{children}</AuthenticatedContent>
+            </PlanProvider>
         </SessionProvider>
     );
 }

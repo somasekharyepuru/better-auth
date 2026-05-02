@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { Injectable, Logger, NotFoundException, ForbiddenException } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import { CalendarProvider, ConnectionStatus } from "@prisma/client";
@@ -7,6 +7,7 @@ import { PrismaService } from "../../prisma/prisma.service";
 import { CalendarProviderFactory } from "../providers/calendar-provider.factory";
 import { CalendarTokenService } from "./calendar-token.service";
 import { CALENDAR_QUEUES } from "../queue/calendar-queue.constants";
+import { PlanLimitsService } from "../../subscription/plan-limits.service";
 
 @Injectable()
 export class CalendarConnectionService {
@@ -16,6 +17,7 @@ export class CalendarConnectionService {
     private readonly prisma: PrismaService,
     private readonly providerFactory: CalendarProviderFactory,
     private readonly tokenService: CalendarTokenService,
+    private readonly planLimits: PlanLimitsService,
     @InjectQueue(CALENDAR_QUEUES.GOOGLE_SYNC)
     private readonly googleQueue: Queue,
     @InjectQueue(CALENDAR_QUEUES.MICROSOFT_SYNC)
@@ -27,6 +29,13 @@ export class CalendarConnectionService {
     provider: CalendarProvider,
     redirectUri: string,
   ): Promise<{ authUrl: string; state: string }> {
+    const check = await this.planLimits.canAddCalendarConnection(userId);
+    if (!check.allowed) {
+      throw new ForbiddenException(
+        PlanLimitsService.limitPayload('calendar_connections', check.current, check.max),
+      );
+    }
+
     const state = randomBytes(16).toString("hex");
 
     // Apple CalDAV uses app-specific passwords (completeAppleConnection), not OAuth URLs.

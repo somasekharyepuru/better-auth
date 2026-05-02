@@ -7,6 +7,9 @@ import { LifeArea, TopPriority } from "@/lib/daymark-api";
 import { SimpleTooltip as Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { useFocusOptional } from "@/lib/focus-context";
+import { usePlan } from "@/contexts/plan-context";
+import { LimitBanner } from "@/components/plan/upgrade-prompt";
+import { isPlanLimitError } from "@/lib/plan-errors";
 import { SortablePriorityItem } from "./sortable-priority-item";
 import {
     useTogglePriorityMutation,
@@ -53,6 +56,8 @@ export function TopPriorities({ date, priorities, lifeAreaId, readOnly = false, 
 
     const focus = useFocusOptional();
     const { addToast } = useToast();
+    const { hasReachedLimit, limits, usage, refresh: refreshPlan } = usePlan();
+    const atPriorityLimit = hasReachedLimit('priorities');
 
     // Setup React Query mutations
     const toggleMutation = useTogglePriorityMutation(date, lifeAreaId);
@@ -103,7 +108,21 @@ export function TopPriorities({ date, priorities, lifeAreaId, readOnly = false, 
             onSuccess: () => {
                 setNewTitle("");
                 setIsAdding(false);
-            }
+                refreshPlan();
+            },
+            onError: (err) => {
+                if (isPlanLimitError(err)) {
+                    setIsAdding(false);
+                    setNewTitle("");
+                    addToast({
+                        type: 'warning',
+                        title: `Daily limit reached (${err.current}/${err.max} priorities)`,
+                        description: 'Upgrade to Premium for unlimited daily priorities.',
+                    });
+                } else {
+                    addToast({ type: 'error', title: err.message || 'Failed to add priority' });
+                }
+            },
         });
     };
 
@@ -212,7 +231,17 @@ export function TopPriorities({ date, priorities, lifeAreaId, readOnly = false, 
                 </SortableContext>
             </DndContext>
 
-            {!isAdding && (
+            {atPriorityLimit && (
+                <div className="mt-3">
+                    <LimitBanner
+                        metric="priorities"
+                        current={usage.prioritiesCreatedToday}
+                        max={limits.maxDailyPriorities as number}
+                    />
+                </div>
+            )}
+
+            {!isAdding && !atPriorityLimit && (
                 <button
                     onClick={() => setIsAdding(true)}
                     className="flex items-center gap-2 p-3 mt-2 w-full rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all"
